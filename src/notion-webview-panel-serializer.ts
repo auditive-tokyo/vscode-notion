@@ -135,10 +135,18 @@ export class NotionWebviewPanelSerializer implements vscode.WebviewPanelSerializ
       },
     )
     console.log('[notion-webview-serializer] page data fetched, data length:', data?.length)
-    // Markdown形式なので、タイトルは既にヘッダーに含まれている
-    const title = untitledPageTitle
+    // Markdown の最初のヘッダーからタイトルを抽出
+    const title = this.extractTitleFromMarkdown(data) ?? untitledPageTitle
     console.log('[notion-webview-serializer] page title:', title)
     return {id, title, data}
+  }
+
+  /**
+   * Markdown の最初の # ヘッダーを抽出
+   */
+  private extractTitleFromMarkdown(markdown: string): string | null {
+    const match = markdown.match(/^#\s+(.+?)$/m)
+    return match && match[1] ? match[1].trim() : null
   }
 
   private renderWebview(webviewPanel: vscode.WebviewPanel, state: NotionWebviewState) {
