@@ -11,6 +11,7 @@
     "jsx": "react",
     "sourceMap": true,
     "rootDir": "..",
+    "skipLibCheck": true,
     "noUnusedLocals": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,

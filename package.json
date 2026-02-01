@@ -23,7 +23,7 @@
   "publisher": "auditive-tokyo",
   "main": "./dist/extension.js",
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit --project src/webview/tsconfig.json",
     "build": "NODE_ENV=production webpack --mode production --config webpack.config.ts",
     "watch": "NODE_ENV=development webpack --watch --mode development --config webpack.config.ts",
     "package-extension": "vsce package --no-dependencies",

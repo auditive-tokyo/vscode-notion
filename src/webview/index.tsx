@@ -45,7 +45,7 @@ if (!state || !state.data) {
           p: ({node, ...props}) => <p {...props} style={{marginBottom: '12px'}} />,
           ul: ({node, ...props}) => <ul {...props} style={{marginLeft: '20px', marginBottom: '12px'}} />,
           ol: ({node, ...props}) => <ol {...props} style={{marginLeft: '20px', marginBottom: '12px'}} />,
-          code: ({node, inline, ...props}) => 
+          code: ({node, inline, ...props}: any) => 
             inline ? (
               <code {...props} style={{backgroundColor: '#f0f0f0', padding: '2px 4px', borderRadius: '3px', fontFamily: 'monospace'}} />
             ) : (
