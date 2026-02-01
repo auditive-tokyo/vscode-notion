@@ -166,7 +166,7 @@ export class NotionWebviewPanelSerializer
 
   private async fetchDataAndGetPageState(id: string) {
     console.log(
-      "[notion-webview-serializer] fetchDataAndGetPageState called with id:",
+      "[notion-page-viewer] fetchDataAndGetPageState called with id:",
       id,
     );
     const result = await vscode.window.withProgress(
@@ -180,14 +180,14 @@ export class NotionWebviewPanelSerializer
       },
     );
     console.log(
-      "[notion-webview-serializer] page data fetched, data length:",
+      "[notion-page-viewer] page data fetched, data length:",
       result.data?.length,
     );
-    console.log("[notion-webview-serializer] result:", result);
+    console.log("[notion-page-viewer] result:", result);
     // Markdown の最初のヘッダーからタイトルを抽出
     const title =
       this.extractTitleFromMarkdown(result.data) ?? untitledPageTitle;
-    console.log("[notion-webview-serializer] page title:", title);
+    console.log("[notion-page-viewer] page title:", title);
     const finalState: NotionWebviewState = {
       id,
       title,
@@ -196,7 +196,7 @@ export class NotionWebviewPanelSerializer
       tableData: result.tableData,
       coverUrl: result.coverUrl ?? null,
     };
-    console.log("[notion-webview-serializer] finalState:", finalState);
+    console.log("[notion-page-viewer] finalState:", finalState);
     return finalState;
   }
 

@@ -48,7 +48,7 @@ if (!state || !state.data) {
       console.log("[webview] Rendering table with tableData:", state.tableData);
       return (
         <div className="min-h-screen py-8 px-4">
-          <div className="max-w-4xl mx-auto">
+          <div className="page-container">
             {renderCover()}
             <ReactMarkdown>{state.data}</ReactMarkdown>
             <div className="overflow-x-auto">
@@ -106,7 +106,7 @@ if (!state || !state.data) {
     // テーブルデータがない場合は Markdown をレンダリング
     return (
       <div className="min-h-screen py-8 px-4">
-        <div className="max-w-3xl mx-auto">
+        <div className="page-container">
           {renderCover()}
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}

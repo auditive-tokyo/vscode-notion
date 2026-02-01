@@ -68,3 +68,8 @@ td {
 th {
   @apply font-bold bg-gray-800;
 }
+
+/* Page container */
+.page-container {
+  @apply max-w-5xl mx-auto;
+}
