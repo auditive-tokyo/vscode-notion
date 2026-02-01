@@ -78,3 +78,8 @@ th {
 .notion-callout {
   @apply text-lg rounded p-4 mb-3 bg-blue-900/30 border-l-4 border-blue-500;
 }
+
+/* Divider */
+hr {
+  @apply border-t border-gray-500 my-6;
+}

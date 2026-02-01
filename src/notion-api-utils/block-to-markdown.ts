@@ -106,6 +106,10 @@ export function blockToMarkdown(block: any): string {
         return `\`\`\`callout\n${icon} ${text}\n\`\`\``;
       }
 
+      case "divider":
+        console.log("[block-to-markdown] divider block:", JSON.stringify(block, null, 2));
+        return "---";
+
       default:
         console.warn(`[block-to-markdown] Unsupported block type: ${type}`);
         return "";
