@@ -62,17 +62,16 @@ if (!state || !state.data) {
                     (row: { id: string; cells: string[] }, idx: number) => (
                       <tr key={idx}>
                         <td className="border border-gray-600 px-4 py-2">
-                          <button
-                            className="bg-gray-600 hover:bg-gray-500 text-white px-3 py-1 rounded text-sm font-semibold transition"
-                            onClick={() => {
-                              const args = JSON.stringify({
+                          <a
+                            href={`command:${openPageCommand}?${encodeURI(
+                              JSON.stringify({
                                 id: row.id,
-                              });
-                              window.location.href = `command:${openPageCommand}?${encodeURI(args)}`;
-                            }}
+                              } as OpenPageCommandArgs),
+                            )}`}
+                            className="bg-gray-600 hover:bg-gray-500 text-white px-3 py-1 rounded text-sm font-semibold transition inline-block no-underline"
                           >
                             OPEN
-                          </button>
+                          </a>
                         </td>
                         {row.cells.map((cell: string, cellIdx: number) => (
                           <td

@@ -86,8 +86,15 @@ export class NotionApiClient {
       this.officialClient.databases.retrieve({ database_id: cleanId }),
     ]);
 
-    // データベースを優先（ページはデータベースとしても認識される可能性があるため）
-    if (databaseResult.status === "fulfilled") {
+    // ページを優先（データベースレコードはページとして扱われるため）
+    if (pageResult.status === "fulfilled") {
+      console.log("[notion-api-client] Retrieved as page");
+      const data = await convertPageToMarkdownHelper(
+        pageResult.value,
+        this.getPageBlocksRecursive.bind(this),
+      );
+      return { data, type: "page" };
+    } else if (databaseResult.status === "fulfilled") {
       console.log("[notion-api-client] Retrieved as database");
       const result = await convertDatabaseToMarkdownHelper(
         databaseResult.value,
@@ -95,13 +102,6 @@ export class NotionApiClient {
       );
       console.log("[notion-api-client] convertDatabaseToMarkdownHelper result:", result);
       return { data: result.markdown, type: "database", tableData: result.tableData };
-    } else if (pageResult.status === "fulfilled") {
-      console.log("[notion-api-client] Retrieved as page");
-      const data = await convertPageToMarkdownHelper(
-        pageResult.value,
-        this.getPageBlocksRecursive.bind(this),
-      );
-      return { data, type: "page" };
     } else {
       throw new Error("Failed to retrieve page or database");
     }
@@ -171,6 +171,7 @@ export class NotionApiClient {
       throw new Error("Official API client is not configured");
     }
 
+    console.log("[notion-api-client] getPageBlocksRecursive called with pageId:", pageId);
     const allBlocks: any[] = [];
     let cursor: string | undefined = undefined;
 
@@ -185,6 +186,7 @@ export class NotionApiClient {
         }
         const response = await this.officialClient.blocks.children.list(params);
 
+        console.log("[notion-api-client] blocks.children.list response:", response.results.length, "blocks");
         allBlocks.push(...response.results);
 
         if (!response.has_more) {
@@ -193,8 +195,10 @@ export class NotionApiClient {
         cursor = response.next_cursor || undefined;
       }
 
+      console.log("[notion-api-client] Total blocks retrieved:", allBlocks.length);
       return allBlocks;
     } catch (error) {
+      console.error("[notion-api-client] getPageBlocksRecursive error:", error);
       throw new Error(
         `Failed to retrieve blocks: ${
           error instanceof Error ? error.message : String(error)

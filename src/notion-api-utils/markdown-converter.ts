@@ -4,18 +4,28 @@
  */
 
 import { blocksToMarkdown } from "./block-to-markdown";
-import { rowToMarkdownTableRow, extractPropertyValue } from "./property-extractor";
+import {
+  rowToMarkdownTableRow,
+  extractPropertyValue,
+} from "./property-extractor";
 
 /**
  * ページタイトルを抽出
+ * データベースレコードの場合は id="title" のプロパティを使用
  * @param page - Notion API から取得したページオブジェクト
  * @returns ページのタイトル文字列
  */
 export function extractPageTitle(page: any): string {
-  if ("properties" in page && page.properties && "title" in page.properties) {
-    const titleProp = page.properties["title"];
-    if ("title" in titleProp && Array.isArray(titleProp.title)) {
-      return titleProp.title.map((t: any) => t.plain_text).join("");
+  if ("properties" in page && page.properties) {
+    // プロパティの id が "title" であるものを探す（データベースレコード対応）
+    for (const [, propValue] of Object.entries(page.properties)) {
+      const prop = propValue as any;
+      if (prop.id === "title") {
+        const value = extractPropertyValue(prop);
+        if (value) {
+          return value;
+        }
+      }
     }
   }
   return "Untitled";
@@ -33,7 +43,28 @@ export async function convertPageToMarkdown(
   getChildBlocks?: (blockId: string) => Promise<any[]>,
 ): Promise<string> {
   const title = extractPageTitle(page);
-  const markdown = await blocksToMarkdown(blocks, getChildBlocks);
+  let markdown = await blocksToMarkdown(blocks, getChildBlocks);
+
+  // ブロックがない場合、properties から情報を抽出（データベースレコード対応）
+  if (blocks.length === 0 && "properties" in page && page.properties) {
+    const props = page.properties;
+    const propLines: string[] = [];
+
+    for (const [propName, propValue] of Object.entries(props)) {
+      const prop = propValue as any;
+      // id="title" のプロパティは既にタイトルとして使用しているので除外
+      if (prop.id !== "title") {
+        const value = extractPropertyValue(prop);
+        if (value) {
+          propLines.push(`**${propName}**: ${value}`);
+        }
+      }
+    }
+
+    if (propLines.length > 0) {
+      markdown = propLines.join("\n\n");
+    }
+  }
 
   return `# ${title}\n\n${markdown}`;
 }
@@ -90,11 +121,13 @@ export function convertDatabaseToMarkdownAndTable(
   const tableData = convertRowsToTableData(rows, propertyNames);
 
   console.log("[markdown-converter] tableData created:", tableData);
-  console.log("[markdown-converter] returning tableData:", { markdown, tableData });
-  
+  console.log("[markdown-converter] returning tableData:", {
+    markdown,
+    tableData,
+  });
+
   return { markdown, tableData };
 }
-
 
 /**
  * データベース行をMarkdownテーブルに変換
