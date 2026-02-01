@@ -19,6 +19,7 @@ export type NotionWebviewState = {
   id: string;
   title: string;
   data: string; // Markdown
+  type?: "database" | "page";
 };
 
 class CachedNotionWebview implements vscode.Disposable {
@@ -75,7 +76,7 @@ export class NotionWebviewPanelSerializer
   async createOrShowPage(id: string) {
     const cached = this.cache.get(id);
     if (cached) {
-      this.recentsState.addRecent(id, cached.state.title);
+      this.recentsState.addRecent(id, cached.state.title, cached.state.type);
       cached.reveal();
       return;
     }
@@ -92,7 +93,7 @@ export class NotionWebviewPanelSerializer
       },
     );
 
-    this.recentsState.addRecent(id, state.title);
+    this.recentsState.addRecent(id, state.title, state.type);
     await this.deserializeWebviewPanel(webviewPanel, state);
   }
 
@@ -145,7 +146,7 @@ export class NotionWebviewPanelSerializer
       "[notion-webview-serializer] fetchDataAndGetPageState called with id:",
       id,
     );
-    const data = await vscode.window.withProgress(
+    const result = await vscode.window.withProgress(
       {
         title: "VSCode Notion",
         location: vscode.ProgressLocation.Notification,
@@ -157,12 +158,13 @@ export class NotionWebviewPanelSerializer
     );
     console.log(
       "[notion-webview-serializer] page data fetched, data length:",
-      data?.length,
+      result.data?.length,
     );
     // Markdown の最初のヘッダーからタイトルを抽出
-    const title = this.extractTitleFromMarkdown(data) ?? untitledPageTitle;
+    const title =
+      this.extractTitleFromMarkdown(result.data) ?? untitledPageTitle;
     console.log("[notion-webview-serializer] page title:", title);
-    return { id, title, data };
+    return { id, title, data: result.data, type: result.type };
   }
 
   /**

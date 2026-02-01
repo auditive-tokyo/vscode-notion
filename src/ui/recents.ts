@@ -12,6 +12,7 @@ type RecentEntry = {
   id: string;
   title: string;
   date: number;
+  type?: "database" | "page";
 };
 
 @Injectable()
@@ -33,8 +34,8 @@ export class RecentsStateProvider implements vscode.Disposable {
     return this.getEntries(TreeId.Recents);
   }
 
-  async addRecent(id: string, title: string) {
-    await this.addEntry(TreeId.Recents, id, title);
+  async addRecent(id: string, title: string, type?: "database" | "page") {
+    await this.addEntry(TreeId.Recents, id, title, type);
     this.onDidChangeRecentsEventEmitter.fire();
   }
 
@@ -53,18 +54,28 @@ export class RecentsStateProvider implements vscode.Disposable {
     return entries ?? [];
   }
 
-  private async addEntry(key: string, id: string, title: string) {
+  private async addEntry(
+    key: string,
+    id: string,
+    title: string,
+    type?: "database" | "page",
+  ) {
     const entries = [...this.getEntries(key)];
 
     const index = entries.findIndex((entry) => entry.id === id);
     if (index !== -1) {
       const entry = entries[index]!;
-      entries.splice(index, 1, { ...entry, date: new Date().getTime() });
+      entries.splice(index, 1, {
+        ...entry,
+        date: new Date().getTime(),
+        ...(type && { type }),
+      });
     } else {
       entries.push({
         id,
         title,
         date: new Date().getTime(),
+        ...(type && { type }),
       });
     }
 
@@ -109,7 +120,9 @@ export class RecentsTreeDataProvider
 
   getTreeItem(entry: RecentEntry): vscode.TreeItem {
     return {
-      iconPath: new vscode.ThemeIcon("file"),
+      iconPath: new vscode.ThemeIcon(
+        entry.type === "database" ? "database" : "file",
+      ),
       id: entry.id,
       label: entry.title,
       collapsibleState: vscode.TreeItemCollapsibleState.None,
