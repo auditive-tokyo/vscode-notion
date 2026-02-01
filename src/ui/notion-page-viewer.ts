@@ -28,6 +28,7 @@ export type NotionWebviewState = {
     }[];
   };
   coverUrl?: string | null;
+  icon?: { type: string; emoji?: string; url?: string } | null;
 };
 
 class CachedNotionWebview implements vscode.Disposable {
@@ -91,12 +92,6 @@ export class NotionWebviewPanelSerializer
     const cached = this.cache.get(id);
     if (cached) {
       this.recentsState.addRecent(id, cached.state.title, cached.state.type);
-      // coverUrl が含まれていない場合は新たに取得して更新
-      if (!cached.state.coverUrl) {
-        const freshState = await this.fetchDataAndGetPageState(id);
-        cached.state = freshState;
-        this.renderWebview(cached.webviewPanel, freshState);
-      }
       cached.reveal();
       return;
     }
@@ -195,6 +190,7 @@ export class NotionWebviewPanelSerializer
       type: result.type,
       tableData: result.tableData,
       coverUrl: result.coverUrl ?? null,
+      icon: result.icon ?? null,
     };
     console.log("[notion-page-viewer] finalState:", finalState);
     return finalState;

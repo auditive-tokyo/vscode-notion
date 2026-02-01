@@ -57,6 +57,38 @@ export function extractPageCover(page: any): string | null {
 }
 
 /**
+ * ページのアイコンを抽出
+ * @param page - Notion API から取得したページオブジェクト
+ * @returns アイコンオブジェクト（ない場合は null）
+ */
+export function extractPageIcon(
+  page: any,
+): { type: string; emoji?: string; url?: string } | null {
+  if (!page.icon) {
+    return null;
+  }
+
+  const icon = page.icon;
+
+  // Emoji icon
+  if (icon.type === "emoji" && icon.emoji) {
+    return { type: "emoji", emoji: icon.emoji };
+  }
+
+  // External icon（外部URL）
+  if (icon.type === "external" && icon.external?.url) {
+    return { type: "external", url: icon.external.url };
+  }
+
+  // File icon（Notion にアップロードされたファイル）
+  if (icon.type === "file" && icon.file?.url) {
+    return { type: "file", url: icon.file.url };
+  }
+
+  return null;
+}
+
+/**
  * ページオブジェクトを Markdown に変換
  * @param page - ページオブジェクト
  * @param blocks - ページのブロック配列
@@ -195,11 +227,16 @@ export function convertRowsToMarkdownTable(rows: any[]): string {
 export async function convertPageToMarkdownHelper(
   page: any,
   getBlocks: (pageId: string) => Promise<any[]>,
-): Promise<{ markdown: string; coverUrl: string | null }> {
+): Promise<{
+  markdown: string;
+  coverUrl: string | null;
+  icon: { type: string; emoji?: string; url?: string } | null;
+}> {
   const blocks = await getBlocks(page.id);
   const markdown = await convertPageToMarkdown(page, blocks, getBlocks);
   const coverUrl = extractPageCover(page);
-  return { markdown, coverUrl };
+  const icon = extractPageIcon(page);
+  return { markdown, coverUrl, icon };
 }
 
 /**
@@ -215,7 +252,12 @@ export async function convertPageToMarkdownHelper(
 export async function convertDatabaseToMarkdownHelper(
   database: any,
   queryRows: (databaseId: string) => Promise<any[]>,
-): Promise<{ markdown: string; tableData: any; coverUrl: string | null }> {
+): Promise<{
+  markdown: string;
+  tableData: any;
+  coverUrl: string | null;
+  icon: { type: string; emoji?: string; url?: string } | null;
+}> {
   console.log("[notion-api-utils] Database ID:", database.id);
   console.log(
     "[notion-api-utils] Database has",
@@ -228,5 +270,6 @@ export async function convertDatabaseToMarkdownHelper(
 
   const result = convertDatabaseToMarkdownAndTable(database, rows);
   const coverUrl = extractPageCover(database);
-  return { ...result, coverUrl };
+  const icon = extractPageIcon(database);
+  return { ...result, coverUrl, icon };
 }

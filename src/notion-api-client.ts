@@ -53,6 +53,7 @@ export class NotionApiClient {
     type: "page" | "database";
     tableData?: any;
     coverUrl?: string | null;
+    icon?: { type: string; emoji?: string; url?: string } | null;
   }> {
     console.log("[notion-api-client] getPageDataById called with id:", id);
 
@@ -79,6 +80,7 @@ export class NotionApiClient {
     type: "page" | "database";
     tableData?: any;
     coverUrl?: string | null;
+    icon?: { type: string; emoji?: string; url?: string } | null;
   }> {
     if (!this.officialClient) {
       throw new Error("Official API client is not configured");
@@ -95,11 +97,18 @@ export class NotionApiClient {
     // ページを優先（データベースレコードはページとして扱われるため）
     if (pageResult.status === "fulfilled") {
       console.log("[notion-api-client] Retrieved as page");
+      const pageData = pageResult.value as any;
+      console.log("[notion-api-client] page.icon:", pageData.icon);
       const result = await convertPageToMarkdownHelper(
         pageResult.value,
         this.getPageBlocksRecursive.bind(this),
       );
-      return { data: result.markdown, type: "page", coverUrl: result.coverUrl };
+      return {
+        data: result.markdown,
+        type: "page",
+        coverUrl: result.coverUrl,
+        icon: result.icon,
+      };
     } else if (databaseResult.status === "fulfilled") {
       console.log("[notion-api-client] Retrieved as database");
       const result = await convertDatabaseToMarkdownHelper(
@@ -115,6 +124,7 @@ export class NotionApiClient {
         type: "database",
         tableData: result.tableData,
         coverUrl: result.coverUrl,
+        icon: result.icon,
       };
     } else {
       throw new Error("Failed to retrieve page or database");

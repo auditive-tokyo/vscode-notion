@@ -33,14 +33,37 @@ if (!state || !state.data) {
   console.log("[webview] state.tableData:", state.tableData);
 
   // カバー画像をレンダリング
-  const renderCover = () =>
-    state.coverUrl ? (
-      <img
-        src={state.coverUrl}
-        alt="Page cover"
-        className="block w-full h-[30vh] max-h-40 object-cover object-center rounded-none mb-6"
-      />
-    ) : null;
+  const renderCover = () => {
+    if (!state.coverUrl && !state.icon) return null;
+
+    return (
+      <div className="relative w-full mb-6">
+        {/* カバー画像 */}
+        {state.coverUrl && (
+          <img
+            src={state.coverUrl}
+            alt="Page cover"
+            className="block w-full h-[30vh] max-h-40 object-cover object-center rounded-none"
+          />
+        )}
+
+        {/* アイコン（カバーの左下に絶対配置） */}
+        {state.icon && (
+          <div className="absolute bottom-0 left-6 translate-y-1/2">
+            {state.icon.type === "emoji" ? (
+              <span className="text-6xl drop-shadow-lg">{state.icon.emoji}</span>
+            ) : state.icon.url ? (
+              <img
+                src={state.icon.url}
+                alt="Page icon"
+                className="w-20 h-20 rounded-lg shadow-lg object-cover"
+              />
+            ) : null}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   // テーブルデータがあった場合のレンダリング
   const renderContent = () => {
