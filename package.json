@@ -180,6 +180,7 @@
     "onWebviewPanel:notion.pageView"
   ],
   "dependencies": {
+    "@notionhq/client": "^5.9.0",
     "nanoid": "3",
     "notion-client": "^6.16.0",
     "notion-utils": "^6.16.0",
@@ -193,20 +194,20 @@
     "@changesets/cli": "^2.27.7",
     "@swc/core": "^1.4.8",
     "@swc/register": "^0.1.10",
-    "@vscode/vsce": "^3.0.0",
-    "dotenv-webpack": "^8.0.1",
-    "swc-loader": "^0.2.6",
-    "webpack": "^5.90.3",
-    "webpack-cli": "^5.1.4",
-    "@types/bun": "^e.0.10",
+    "@types/bun": "latest",
     "@types/dotenv-webpack": "^7.0.7",
     "@types/node": "^18.19.20",
     "@types/react": "^18.3.4",
     "@types/react-dom": "^18.3.0",
     "@types/vscode": "^1.87.0",
+    "@vscode/vsce": "^3.0.0",
+    "dotenv-webpack": "^8.0.1",
     "fantasticon": "^2.0.0",
     "notion-types": "^6.16.0",
-    "typescript": "^5.5.4"
+    "swc-loader": "^0.2.6",
+    "typescript": "^5.5.4",
+    "webpack": "^5.90.3",
+    "webpack-cli": "^5.1.4"
   },
   "engines": {
     "vscode": "^1.91.0"
