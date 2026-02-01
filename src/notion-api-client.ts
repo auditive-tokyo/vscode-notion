@@ -134,7 +134,6 @@ export class NotionApiClient {
           params.start_cursor = cursor;
         }
 
-        // @ts-ignore - dataSources.query は型定義に含まれていないが実行時に存在する
         const response = await this.officialClient.dataSources.query(params);
 
         for (const result of response.results) {

@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+/* VS Code integration */
+:root {
+  --vscode-editor-foreground: currentColor;
+  --vscode-editor-background: currentColor;
+}
+
+/* Markdown elements styling */
+h1 {
+  @apply text-3xl font-bold mt-6 mb-3;
+}
+
+h2 {
+  @apply text-2xl font-bold mt-5 mb-2;
+}
+
+h3 {
+  @apply text-xl font-bold mt-4 mb-2;
+}
+
+p {
+  @apply mb-3 whitespace-pre-wrap;
+}
+
+a {
+  @apply text-blue-400 hover:text-blue-300 underline cursor-pointer;
+}
+
+ul {
+  @apply list-disc ml-6 mb-3;
+}
+
+ol {
+  @apply list-decimal ml-6 mb-3;
+}
+
+li {
+  @apply mb-1;
+}
+
+code {
+  @apply rounded px-1 py-0.5 text-sm font-mono;
+}
+
+pre {
+  @apply rounded p-3 overflow-auto mb-3 bg-gray-700 text-gray-100;
+}
+
+blockquote {
+  @apply border-l-4 pl-4 italic mb-3 opacity-75;
+}
+
+table {
+  @apply w-full border border-gray-600 mb-3;
+}
+
+th,
+td {
+  @apply border border-gray-600 px-3 py-2 text-left;
+}
+
+th {
+  @apply font-bold bg-gray-800;
+}

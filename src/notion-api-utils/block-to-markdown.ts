@@ -60,54 +60,39 @@ export function blockToMarkdown(block: any): string {
             .join("") || "")
         );
 
-      case "to_do":
+      case "to_do": {
         const checked = block.to_do?.checked ? "[x]" : "[ ]";
         const text =
           block.to_do?.rich_text?.map((t: any) => t.plain_text).join("") || "";
         return checked + " " + text;
+      }
 
-      case "toggle":
-        return (
-          "> " +
-          (block.toggle?.rich_text?.map((t: any) => t.plain_text).join("") ||
-            "")
-        );
-
-      case "quote":
-        return (
-          "> " +
-          (block.quote?.rich_text?.map((t: any) => t.plain_text).join("") ||
-            "")
-        );
-
-      case "code":
+      case "code": {
         const language = block.code?.language || "text";
         const code =
           block.code?.rich_text?.map((t: any) => t.plain_text).join("") || "";
         return `\`\`\`${language}\n${code}\n\`\`\``;
+      }
 
-      case "divider":
-        return "---";
-
-      case "image":
+      case "image": {
         const imageUrl =
           block.image?.external?.url || block.image?.file?.url || "";
         const imageCaption =
           block.image?.caption?.map((t: any) => t.plain_text).join("") || "";
         return `![${imageCaption}](${imageUrl})`;
+      }
 
-      case "bookmark":
-        return `[Link](${block.bookmark?.url})`;
-
-      case "child_page":
+      case "child_page": {
         const pageId = block.id;
         const pageTitle = block.child_page?.title || "Untitled Page";
         return `📄 [${pageTitle}](/${pageId})`;
+      }
 
-      case "child_database":
+      case "child_database": {
         const databaseId = block.id;
         const databaseTitle = block.child_database?.title || "Untitled Database";
         return `📊 [${databaseTitle}](/${databaseId})`;
+      }
 
       default:
         console.warn(`[block-to-markdown] Unsupported block type: ${type}`);

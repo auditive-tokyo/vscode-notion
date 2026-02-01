@@ -103,6 +103,14 @@ const webviewConfig = {
         exclude: /node_modules/,
         use: swcLoader,
       },
+      {
+        test: /\.css$/,
+        use: [
+          'style-loader',
+          'css-loader',
+          'postcss-loader',
+        ],
+      },
     ],
   },
 } satisfies Configuration
