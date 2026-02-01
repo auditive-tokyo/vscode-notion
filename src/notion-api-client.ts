@@ -1,17 +1,14 @@
 import { Client } from "@notionhq/client";
-import { NotionAPI } from "notion-client";
 import { Injectable } from "vedk";
 import * as vscode from "vscode";
 
 /**
  * Notion APIクライアント
- * - 公式API: プライベートページ取得、編集機能用
- * - 非公式API: 公開ページのフォールバック
+ * 公式API (@notionhq/client) を使用してページとデータベースを取得
  */
 @Injectable()
 export class NotionApiClient {
   private officialClient: Client | null = null;
-  private unofficialClient = new NotionAPI();
 
   constructor() {
     this.initializeApiKey();
@@ -44,29 +41,19 @@ export class NotionApiClient {
 
   /**
    * ページデータをMarkdownで取得
-   * - API キーが設定されている場合は公式APIを使用
-   * - 設定されていない場合は非公式APIを使用（公開ページのみ）
-   * - ページとデータベースの両方に対応
+   * 公式APIを使用してページとデータベースの両方に対応
    */
   async getPageDataById(id: string): Promise<string> {
     console.log("[notion-api-client] getPageDataById called with id:", id);
-    console.log(
-      "[notion-api-client] officialClient configured:",
-      this.officialClient !== null,
-    );
+
+    if (!this.officialClient) {
+      throw new Error(
+        "Notion API key is not configured. Please set notion.apiKey in settings.",
+      );
+    }
 
     try {
-      if (this.officialClient) {
-        // 公式APIを使用：ページとデータベースを判定
-        return await this.getPageOrDatabaseWithOfficialApi(id);
-      } else {
-        // 非公式APIにフォールバック（公開ページのみ）
-        console.log(
-          "[notion-api-client] Using unofficial API (public pages only)",
-        );
-        const recordMap = await this.unofficialClient.getPage(id);
-        return this.recordMapToMarkdown(recordMap);
-      }
+      return await this.getPageOrDatabaseWithOfficialApi(id);
     } catch (error) {
       console.error("[notion-api-client] getPageDataById error:", error);
       throw error;
@@ -453,16 +440,5 @@ export class NotionApiClient {
       );
       return "";
     }
-  }
-
-  /**
-   * RecordMapをMarkdownに変換（非公式API用）
-   */
-  private recordMapToMarkdown(recordMap: any): string {
-    // これは簡易実装。実際にはrecord-mapの構造を解析する必要がある
-    console.log(
-      "[notion-api-client] Converting recordMap to markdown (simplified)",
-    );
-    return JSON.stringify(recordMap, null, 2);
   }
 }

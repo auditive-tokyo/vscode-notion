@@ -41,8 +41,13 @@ export class NotionTreeDataProvider
       element.title,
       vscode.TreeItemCollapsibleState.Collapsed, // 常に展開可能にする
     );
-    treeItem.iconPath = element.type === "database" ? "🗄️" : "📄";
+
+    // アイコンを設定（VSCodeのビルトインアイコン使用）
+    treeItem.iconPath = new vscode.ThemeIcon(
+      element.type === 'database' ? 'database' : 'file',
+    );
     treeItem.contextValue = element.type; // コンテキストメニュー用
+
     console.log(
       `[notion-tree] getTreeItem: ${element.title} (${element.type})`,
     );

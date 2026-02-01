@@ -28,6 +28,11 @@ export class OpenPageCommand implements vscode.Disposable {
       pageId = parsePageId(urlOrId)
     }
 
+    if (!pageId) {
+      await vscode.window.showErrorMessage('Invalid page ID')
+      return
+    }
+
     try {
       await this.notionPages.createOrShowPage(pageId)
     } catch (e) {

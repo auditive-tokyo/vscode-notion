@@ -1,5 +1,4 @@
 import {nanoid} from 'nanoid'
-import {getPageTitle} from 'notion-utils'
 import {InjectContext, Injectable} from 'vedk'
 import * as vscode from 'vscode'
 import {CommandId, ConfigId, ViewType, configurationPrefix, trustedSources, untitledPageTitle} from './constants'
