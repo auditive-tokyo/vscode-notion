@@ -1,6 +1,7 @@
 import React from 'react'
 import {createRoot} from 'react-dom/client'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import type {CommandId} from '../constants'
 import type {NotionWebviewState} from '../notion-webview-panel-serializer'
 import type {OpenPageCommandArgs} from '../open-page-command'
@@ -28,6 +29,7 @@ if (!state || !state.data) {
   root.render(
     <div style={{padding: '20px', fontFamily: 'system-ui', lineHeight: '1.6'}}>
       <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
         components={{
           a: ({node, ...props}) => {
             const href = props.href || ''
@@ -50,6 +52,10 @@ if (!state || !state.data) {
               <code {...props} style={{backgroundColor: '#f0f0f0', padding: '12px', borderRadius: '4px', fontFamily: 'monospace', display: 'block', overflow: 'auto'}} />
             ),
           blockquote: ({node, ...props}) => <blockquote {...props} style={{borderLeft: '3px solid #ccc', paddingLeft: '12px', color: '#666', fontStyle: 'italic'}} />,
+          table: ({node, ...props}) => <table {...props} style={{borderCollapse: 'collapse', width: '100%', marginBottom: '16px'}} />,
+          thead: ({node, ...props}) => <thead {...props} style={{backgroundColor: '#f5f5f5'}} />,
+          th: ({node, ...props}) => <th {...props} style={{border: '1px solid #ddd', padding: '8px', textAlign: 'left', fontWeight: 'bold'}} />,
+          td: ({node, ...props}) => <td {...props} style={{border: '1px solid #ddd', padding: '8px'}} />,
         }}
       >
         {state.data}

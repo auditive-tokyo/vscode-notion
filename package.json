@@ -194,6 +194,7 @@
     "react-markdown": "^10.1.0",
     "react-notion-x": "^6.16.0",
     "reflect-metadata": "^0.2.1",
+    "remark-gfm": "^4.0.1",
     "vedk": "^0.1.2"
   },
   "devDependencies": {
