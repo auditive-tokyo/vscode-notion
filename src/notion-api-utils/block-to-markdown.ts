@@ -100,10 +100,14 @@ export function blockToMarkdown(block: any): string {
         return `[Link](${block.bookmark?.url})`;
 
       case "child_page":
-        return `📄 ${block.child_page?.title || "Untitled Page"}`;
+        const pageId = block.id;
+        const pageTitle = block.child_page?.title || "Untitled Page";
+        return `📄 [${pageTitle}](/${pageId})`;
 
       case "child_database":
-        return `📊 ${block.child_database?.title || "Untitled Database"}`;
+        const databaseId = block.id;
+        const databaseTitle = block.child_database?.title || "Untitled Database";
+        return `📊 [${databaseTitle}](/${databaseId})`;
 
       default:
         console.warn(`[block-to-markdown] Unsupported block type: ${type}`);
@@ -133,11 +137,19 @@ export async function blocksToMarkdown(
   for (const block of blocks) {
     markdown += blockToMarkdown(block) + "\n";
 
+    // child_page と child_database は子ブロックを取得しない
+    // （孫ページまで表示されないようにする）
+    const shouldSkipChildren =
+      block.type === "child_page" || block.type === "child_database";
+
     // 子ブロックがあれば再帰的に処理
-    if (block.has_children && getChildBlocks) {
+    if (block.has_children && getChildBlocks && !shouldSkipChildren) {
       try {
         const childBlocks = await getChildBlocks(block.id);
-        const childMarkdown = await blocksToMarkdown(childBlocks, getChildBlocks);
+        const childMarkdown = await blocksToMarkdown(
+          childBlocks,
+          getChildBlocks,
+        );
         markdown += childMarkdown;
       } catch (error) {
         console.warn("[block-to-markdown] Failed to get child blocks:", error);

@@ -218,7 +218,7 @@ export class NotionWebviewPanelSerializer
       .map((x) => `<link href="${x}" rel="stylesheet" />`)
       .join("\n")}
 </head>
-<body>
+<body class="vscode-body">
     <div id="root"></div>
     <script nonce="${nonce}">
       const vscode = acquireVsCodeApi();
