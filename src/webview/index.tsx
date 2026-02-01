@@ -1,4 +1,4 @@
-import React from "react";
+import React, { type ComponentProps } from "react";
 import { createRoot } from "react-dom/client";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -59,7 +59,14 @@ if (!state || !state.data) {
             ul: (props) => <ul className="list-disc" {...props} />,
             ol: (props) => <ol className="list-decimal" {...props} />,
             li: (props) => <li {...props} />,
-            code: ({ inline, className, ...props }: any) => {
+            code: ({
+              inline,
+              className,
+              ...props
+            }: ComponentProps<"code"> & {
+              inline?: boolean;
+              className?: string;
+            }) => {
               const match = /language-(\w+)/.exec(className || "");
               return inline ? (
                 <code {...props} />

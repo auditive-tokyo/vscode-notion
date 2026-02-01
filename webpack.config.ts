@@ -1,27 +1,27 @@
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-import type {Config as SwcConfig} from '@swc/core'
-import type {Configuration} from 'webpack'
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import type { Config as SwcConfig } from "@swc/core";
+import type { Configuration } from "webpack";
 
 // ES Modules環境で__dirnameを定義
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // todo: check for browser conditional imports, remove them unless needed
 
-import TerserPlugin from 'terser-webpack-plugin'
+import TerserPlugin from "terser-webpack-plugin";
 
-const cwd = (p: string) => path.resolve(__dirname, p)
+const cwd = (p: string) => path.resolve(__dirname, p);
 
 // [SWC](https://swc.rs) compiles TypeScript to JavaScript
 const swcLoader = {
-  loader: 'swc-loader',
+  loader: "swc-loader",
   options: {
     jsc: {
       loose: true,
-      target: 'es2022',
+      target: "es2022",
       parser: {
         tsx: true,
-        syntax: 'typescript',
+        syntax: "typescript",
         decorators: true,
       },
       keepClassNames: true,
@@ -31,7 +31,7 @@ const swcLoader = {
       },
     },
   } satisfies SwcConfig,
-}
+};
 
 // [Terser](https://terser.org) minifies the outputted JavaScript, using SWC under the hood.
 const terserMinimizer = new TerserPlugin({
@@ -43,38 +43,38 @@ const terserMinimizer = new TerserPlugin({
       keep_fnames: true,
     },
   },
-})
+});
 
 const sharedConfig = {
-  mode: 'none',
+  mode: "none",
   externals: {
     // vscode module is only provided to extensions during
     // extension runtime, and doesn't exists as a real dependency
-    vscode: 'commonjs vscode',
+    vscode: "commonjs vscode",
   },
   output: {
-    path: cwd('dist'),
+    path: cwd("dist"),
   },
-  devtool: 'source-map',
+  devtool: "source-map",
   resolve: {
-    extensions: ['.ts', '.js'],
-    mainFields: ['main', 'module'],
+    extensions: [".ts", ".js"],
+    mainFields: ["main", "module"],
   },
   optimization: {
     minimize: true,
     minimizer: [terserMinimizer],
   },
-} satisfies Configuration
+} satisfies Configuration;
 
 const buildConfig = {
   ...sharedConfig,
-  target: 'node',
-  name: 'build-extension',
-  entry: './src/extension.ts',
+  target: "node",
+  name: "build-extension",
+  entry: "./src/extension.ts",
   output: {
     ...sharedConfig.output,
-    libraryTarget: 'commonjs2',
-    filename: 'extension.js',
+    libraryTarget: "commonjs2",
+    filename: "extension.js",
   },
   module: {
     rules: [
@@ -85,16 +85,16 @@ const buildConfig = {
       },
     ],
   },
-} satisfies Configuration
+} satisfies Configuration;
 
 const webviewConfig = {
   ...sharedConfig,
-  target: 'web',
-  name: 'build-webview',
-  entry: './src/webview/index.tsx',
+  target: "web",
+  name: "build-webview",
+  entry: "./src/webview/index.tsx",
   output: {
     ...sharedConfig.output,
-    filename: 'webview.js',
+    filename: "webview.js",
   },
   module: {
     rules: [
@@ -105,14 +105,10 @@ const webviewConfig = {
       },
       {
         test: /\.css$/,
-        use: [
-          'style-loader',
-          'css-loader',
-          'postcss-loader',
-        ],
+        use: ["style-loader", "css-loader", "postcss-loader"],
       },
     ],
   },
-} satisfies Configuration
+} satisfies Configuration;
 
-export default [buildConfig, webviewConfig]
+export default [buildConfig, webviewConfig];
