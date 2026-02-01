@@ -2,13 +2,10 @@ import * as vscode from "vscode";
 import * as fs from "fs/promises";
 import * as path from "path";
 import { NotionApiClient } from "./notion-api-client";
-
-export interface NotionPageTreeItem {
-  id: string;
-  title: string;
-  type: "page" | "database";
-  children?: NotionPageTreeItem[];
-}
+import {
+  extractPagesAndDatabases,
+  NotionPageTreeItem,
+} from "./notion-api-utils/page-discovery";
 
 export class NotionTreeDataProvider
   implements vscode.TreeDataProvider<NotionPageTreeItem>
@@ -44,7 +41,7 @@ export class NotionTreeDataProvider
 
     // アイコンを設定（VSCodeのビルトインアイコン使用）
     treeItem.iconPath = new vscode.ThemeIcon(
-      element.type === 'database' ? 'database' : 'file',
+      element.type === "database" ? "database" : "file",
     );
     treeItem.contextValue = element.type; // コンテキストメニュー用
 
@@ -139,7 +136,7 @@ export class NotionTreeDataProvider
       // ブロック内のすべてのページ/DBを再帰的に探索
       for (const block of blocks) {
         console.log(`[notion-tree] Processing block type: ${block.type}`);
-        const foundItems = this.extractPagesAndDatabases(block);
+        const foundItems = extractPagesAndDatabases(block);
         console.log(
           `[notion-tree] Found ${foundItems.length} items from ${block.type}`,
           foundItems,
@@ -170,127 +167,6 @@ export class NotionTreeDataProvider
       );
       return [];
     }
-  }
-
-  /**
-   * ブロックからすべてのページ/DBを抽出
-   * child_page, child_database, 同期されたブロックなどを処理
-   */
-  private extractPagesAndDatabases(block: any): NotionPageTreeItem[] {
-    const items: NotionPageTreeItem[] = [];
-
-    if (!block) return items;
-
-    switch (block.type) {
-      case "child_page":
-        items.push({
-          id: block.id,
-          title: block.child_page.title || "Untitled Page",
-          type: "page",
-        });
-        break;
-
-      case "child_database":
-        items.push({
-          id: block.id,
-          title: block.child_database.title || "Untitled Database",
-          type: "database",
-        });
-        break;
-
-      case "synced_block":
-        // 同期されたブロック - リンク先ページ/DBを取得
-        if (block.synced_block?.synced_from) {
-          const syncedBlockId = block.synced_block.synced_from.block_id;
-          items.push({
-            id: syncedBlockId,
-            title: `Synced: ${block.synced_block.synced_from.block_id.slice(
-              0,
-              8,
-            )}`,
-            type: "page",
-          });
-        }
-        break;
-
-      // リッチテキスト内のメンション（@ユーザー、@ページなど）を処理
-      case "paragraph":
-      case "heading_1":
-      case "heading_2":
-      case "heading_3":
-      case "quote":
-      case "bulleted_list_item":
-      case "numbered_list_item":
-      case "to_do":
-      case "toggle":
-        {
-          const blockData = (block as any)[block.type];
-          if (blockData?.rich_text) {
-            const pageRefs = this.extractPageReferencesFromRichText(
-              blockData.rich_text,
-            );
-            items.push(...pageRefs);
-          }
-        }
-        break;
-    }
-
-    return items;
-  }
-
-  /**
-   * リッチテキスト内のページメンション参照を抽出
-   */
-  private extractPageReferencesFromRichText(
-    richTexts: any[],
-  ): NotionPageTreeItem[] {
-    const items: NotionPageTreeItem[] = [];
-
-    if (!Array.isArray(richTexts)) return items;
-
-    console.log(`[notion-tree] Scanning ${richTexts.length} rich text items`);
-
-    for (const text of richTexts) {
-      console.log(`[notion-tree] Rich text item:`, {
-        plain_text: text.plain_text,
-        href: text.href,
-        type: text.type,
-      });
-
-      if (!text.href) continue;
-
-      // Notionの内部リンク形式: /workspace/page-id や /database/page-id
-      const notionLinkMatch = text.href.match(
-        /\/(?:workspace|database|page)\/([a-f0-9]{32})/,
-      );
-      if (notionLinkMatch) {
-        const pageId = notionLinkMatch[1];
-        console.log(
-          `[notion-tree] Found Notion link: ${text.plain_text} -> ${pageId}`,
-        );
-        items.push({
-          id: pageId,
-          title: text.plain_text || pageId.slice(0, 8),
-          type: "page",
-        });
-      }
-
-      // 短いハイフン区切り形式も試す: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-      const shortIdMatch = text.href.match(/([a-f0-9]{32})/);
-      if (shortIdMatch && !notionLinkMatch) {
-        const pageId = shortIdMatch[1];
-        console.log(
-          `[notion-tree] Found ID in href: ${text.plain_text} -> ${pageId}`,
-        );
-        items.push({
-          id: pageId,
-          title: text.plain_text || pageId.slice(0, 8),
-          type: "page",
-        });
-      }
-    }
-
-    return items;
   }
 
   private async getPageBlocks(pageId: string): Promise<any[]> {

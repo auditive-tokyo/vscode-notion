@@ -1,10 +1,15 @@
 import { Client } from "@notionhq/client";
 import { Injectable } from "vedk";
 import * as vscode from "vscode";
+import {
+  convertPageToMarkdownHelper,
+  convertDatabaseToMarkdownHelper,
+} from "./notion-api-utils";
 
 /**
  * Notion APIクライアント
  * 公式API (@notionhq/client) を使用してページとデータベースを取得
+ * Markdown変換ロジックは utils に分離
  */
 @Injectable()
 export class NotionApiClient {
@@ -79,60 +84,19 @@ export class NotionApiClient {
 
     if (pageResult.status === "fulfilled") {
       console.log("[notion-api-client] Retrieved as page");
-      return this.convertPageToMarkdown(pageResult.value);
+      return convertPageToMarkdownHelper(
+        pageResult.value,
+        this.getPageBlocksRecursive.bind(this),
+      );
     } else if (databaseResult.status === "fulfilled") {
       console.log("[notion-api-client] Retrieved as database");
-      return this.convertDatabaseToMarkdown(databaseResult.value);
+      return convertDatabaseToMarkdownHelper(
+        databaseResult.value,
+        this.queryDatabaseRows.bind(this),
+      );
     } else {
       throw new Error("Failed to retrieve page or database");
     }
-  }
-
-  /**
-   * ページオブジェクトをMarkdownに変換
-   */
-  private async convertPageToMarkdown(page: any): Promise<string> {
-    // ページタイトルを取得
-    let title = "Untitled";
-    if ("properties" in page && page.properties && "title" in page.properties) {
-      const titleProp = page.properties["title"];
-      if ("title" in titleProp && Array.isArray(titleProp.title)) {
-        title = titleProp.title.map((t: any) => t.plain_text).join("");
-      }
-    }
-
-    // ブロックを取得してMarkdownに変換
-    const blocks = await this.getPageBlocksRecursive(page.id);
-    const markdown = await this.blocksToMarkdown(blocks);
-
-    return `# ${title}\n\n${markdown}`;
-  }
-
-  /**
-   * データベースオブジェクトをMarkdownに変換
-   */
-  private async convertDatabaseToMarkdown(database: any): Promise<string> {
-    // データベースタイトルを取得
-    let title = "Untitled Database";
-    if (Array.isArray(database.title)) {
-      title = database.title.map((t: any) => t.plain_text).join("");
-    }
-
-    console.log("[notion-api-client] Database ID:", database.id);
-    console.log(
-      "[notion-api-client] Database has",
-      database.data_sources?.length || 0,
-      "data sources",
-    );
-
-    // データベースの行を取得
-    const rows = await this.queryDatabaseRows(database.id);
-    console.log("[notion-api-client] Retrieved", rows.length, "rows");
-
-    // 行をMarkdownテーブルに変換
-    const tableMarkdown = this.convertRowsToMarkdownTable(rows);
-
-    return `# ${title}\n\n${tableMarkdown}`;
   }
 
   /**
@@ -193,75 +157,6 @@ export class NotionApiClient {
   }
 
   /**
-   * データベース行をMarkdownテーブルに変換
-   */
-  private convertRowsToMarkdownTable(rows: any[]): string {
-    if (rows.length === 0) {
-      return "*このデータベースには行がありません。*\n\n";
-    }
-
-    // プロパティ名を抽出（最初の行から）
-    const firstRow = rows[0];
-    const propertyNames = Object.keys(firstRow.properties || {});
-
-    if (propertyNames.length === 0) {
-      return "*プロパティが見つかりません。*\n\n";
-    }
-
-    // ヘッダー行
-    const header = `| ${propertyNames.join(" | ")} |`;
-    const separator = `| ${propertyNames.map(() => "---").join(" | ")} |`;
-
-    // データ行
-    const dataRows = rows.map((row) => {
-      const cells = propertyNames.map((propName) => {
-        const prop = row.properties[propName];
-        const value = this.extractPropertyValue(prop);
-        // パイプ文字と改行をエスケープ
-        return value.replace(/\|/g, "\\|").replace(/\n/g, " ");
-      });
-      return `| ${cells.join(" | ")} |`;
-    });
-
-    // Markdownテーブルとして認識させるため、前後に空行を追加
-    return "\n" + [header, separator, ...dataRows].join("\n") + "\n\n";
-  }
-
-  /**
-   * プロパティから値を抽出（簡易版）
-   */
-  private extractPropertyValue(prop: any): string {
-    if (!prop) return "";
-
-    switch (prop.type) {
-      case "title":
-        return prop.title?.map((t: any) => t.plain_text).join("") || "";
-      case "rich_text":
-        return prop.rich_text?.map((t: any) => t.plain_text).join("") || "";
-      case "number":
-        return prop.number?.toString() || "";
-      case "select":
-        return prop.select?.name || "";
-      case "multi_select":
-        return prop.multi_select?.map((s: any) => s.name).join(", ") || "";
-      case "date":
-        return prop.date?.start || "";
-      case "checkbox":
-        return prop.checkbox ? "✓" : "";
-      case "url":
-        return prop.url || "";
-      case "email":
-        return prop.email || "";
-      case "phone_number":
-        return prop.phone_number || "";
-      case "status":
-        return prop.status?.name || "";
-      default:
-        return "";
-    }
-  }
-
-  /**
    * ページのブロック一覧を再帰的に取得
    */
   private async getPageBlocksRecursive(pageId: string) {
@@ -298,147 +193,6 @@ export class NotionApiClient {
           error instanceof Error ? error.message : String(error)
         }`,
       );
-    }
-  }
-
-  /**
-   * ブロック一覧をMarkdownに変換
-   */
-  private async blocksToMarkdown(blocks: any[]): Promise<string> {
-    let markdown = "";
-
-    for (const block of blocks) {
-      markdown += this.blockToMarkdown(block) + "\n";
-
-      // 子ブロックがあれば再帰的に処理
-      if (block.has_children) {
-        try {
-          const childBlocks = await this.getPageBlocksRecursive(block.id);
-          const childMarkdown = await this.blocksToMarkdown(childBlocks);
-          markdown += childMarkdown;
-        } catch (error) {
-          console.warn(
-            "[notion-api-client] Failed to get child blocks:",
-            error,
-          );
-        }
-      }
-    }
-
-    return markdown;
-  }
-
-  /**
-   * 単一ブロックをMarkdownに変換
-   */
-  private blockToMarkdown(block: any): string {
-    const type = block.type;
-
-    try {
-      switch (type) {
-        case "paragraph":
-          return (
-            block.paragraph?.rich_text
-              ?.map((t: any) => t.plain_text)
-              .join("") || ""
-          );
-
-        case "heading_1":
-          return (
-            "# " +
-            (block.heading_1?.rich_text
-              ?.map((t: any) => t.plain_text)
-              .join("") || "")
-          );
-
-        case "heading_2":
-          return (
-            "## " +
-            (block.heading_2?.rich_text
-              ?.map((t: any) => t.plain_text)
-              .join("") || "")
-          );
-
-        case "heading_3":
-          return (
-            "### " +
-            (block.heading_3?.rich_text
-              ?.map((t: any) => t.plain_text)
-              .join("") || "")
-          );
-
-        case "bulleted_list_item":
-          return (
-            "- " +
-            (block.bulleted_list_item?.rich_text
-              ?.map((t: any) => t.plain_text)
-              .join("") || "")
-          );
-
-        case "numbered_list_item":
-          return (
-            "1. " +
-            (block.numbered_list_item?.rich_text
-              ?.map((t: any) => t.plain_text)
-              .join("") || "")
-          );
-
-        case "to_do":
-          const checked = block.to_do?.checked ? "[x]" : "[ ]";
-          const text =
-            block.to_do?.rich_text?.map((t: any) => t.plain_text).join("") ||
-            "";
-          return checked + " " + text;
-
-        case "toggle":
-          return (
-            "> " +
-            (block.toggle?.rich_text?.map((t: any) => t.plain_text).join("") ||
-              "")
-          );
-
-        case "quote":
-          return (
-            "> " +
-            (block.quote?.rich_text?.map((t: any) => t.plain_text).join("") ||
-              "")
-          );
-
-        case "code":
-          const language = block.code?.language || "text";
-          const code =
-            block.code?.rich_text?.map((t: any) => t.plain_text).join("") || "";
-          return `\`\`\`${language}\n${code}\n\`\`\``;
-
-        case "divider":
-          return "---";
-
-        case "image":
-          const imageUrl =
-            block.image?.external?.url || block.image?.file?.url || "";
-          const imageCaption =
-            block.image?.caption?.map((t: any) => t.plain_text).join("") || "";
-          return `![${imageCaption}](${imageUrl})`;
-
-        case "bookmark":
-          return `[Link](${block.bookmark?.url})`;
-
-        case "child_page":
-          return `📄 ${block.child_page?.title || "Untitled Page"}`;
-
-        case "child_database":
-          return `📊 ${block.child_database?.title || "Untitled Database"}`;
-
-        default:
-          console.warn(`[notion-api-client] Unsupported block type: ${type}`);
-          return "";
-      }
-    } catch (error) {
-      console.warn(
-        `[notion-api-client] Error converting block of type ${type}:`,
-        error,
-      );
-      return "";
     }
   }
 }
