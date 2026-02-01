@@ -1,0 +1,112 @@
+import { InjectContext, Injectable, OnExtensionBootstrap } from "vedk";
+import * as vscode from "vscode";
+import { NotionApiClient } from "../notion-api-client";
+import { NotionTreeDataProvider } from "./notion-tree-provider";
+
+/**
+ * Notion ページ階層の TreeView 管理
+ * TreeView の登録、コマンド登録、設定リスナーを一元管理
+ */
+@Injectable()
+export class NotionHierarchyTreeView
+  implements OnExtensionBootstrap, vscode.Disposable
+{
+  private treeDataProvider: NotionTreeDataProvider | null = null;
+  private readonly disposable: vscode.Disposable;
+
+  constructor(
+    @InjectContext() private readonly context: vscode.ExtensionContext,
+    private readonly notionClient: NotionApiClient,
+  ) {
+    this.disposable = vscode.Disposable.from();
+  }
+
+  dispose() {
+    this.disposable.dispose();
+  }
+
+  async onExtensionBootstrap() {
+    await this.initializeTreeView();
+    this.registerCommands();
+    this.registerConfigListeners();
+  }
+
+  /**
+   * TreeView を初期化して登録
+   */
+  private async initializeTreeView(): Promise<void> {
+    // TreeDataProvider を初期化
+    this.treeDataProvider = new NotionTreeDataProvider(
+      this.notionClient,
+      this.context.globalStorageUri,
+    );
+    await this.treeDataProvider.initialize();
+    console.log("[notion-hierarchy] TreeDataProvider initialized");
+
+    // TreeView を登録
+    const treeView = vscode.window.createTreeView("notion-hierarchy", {
+      treeDataProvider: this.treeDataProvider,
+      showCollapseAll: true,
+    });
+    console.log("[notion-hierarchy] TreeView registered");
+
+    this.context.subscriptions.push(treeView);
+
+    // 初期コンテキスト設定
+    this.updateHierarchyContext();
+  }
+
+  /**
+   * コマンドを登録
+   */
+  private registerCommands(): void {
+    if (!this.treeDataProvider) return;
+
+    this.context.subscriptions.push(
+      vscode.commands.registerCommand("notion.hierarchy.refresh", () => {
+        console.log("[notion-hierarchy] Refreshing Notion hierarchy...");
+        this.treeDataProvider?.refresh();
+      }),
+    );
+  }
+
+  /**
+   * 設定変更リスナーを登録
+   */
+  private registerConfigListeners(): void {
+    this.context.subscriptions.push(
+      vscode.workspace.onDidChangeConfiguration((event) => {
+        if (event.affectsConfiguration("notion.apiKey")) {
+          const config = vscode.workspace.getConfiguration("notion");
+          const newApiKey = config.get<string>("apiKey", "");
+          console.log(
+            "[notion-hierarchy] API Key updated:",
+            newApiKey ? "***" + newApiKey.slice(-8) : "NOT SET",
+          );
+        }
+        if (event.affectsConfiguration("notion.rootPageId")) {
+          console.log("[notion-hierarchy] Root Page ID updated");
+          this.treeDataProvider?.refresh();
+          this.updateHierarchyContext();
+        }
+      }),
+    );
+  }
+
+  /**
+   * ルートページID設定時にコンテキストを更新
+   */
+  private updateHierarchyContext(): void {
+    const config = vscode.workspace.getConfiguration("notion");
+    const rootPageId = config.get<string>("rootPageId", "");
+    console.log(
+      "[notion-hierarchy] rootPageId:",
+      rootPageId ? rootPageId.slice(0, 16) + "..." : "NOT SET",
+    );
+    vscode.commands.executeCommand(
+      "setContext",
+      "notion:hierarchyEnabled",
+      !!rootPageId,
+    );
+  }
+}

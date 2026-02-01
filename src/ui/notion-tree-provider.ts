@@ -1,11 +1,11 @@
 import * as vscode from "vscode";
 import * as fs from "fs/promises";
 import * as path from "path";
-import { NotionApiClient } from "./notion-api-client";
+import { NotionApiClient } from "../notion-api-client";
 import {
   extractPagesAndDatabases,
   NotionPageTreeItem,
-} from "./notion-api-utils/page-discovery";
+} from "../notion-api-utils/page-discovery";
 
 export class NotionTreeDataProvider
   implements vscode.TreeDataProvider<NotionPageTreeItem>
