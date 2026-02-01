@@ -5,9 +5,10 @@ permissions:
   contents: write
 
 on:
-  push:
-    branches:
-      - main
+  # push:
+  #   branches:
+  #     - main
+  workflow_dispatch:
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
@@ -19,26 +20,26 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v2
 
-      - name: Setup bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          bun-version: 1.0.33
+          node-version: "20"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: npm install
 
       - name: Build
         run: |
-          bun run build
-          bun run package-extension
+          npm run build
+          npm run package-extension
 
       - name: Create release pull request or publish
         uses: changesets/action@v1
         with:
-          version: bun run changeset version
-          publish: bun run publish-extension
-          commit: 'chore: release'
-          title: 'A New Release'
+          version: npm run changeset version
+          publish: npm run publish-extension
+          commit: "chore: release"
+          title: "A New Release"
           setupGitUser: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
