@@ -32,6 +32,16 @@ if (!state || !state.data) {
   console.log("[webview] rendering markdown with length:", state.data.length);
   console.log("[webview] state.tableData:", state.tableData);
 
+  // カバー画像をレンダリング
+  const renderCover = () =>
+    state.coverUrl ? (
+      <img
+        src={state.coverUrl}
+        alt="Page cover"
+        className="block w-full h-[30vh] max-h-40 object-cover object-center rounded-none mb-6"
+      />
+    ) : null;
+
   // テーブルデータがあった場合のレンダリング
   const renderContent = () => {
     if (state.tableData) {
@@ -39,6 +49,7 @@ if (!state || !state.data) {
       return (
         <div className="min-h-screen py-8 px-4">
           <div className="max-w-4xl mx-auto">
+            {renderCover()}
             <ReactMarkdown>{state.data}</ReactMarkdown>
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
@@ -96,6 +107,7 @@ if (!state || !state.data) {
     return (
       <div className="min-h-screen py-8 px-4">
         <div className="max-w-3xl mx-auto">
+          {renderCover()}
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{

@@ -32,6 +32,31 @@ export function extractPageTitle(page: any): string {
 }
 
 /**
+ * ページのカバー画像URLを抽出
+ * @param page - Notion API から取得したページオブジェクト
+ * @returns カバー画像URL（ない場合は null）
+ */
+export function extractPageCover(page: any): string | null {
+  if (!page.cover) {
+    return null;
+  }
+
+  const cover = page.cover;
+
+  // External cover (外部URL)
+  if (cover.type === "external" && cover.external?.url) {
+    return cover.external.url;
+  }
+
+  // File cover (Notion にアップロードされたファイル)
+  if (cover.type === "file" && cover.file?.url) {
+    return cover.file.url;
+  }
+
+  return null;
+}
+
+/**
  * ページオブジェクトを Markdown に変換
  * @param page - ページオブジェクト
  * @param blocks - ページのブロック配列
@@ -164,15 +189,17 @@ export function convertRowsToMarkdownTable(rows: any[]): string {
  *
  * @param page - Notion API から取得したページオブジェクト
  * @param getBlocks - ページのブロック取得関数（NotionApiClient.getPageBlocksRecursive）
- * @returns Markdown 形式のページコンテンツ
+ * @returns { markdown, coverUrl } オブジェクト
  * @see NotionApiClient.getPageOrDatabaseWithOfficialApi
  */
 export async function convertPageToMarkdownHelper(
   page: any,
   getBlocks: (pageId: string) => Promise<any[]>,
-): Promise<string> {
+): Promise<{ markdown: string; coverUrl: string | null }> {
   const blocks = await getBlocks(page.id);
-  return convertPageToMarkdown(page, blocks, getBlocks);
+  const markdown = await convertPageToMarkdown(page, blocks, getBlocks);
+  const coverUrl = extractPageCover(page);
+  return { markdown, coverUrl };
 }
 
 /**
@@ -182,13 +209,13 @@ export async function convertPageToMarkdownHelper(
  *
  * @param database - Notion API から取得したデータベースオブジェクト
  * @param queryRows - データベースの行取得関数（NotionApiClient.queryDatabaseRows）
- * @returns { markdown, tableData } オブジェクト
+ * @returns { markdown, tableData, coverUrl } オブジェクト
  * @see NotionApiClient.getPageOrDatabaseWithOfficialApi
  */
 export async function convertDatabaseToMarkdownHelper(
   database: any,
   queryRows: (databaseId: string) => Promise<any[]>,
-): Promise<{ markdown: string; tableData: any }> {
+): Promise<{ markdown: string; tableData: any; coverUrl: string | null }> {
   console.log("[notion-api-utils] Database ID:", database.id);
   console.log(
     "[notion-api-utils] Database has",
@@ -199,5 +226,7 @@ export async function convertDatabaseToMarkdownHelper(
   const rows = await queryRows(database.id);
   console.log("[notion-api-utils] Retrieved", rows.length, "rows");
 
-  return convertDatabaseToMarkdownAndTable(database, rows);
+  const result = convertDatabaseToMarkdownAndTable(database, rows);
+  const coverUrl = extractPageCover(database);
+  return { ...result, coverUrl };
 }

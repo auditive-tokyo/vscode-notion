@@ -27,6 +27,7 @@ export type NotionWebviewState = {
       cells: string[];
     }[];
   };
+  coverUrl?: string | null;
 };
 
 class CachedNotionWebview implements vscode.Disposable {
@@ -64,6 +65,12 @@ export class NotionWebviewPanelSerializer
         this.refreshActivePage,
         this,
       ),
+      // Development only: キャッシュクリアコマンド（開発時のデバッグ用）
+      // vscode.commands.registerCommand("notion.clearCache", () => {
+      //   this.cache.forEach((cached) => cached.dispose());
+      //   this.cache.clear();
+      //   vscode.window.showInformationMessage("Notion page cache cleared");
+      // }),
       vscode.window.registerWebviewPanelSerializer(
         ViewType.NotionPageView,
         this,
@@ -84,6 +91,12 @@ export class NotionWebviewPanelSerializer
     const cached = this.cache.get(id);
     if (cached) {
       this.recentsState.addRecent(id, cached.state.title, cached.state.type);
+      // coverUrl が含まれていない場合は新たに取得して更新
+      if (!cached.state.coverUrl) {
+        const freshState = await this.fetchDataAndGetPageState(id);
+        cached.state = freshState;
+        this.renderWebview(cached.webviewPanel, freshState);
+      }
       cached.reveal();
       return;
     }
@@ -143,8 +156,11 @@ export class NotionWebviewPanelSerializer
   }
 
   private async rerenderCachedWebviews() {
-    for (const cache of this.cache.values()) {
-      this.renderWebview(cache.webviewPanel, cache.state);
+    for (const [id, cache] of this.cache.entries()) {
+      // 古いキャッシュを破棄して新たにデータを取得
+      const freshState = await this.fetchDataAndGetPageState(id);
+      cache.state = freshState;
+      this.renderWebview(cache.webviewPanel, freshState);
     }
   }
 
@@ -172,12 +188,13 @@ export class NotionWebviewPanelSerializer
     const title =
       this.extractTitleFromMarkdown(result.data) ?? untitledPageTitle;
     console.log("[notion-webview-serializer] page title:", title);
-    const finalState = {
+    const finalState: NotionWebviewState = {
       id,
       title,
       data: result.data,
       type: result.type,
       tableData: result.tableData,
+      coverUrl: result.coverUrl ?? null,
     };
     console.log("[notion-webview-serializer] finalState:", finalState);
     return finalState;
