@@ -22,6 +22,7 @@ declare global {
 const root = createRoot(document.getElementById("root")!);
 const state = window.vscode.getState();
 console.log("[webview] state received:", state);
+
 if (!state || !state.data) {
   console.error("[webview] ERROR: No page data found in state");
   root.render(
@@ -29,67 +30,134 @@ if (!state || !state.data) {
   );
 } else {
   console.log("[webview] rendering markdown with length:", state.data.length);
-  root.render(
-    <div className="min-h-screen py-8 px-4">
-      <div className="max-w-3xl mx-auto">
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm]}
-          components={{
-            a: (props) => {
-              const href = props.href || "";
-              if (href.startsWith("/")) {
-                const args = JSON.stringify({
-                  id: href.slice(1),
-                } as OpenPageCommandArgs);
-                return (
-                  <a
-                    {...props}
-                    href={`command:${openPageCommand}?${encodeURI(args)}`}
-                  >
-                    {props.children}
-                  </a>
+  console.log("[webview] state.tableData:", state.tableData);
+
+  // テーブルデータがあった場合のレンダリング
+  const renderContent = () => {
+    if (state.tableData) {
+      console.log("[webview] Rendering table with tableData:", state.tableData);
+      return (
+        <div className="min-h-screen py-8 px-4">
+          <div className="max-w-4xl mx-auto">
+            <ReactMarkdown>{state.data}</ReactMarkdown>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr>
+                    <th className="border border-gray-600 px-4 py-2 bg-gray-800 text-left font-bold w-24">
+                      ACTION
+                    </th>
+                    {state.tableData.columns.map((col: string) => (
+                      <th
+                        key={col}
+                        className="border border-gray-600 px-4 py-2 bg-gray-800 text-left font-bold"
+                      >
+                        {col}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {state.tableData.rows.map(
+                    (row: { id: string; cells: string[] }, idx: number) => (
+                      <tr key={idx}>
+                        <td className="border border-gray-600 px-4 py-2">
+                          <button
+                            className="bg-gray-600 hover:bg-gray-500 text-white px-3 py-1 rounded text-sm font-semibold transition"
+                            onClick={() => {
+                              const args = JSON.stringify({
+                                id: row.id,
+                              });
+                              window.location.href = `command:${openPageCommand}?${encodeURI(args)}`;
+                            }}
+                          >
+                            OPEN
+                          </button>
+                        </td>
+                        {row.cells.map((cell: string, cellIdx: number) => (
+                          <td
+                            key={cellIdx}
+                            className="border border-gray-600 px-4 py-2"
+                          >
+                            {cell}
+                          </td>
+                        ))}
+                      </tr>
+                    ),
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // テーブルデータがない場合は Markdown をレンダリング
+    return (
+      <div className="min-h-screen py-8 px-4">
+        <div className="max-w-3xl mx-auto">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              a: (props) => {
+                const href = props.href || "";
+                if (href.startsWith("/")) {
+                  const args = JSON.stringify({
+                    id: href.slice(1),
+                  } as OpenPageCommandArgs);
+                  return (
+                    <a
+                      {...props}
+                      href={`command:${openPageCommand}?${encodeURI(args)}`}
+                    >
+                      {props.children}
+                    </a>
+                  );
+                }
+                return <a {...props} />;
+              },
+              h1: (props) => <h1 {...props} />,
+              h2: (props) => <h2 {...props} />,
+              h3: (props) => <h3 {...props} />,
+              p: (props) => <p {...props} />,
+              ul: (props) => <ul className="list-disc" {...props} />,
+              ol: (props) => <ol className="list-decimal" {...props} />,
+              li: (props) => <li {...props} />,
+              code: ({
+                inline,
+                className,
+                ...props
+              }: ComponentProps<"code"> & {
+                inline?: boolean;
+                className?: string;
+              }) => {
+                const match = /language-(\w+)/.exec(className || "");
+                return inline ? (
+                  <code {...props} />
+                ) : !inline && match ? (
+                  <pre>
+                    <code {...props} className={className} />
+                  </pre>
+                ) : (
+                  <code {...props} />
                 );
-              }
-              return <a {...props} />;
-            },
-            h1: (props) => <h1 {...props} />,
-            h2: (props) => <h2 {...props} />,
-            h3: (props) => <h3 {...props} />,
-            p: (props) => <p {...props} />,
-            ul: (props) => <ul className="list-disc" {...props} />,
-            ol: (props) => <ol className="list-decimal" {...props} />,
-            li: (props) => <li {...props} />,
-            code: ({
-              inline,
-              className,
-              ...props
-            }: ComponentProps<"code"> & {
-              inline?: boolean;
-              className?: string;
-            }) => {
-              const match = /language-(\w+)/.exec(className || "");
-              return inline ? (
-                <code {...props} />
-              ) : !inline && match ? (
-                <pre>
-                  <code {...props} className={className} />
-                </pre>
-              ) : (
-                <code {...props} />
-              );
-            },
-            blockquote: (props) => <blockquote {...props} />,
-            table: (props) => <table {...props} />,
-            thead: (props) => <thead {...props} />,
-            tbody: (props) => <tbody {...props} />,
-            tr: (props) => <tr {...props} />,
-            th: (props) => <th {...props} />,
-            td: (props) => <td {...props} />,
-          }}
-        >
-          {state.data}
-        </ReactMarkdown>
+              },
+              blockquote: (props) => <blockquote {...props} />,
+              table: (props) => <table {...props} />,
+              thead: (props) => <thead {...props} />,
+              tbody: (props) => <tbody {...props} />,
+              tr: (props) => <tr {...props} />,
+              th: (props) => <th {...props} />,
+              td: (props) => <td {...props} />,
+            }}
+          >
+            {state.data}
+          </ReactMarkdown>
+        </div>
       </div>
-    </div>,
-  );
+    );
+  };
+
+  root.render(renderContent());
 }

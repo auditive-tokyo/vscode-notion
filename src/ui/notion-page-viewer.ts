@@ -20,6 +20,13 @@ export type NotionWebviewState = {
   title: string;
   data: string; // Markdown
   type?: "database" | "page";
+  tableData?: {
+    columns: string[];
+    rows: {
+      id: string;
+      cells: string[];
+    }[];
+  };
 };
 
 class CachedNotionWebview implements vscode.Disposable {
@@ -160,11 +167,20 @@ export class NotionWebviewPanelSerializer
       "[notion-webview-serializer] page data fetched, data length:",
       result.data?.length,
     );
+    console.log("[notion-webview-serializer] result:", result);
     // Markdown の最初のヘッダーからタイトルを抽出
     const title =
       this.extractTitleFromMarkdown(result.data) ?? untitledPageTitle;
     console.log("[notion-webview-serializer] page title:", title);
-    return { id, title, data: result.data, type: result.type };
+    const finalState = {
+      id,
+      title,
+      data: result.data,
+      type: result.type,
+      tableData: result.tableData,
+    };
+    console.log("[notion-webview-serializer] finalState:", finalState);
+    return finalState;
   }
 
   /**

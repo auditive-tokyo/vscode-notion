@@ -4,7 +4,7 @@
  */
 
 import { blocksToMarkdown } from "./block-to-markdown";
-import { rowToMarkdownTableRow } from "./property-extractor";
+import { rowToMarkdownTableRow, extractPropertyValue } from "./property-extractor";
 
 /**
  * ページタイトルを抽出
@@ -44,18 +44,57 @@ export async function convertPageToMarkdown(
  * @param rows - データベースの行配列
  * @returns Markdown 形式のデータベースコンテンツ
  */
-export function convertDatabaseToMarkdown(database: any, rows: any[]): string {
+/**
+ * データベース行をテーブルデータ構造に変換
+ * @param rows - データベース行の配列
+ * @returns テーブルデータ構造
+ */
+export function convertRowsToTableData(
+  rows: any[],
+  propertyNames: string[],
+): { columns: string[]; rows: { id: string; cells: string[] }[] } {
+  return {
+    columns: propertyNames,
+    rows: rows.map((row) => ({
+      id: row.id,
+      cells: propertyNames.map((propName) => {
+        const prop = row.properties[propName];
+        const value = extractPropertyValue(prop);
+        return value;
+      }),
+    })),
+  };
+}
+
+/**
+ * データベースオブジェクトを Markdown + テーブルデータに変換
+ * @param database - データベースオブジェクト
+ * @param rows - データベースの行配列
+ * @returns { markdown, tableData }
+ */
+export function convertDatabaseToMarkdownAndTable(
+  database: any,
+  rows: any[],
+): { markdown: string; tableData: any } {
   // データベースタイトルを取得
   let title = "Untitled Database";
   if (Array.isArray(database.title)) {
     title = database.title.map((t: any) => t.plain_text).join("");
   }
 
-  // 行を Markdown テーブルに変換
-  const tableMarkdown = convertRowsToMarkdownTable(rows);
+  // プロパティ名を抽出
+  const firstRow = rows[0];
+  const propertyNames = Object.keys(firstRow?.properties || {});
 
-  return `# ${title}\n\n${tableMarkdown}`;
+  const markdown = `# ${title}`;
+  const tableData = convertRowsToTableData(rows, propertyNames);
+
+  console.log("[markdown-converter] tableData created:", tableData);
+  console.log("[markdown-converter] returning tableData:", { markdown, tableData });
+  
+  return { markdown, tableData };
 }
+
 
 /**
  * データベース行をMarkdownテーブルに変換
@@ -75,9 +114,9 @@ export function convertRowsToMarkdownTable(rows: any[]): string {
     return "*プロパティが見つかりません。*\n\n";
   }
 
-  // ヘッダー行
-  const header = `| ${propertyNames.join(" | ")} |`;
-  const separator = `| ${propertyNames.map(() => "---").join(" | ")} |`;
+  // ヘッダー行（最初の列に空のヘッダー追加）
+  const header = `|  | ${propertyNames.join(" | ")} |`;
+  const separator = `| --- | ${propertyNames.map(() => "---").join(" | ")} |`;
 
   // データ行
   const dataRows = rows.map((row) => rowToMarkdownTableRow(row, propertyNames));
@@ -110,13 +149,13 @@ export async function convertPageToMarkdownHelper(
  *
  * @param database - Notion API から取得したデータベースオブジェクト
  * @param queryRows - データベースの行取得関数（NotionApiClient.queryDatabaseRows）
- * @returns Markdown 形式のデータベースコンテンツ
+ * @returns { markdown, tableData } オブジェクト
  * @see NotionApiClient.getPageOrDatabaseWithOfficialApi
  */
 export async function convertDatabaseToMarkdownHelper(
   database: any,
   queryRows: (databaseId: string) => Promise<any[]>,
-): Promise<string> {
+): Promise<{ markdown: string; tableData: any }> {
   console.log("[notion-api-utils] Database ID:", database.id);
   console.log(
     "[notion-api-utils] Database has",
@@ -127,5 +166,5 @@ export async function convertDatabaseToMarkdownHelper(
   const rows = await queryRows(database.id);
   console.log("[notion-api-utils] Retrieved", rows.length, "rows");
 
-  return convertDatabaseToMarkdown(database, rows);
+  return convertDatabaseToMarkdownAndTable(database, rows);
 }

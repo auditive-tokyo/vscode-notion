@@ -27,6 +27,11 @@ a {
   @apply text-blue-400 hover:text-blue-300 underline cursor-pointer;
 }
 
+/* OPEN button styling in table cells */
+a > code {
+  @apply no-underline bg-gray-600 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs font-semibold inline-block;
+}
+
 ul {
   @apply list-disc ml-6 mb-3;
 }

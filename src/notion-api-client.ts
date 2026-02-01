@@ -48,7 +48,9 @@ export class NotionApiClient {
    * ページデータをMarkdownで取得（type情報付き）
    * 公式APIを使用してページとデータベースの両方に対応
    */
-  async getPageDataById(id: string): Promise<{ data: string; type: "page" | "database" }> {
+  async getPageDataById(
+    id: string,
+  ): Promise<{ data: string; type: "page" | "database"; tableData?: any }> {
     console.log("[notion-api-client] getPageDataById called with id:", id);
 
     if (!this.officialClient) {
@@ -69,7 +71,9 @@ export class NotionApiClient {
    * ページまたはデータベースを取得（公式API）
    * Promise.allSettled で両方を同時に試し、どちらが成功するか判定
    */
-  private async getPageOrDatabaseWithOfficialApi(id: string): Promise<{ data: string; type: "page" | "database" }> {
+  private async getPageOrDatabaseWithOfficialApi(
+    id: string,
+  ): Promise<{ data: string; type: "page" | "database"; tableData?: any }> {
     if (!this.officialClient) {
       throw new Error("Official API client is not configured");
     }
@@ -82,20 +86,22 @@ export class NotionApiClient {
       this.officialClient.databases.retrieve({ database_id: cleanId }),
     ]);
 
-    if (pageResult.status === "fulfilled") {
+    // データベースを優先（ページはデータベースとしても認識される可能性があるため）
+    if (databaseResult.status === "fulfilled") {
+      console.log("[notion-api-client] Retrieved as database");
+      const result = await convertDatabaseToMarkdownHelper(
+        databaseResult.value,
+        this.queryDatabaseRows.bind(this),
+      );
+      console.log("[notion-api-client] convertDatabaseToMarkdownHelper result:", result);
+      return { data: result.markdown, type: "database", tableData: result.tableData };
+    } else if (pageResult.status === "fulfilled") {
       console.log("[notion-api-client] Retrieved as page");
       const data = await convertPageToMarkdownHelper(
         pageResult.value,
         this.getPageBlocksRecursive.bind(this),
       );
       return { data, type: "page" };
-    } else if (databaseResult.status === "fulfilled") {
-      console.log("[notion-api-client] Retrieved as database");
-      const data = await convertDatabaseToMarkdownHelper(
-        databaseResult.value,
-        this.queryDatabaseRows.bind(this),
-      );
-      return { data, type: "database" };
     } else {
       throw new Error("Failed to retrieve page or database");
     }

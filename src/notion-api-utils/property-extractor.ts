@@ -41,6 +41,7 @@ export function extractPropertyValue(prop: any): string {
 
 /**
  * データベース行をMarkdownテーブル行に変換
+ * 最初のセルに OPEN ボタンを追加
  * @param row - データベースの行オブジェクト
  * @param propertyNames - テーブルのカラム名
  * @returns Markdown テーブル行の文字列
@@ -49,8 +50,12 @@ export function rowToMarkdownTableRow(row: any, propertyNames: string[]): string
   const cells = propertyNames.map((propName) => {
     const prop = row.properties[propName];
     const value = extractPropertyValue(prop);
-    // パイプ文字と改行をエスケープ
-    return value.replace(/\|/g, "\\|").replace(/\n/g, " ");
+    const escapedValue = value.replace(/\|/g, "\\|").replace(/\n/g, " ");
+    return escapedValue;
   });
-  return `| ${cells.join(" | ")} |`;
+  
+  // 最初のセルの前に OPEN ボタンを追加
+  const openButton = row.id ? `[OPEN](/${row.id})` : "";
+  
+  return `| ${openButton} | ${cells.join(" | ")} |`;
 }
