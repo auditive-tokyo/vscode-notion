@@ -158,23 +158,44 @@ if (!state || !state.data) {
               ul: (props) => <ul className="list-disc" {...props} />,
               ol: (props) => <ol className="list-decimal" {...props} />,
               li: (props) => <li {...props} />,
+              pre: (props) => {
+                // callout の場合は pre スタイルを適用しない
+                const code = props.children as React.ReactElement<{ className?: string }>;
+                const isCallout = code?.props?.className?.includes("language-callout");
+                if (isCallout) {
+                  return <>{props.children}</>;
+                }
+                return <pre {...props} />;
+              },
               code: ({
                 inline,
                 className,
+                children,
                 ...props
               }: ComponentProps<"code"> & {
                 inline?: boolean;
                 className?: string;
               }) => {
                 const match = /language-(\w+)/.exec(className || "");
+                const language = match ? match[1] : null;
+                
+                // callout の特別処理
+                if (!inline && language === "callout") {
+                  return (
+                    <div className="notion-callout">
+                      {children}
+                    </div>
+                  );
+                }
+                
                 return inline ? (
-                  <code {...props} />
+                  <code {...props}>{children}</code>
                 ) : !inline && match ? (
-                  <pre>
-                    <code {...props} className={className} />
-                  </pre>
+                  <code {...props} className={className}>
+                    {children}
+                  </code>
                 ) : (
-                  <code {...props} />
+                  <code {...props}>{children}</code>
                 );
               },
               blockquote: (props) => <blockquote {...props} />,

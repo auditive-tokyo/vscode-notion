@@ -15,33 +15,29 @@ export function blockToMarkdown(block: any): string {
     switch (type) {
       case "paragraph":
         return (
-          block.paragraph?.rich_text
-            ?.map((t: any) => t.plain_text)
-            .join("") || ""
+          block.paragraph?.rich_text?.map((t: any) => t.plain_text).join("") ||
+          ""
         );
 
       case "heading_1":
         return (
           "# " +
-          (block.heading_1?.rich_text
-            ?.map((t: any) => t.plain_text)
-            .join("") || "")
+          (block.heading_1?.rich_text?.map((t: any) => t.plain_text).join("") ||
+            "")
         );
 
       case "heading_2":
         return (
           "## " +
-          (block.heading_2?.rich_text
-            ?.map((t: any) => t.plain_text)
-            .join("") || "")
+          (block.heading_2?.rich_text?.map((t: any) => t.plain_text).join("") ||
+            "")
         );
 
       case "heading_3":
         return (
           "### " +
-          (block.heading_3?.rich_text
-            ?.map((t: any) => t.plain_text)
-            .join("") || "")
+          (block.heading_3?.rich_text?.map((t: any) => t.plain_text).join("") ||
+            "")
         );
 
       case "bulleted_list_item":
@@ -90,8 +86,24 @@ export function blockToMarkdown(block: any): string {
 
       case "child_database": {
         const databaseId = block.id;
-        const databaseTitle = block.child_database?.title || "Untitled Database";
+        const databaseTitle =
+          block.child_database?.title || "Untitled Database";
         return `📊 [${databaseTitle}](/${databaseId})`;
+      }
+
+      case "quote": {
+        const text =
+          block.quote?.rich_text?.map((t: any) => t.plain_text).join("") || "";
+        return `> ${text}`;
+      }
+
+      case "callout": {
+        const icon = block.callout?.icon?.emoji || "💡";
+        const text =
+          block.callout?.rich_text?.map((t: any) => t.plain_text).join("") ||
+          "";
+        // カスタムコードブロック記法で callout を表現
+        return `\`\`\`callout\n${icon} ${text}\n\`\`\``;
       }
 
       default:
