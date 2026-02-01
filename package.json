@@ -1,6 +1,6 @@
 {
-  "name": "vscode-notion",
-  "displayName": "VSCode Notion",
+  "name": "vscode-notion-dev",
+  "displayName": "VSCode Notion (Dev)",
   "icon": "resources/vscode-notion.png",
   "version": "2.0.1",
   "description": "Browse Notion pages directly in Visual Studio Code.",
@@ -20,7 +20,7 @@
     "url": "https://github.com/kyswtn/vscode-notion"
   },
   "license": "MIT",
-  "publisher": "frenco",
+  "publisher": "auditive-tokyo",
   "main": "./dist/extension.js",
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -33,6 +33,11 @@
     "configuration": {
       "title": "VSCode Notion",
       "properties": {
+        "notion.apiKey": {
+          "type": "string",
+          "description": "Your Notion API key (from https://www.notion.so/my-integrations)",
+          "default": ""
+        },
         "notion.fontFamily": {
           "type": "string",
           "description": "Controls the font family used in Notion pages.",
@@ -186,6 +191,7 @@
     "notion-utils": "^6.16.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-markdown": "^10.1.0",
     "react-notion-x": "^6.16.0",
     "reflect-metadata": "^0.2.1",
     "vedk": "^0.1.2"

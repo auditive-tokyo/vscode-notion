@@ -12,7 +12,7 @@ import {RecentsStateProvider} from './recents'
 export type NotionWebviewState = {
   id: string
   title: string
-  data: Awaited<ReturnType<NotionApiClient['getPageDataById']>>
+  data: string  // Markdown
 }
 
 class CachedNotionWebview implements vscode.Disposable {
@@ -123,6 +123,7 @@ export class NotionWebviewPanelSerializer implements vscode.WebviewPanelSerializ
   }
 
   private async fetchDataAndGetPageState(id: string) {
+    console.log('[notion-webview-serializer] fetchDataAndGetPageState called with id:', id)
     const data = await vscode.window.withProgress(
       {
         title: 'VSCode Notion',
@@ -133,7 +134,10 @@ export class NotionWebviewPanelSerializer implements vscode.WebviewPanelSerializ
         return this.notionApi.getPageDataById(id)
       },
     )
-    const title = getPageTitle(data) ?? untitledPageTitle
+    console.log('[notion-webview-serializer] page data fetched, data length:', data?.length)
+    // Markdown形式なので、タイトルは既にヘッダーに含まれている
+    const title = untitledPageTitle
+    console.log('[notion-webview-serializer] page title:', title)
     return {id, title, data}
   }
 

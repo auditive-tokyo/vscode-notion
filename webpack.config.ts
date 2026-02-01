@@ -1,6 +1,10 @@
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import type {Config as SwcConfig} from '@swc/core'
 import type {Configuration} from 'webpack'
+
+// ES Modules環境で__dirnameを定義
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // todo: check for browser conditional imports, remove them unless needed
 
@@ -103,4 +107,4 @@ const webviewConfig = {
   },
 } satisfies Configuration
 
-module.exports = [buildConfig, webviewConfig]
+export default [buildConfig, webviewConfig]

@@ -20,5 +20,21 @@ const extension = new Extension({
 })
 
 export async function activate(context: vscode.ExtensionContext) {
+  // API キー読み込みログ
+  const config = vscode.workspace.getConfiguration('notion')
+  const apiKey = config.get<string>('apiKey', '')
+  console.log('[notion-extension] ✓ API Key loaded:', apiKey ? '***' + apiKey.slice(-8) : 'NOT SET')
+
   await extension.activate(context)
+
+  // 設定変更をリッスン
+  vscode.workspace.onDidChangeConfiguration((event) => {
+    if (event.affectsConfiguration('notion.apiKey')) {
+      // 動的にAPI キーを更新
+      const config = vscode.workspace.getConfiguration('notion')
+      const newApiKey = config.get<string>('apiKey', '')
+      console.log('[notion-extension] ✓ API Key updated:', newApiKey ? '***' + newApiKey.slice(-8) : 'NOT SET')
+      // NotionApiClientはコンストラクタで自動初期化されるため追加処理は不要
+    }
+  }, null, context.subscriptions)
 }
