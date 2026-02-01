@@ -38,6 +38,11 @@
           "description": "Your Notion API key (from https://www.notion.so/my-integrations)",
           "default": ""
         },
+        "notion.rootPageId": {
+          "type": "string",
+          "description": "Root Notion page ID to load the page hierarchy (32-character ID without hyphens)",
+          "default": ""
+        },
         "notion.fontFamily": {
           "type": "string",
           "description": "Controls the font family used in Notion pages.",
@@ -85,6 +90,12 @@
         "command": "notion.recents.remove",
         "title": "Remove Item",
         "icon": "$(close)"
+      },
+      {
+        "category": "Notion",
+        "command": "notion.hierarchy.refresh",
+        "title": "Refresh Page Hierarchy",
+        "icon": "$(extensions-refresh)"
       }
     ],
     "viewsContainers": {
@@ -104,6 +115,14 @@
           "name": "Recents",
           "contextualTitle": "Notion Recents",
           "visibility": "visible"
+        },
+        {
+          "type": "tree",
+          "id": "notion-hierarchy",
+          "name": "Page Hierarchy",
+          "contextualTitle": "Notion Page Hierarchy",
+          "visibility": "visible",
+          "when": "notion:hierarchyEnabled"
         }
       ]
     },
@@ -133,6 +152,10 @@
         {
           "command": "notion.recents.remove",
           "when": "false"
+        },
+        {
+          "command": "notion.hierarchy.refresh",
+          "when": "false"
         }
       ],
       "view/title": [
@@ -150,6 +173,11 @@
           "command": "notion.recents.clear",
           "when": "notion:isReady && view == notion-recents",
           "group": "navigation@3"
+        },
+        {
+          "command": "notion.hierarchy.refresh",
+          "when": "notion:hierarchyEnabled && view == notion-hierarchy",
+          "group": "navigation@1"
         }
       ],
       "editor/title": [
