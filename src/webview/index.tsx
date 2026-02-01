@@ -74,6 +74,9 @@ if (!state || !state.data) {
           <div className="page-container">
             {renderCover()}
             <ReactMarkdown>{state.data}</ReactMarkdown>
+            {state.description && (
+              <p className="text-lg italic text-gray-300 mb-6">{state.description}</p>
+            )}
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead>
@@ -131,6 +134,9 @@ if (!state || !state.data) {
       <div className="min-h-screen py-8 px-4">
         <div className="page-container">
           {renderCover()}
+          {state.description && (
+            <p className="text-lg italic text-gray-300 mb-6">{state.description}</p>
+          )}
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{

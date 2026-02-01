@@ -29,6 +29,7 @@ export type NotionWebviewState = {
   };
   coverUrl?: string | null;
   icon?: { type: string; emoji?: string; url?: string } | null;
+  description?: string | null;
 };
 
 class CachedNotionWebview implements vscode.Disposable {
@@ -191,6 +192,7 @@ export class NotionWebviewPanelSerializer
       tableData: result.tableData,
       coverUrl: result.coverUrl ?? null,
       icon: result.icon ?? null,
+      description: result.description ?? null,
     };
     console.log("[notion-page-viewer] finalState:", finalState);
     return finalState;

@@ -54,6 +54,7 @@ export class NotionApiClient {
     tableData?: any;
     coverUrl?: string | null;
     icon?: { type: string; emoji?: string; url?: string } | null;
+    description?: string | null;
   }> {
     console.log("[notion-api-client] getPageDataById called with id:", id);
 
@@ -81,6 +82,7 @@ export class NotionApiClient {
     tableData?: any;
     coverUrl?: string | null;
     icon?: { type: string; emoji?: string; url?: string } | null;
+    description?: string | null;
   }> {
     if (!this.officialClient) {
       throw new Error("Official API client is not configured");
@@ -111,6 +113,8 @@ export class NotionApiClient {
       };
     } else if (databaseResult.status === "fulfilled") {
       console.log("[notion-api-client] Retrieved as database");
+      const databaseData = databaseResult.value as any;
+      console.log("[notion-api-client] database.description:", JSON.stringify(databaseData.description, null, 2));
       const result = await convertDatabaseToMarkdownHelper(
         databaseResult.value,
         this.queryDatabaseRows.bind(this),
@@ -125,6 +129,7 @@ export class NotionApiClient {
         tableData: result.tableData,
         coverUrl: result.coverUrl,
         icon: result.icon,
+        description: result.description,
       };
     } else {
       throw new Error("Failed to retrieve page or database");

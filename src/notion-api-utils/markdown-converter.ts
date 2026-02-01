@@ -89,6 +89,23 @@ export function extractPageIcon(
 }
 
 /**
+ * データベースの説明を抽出
+ * @param database - Notion API から取得したデータベースオブジェクト
+ * @returns 説明テキスト（ない場合は null）
+ */
+export function extractDatabaseDescription(database: any): string | null {
+  if (!database.description || !Array.isArray(database.description)) {
+    return null;
+  }
+
+  const descriptionText = database.description
+    .map((item: any) => item.plain_text || "")
+    .join("");
+
+  return descriptionText || null;
+}
+
+/**
  * ページオブジェクトを Markdown に変換
  * @param page - ページオブジェクト
  * @param blocks - ページのブロック配列
@@ -257,6 +274,7 @@ export async function convertDatabaseToMarkdownHelper(
   tableData: any;
   coverUrl: string | null;
   icon: { type: string; emoji?: string; url?: string } | null;
+  description: string | null;
 }> {
   console.log("[notion-api-utils] Database ID:", database.id);
   console.log(
@@ -271,5 +289,6 @@ export async function convertDatabaseToMarkdownHelper(
   const result = convertDatabaseToMarkdownAndTable(database, rows);
   const coverUrl = extractPageCover(database);
   const icon = extractPageIcon(database);
-  return { ...result, coverUrl, icon };
+  const description = extractDatabaseDescription(database);
+  return { ...result, coverUrl, icon, description };
 }
