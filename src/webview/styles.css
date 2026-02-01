@@ -65,10 +65,6 @@ td {
   @apply border border-gray-600 px-3 py-2 text-left;
 }
 
-th {
-  @apply font-bold bg-gray-800;
-}
-
 /* Page container */
 .page-container {
   @apply max-w-5xl mx-auto;

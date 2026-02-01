@@ -107,8 +107,25 @@ export function blockToMarkdown(block: any): string {
       }
 
       case "divider":
-        console.log("[block-to-markdown] divider block:", JSON.stringify(block, null, 2));
+        console.log(
+          "[block-to-markdown] divider block:",
+          JSON.stringify(block, null, 2),
+        );
         return "---";
+
+      case "table":
+        // テーブルは子ブロック（table_row）で処理するため、ここでは何も出力しない
+        return "";
+
+      case "table_row": {
+        const cells = block.table_row?.cells || [];
+        // 各セルのテキストを抽出
+        const cellContents = cells.map((cellRichTexts: any[]) =>
+          cellRichTexts.map((t: any) => t.plain_text || "").join(""),
+        );
+        // Markdown テーブル行として返す
+        return `| ${cellContents.join(" | ")} |`;
+      }
 
       default:
         console.warn(`[block-to-markdown] Unsupported block type: ${type}`);
@@ -134,9 +151,50 @@ export async function blocksToMarkdown(
   getChildBlocks?: (blockId: string) => Promise<any[]>,
 ): Promise<string> {
   let markdown = "";
+  let currentTableParentId: string | null = null;
+  let isFirstRowInCurrentTable = false;
 
-  for (const block of blocks) {
-    markdown += blockToMarkdown(block) + "\n";
+  for (let i = 0; i < blocks.length; i++) {
+    const block = blocks[i];
+
+    // テーブル行を処理
+    if (block.type === "table_row") {
+      const rowParentId = block.parent?.block_id;
+      const cellCount = block.table_row?.cells?.length || 0;
+
+      // 新しいテーブルの開始か判定
+      if (rowParentId !== currentTableParentId) {
+        currentTableParentId = rowParentId;
+        isFirstRowInCurrentTable = true;
+        console.log("[blocksToMarkdown] New table detected:", {
+          tableId: rowParentId,
+          cellCount,
+        });
+      }
+
+      // テーブル行を追加
+      markdown += blockToMarkdown(block) + "\n";
+
+      // 最初の行の後にセパレータを挿入
+      if (isFirstRowInCurrentTable) {
+        const separator = `| ${Array(cellCount).fill("---").join(" | ")} |\n`;
+        console.log(
+          "[blocksToMarkdown] Adding separator with",
+          cellCount,
+          "columns",
+        );
+        markdown += separator;
+        isFirstRowInCurrentTable = false;
+      }
+    } else {
+      // テーブル行以外のブロック
+      markdown += blockToMarkdown(block) + "\n";
+      // テーブルコンテキストをリセット
+      if (block.type !== "table") {
+        currentTableParentId = null;
+        isFirstRowInCurrentTable = false;
+      }
+    }
 
     // child_page と child_database は子ブロックを取得しない
     // （孫ページまで表示されないようにする）
