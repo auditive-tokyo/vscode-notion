@@ -27,6 +27,17 @@ export type NotionWebviewState = {
       cells: string[];
     }[];
   };
+  inlineDatabases?: {
+    databaseId: string;
+    title: string;
+    tableData: {
+      columns: string[];
+      rows: {
+        id: string;
+        cells: string[];
+      }[];
+    };
+  }[];
   coverUrl?: string | null;
   icon?: { type: string; emoji?: string; url?: string } | null;
   description?: string | null;
@@ -193,6 +204,7 @@ export class NotionWebviewPanelSerializer
       coverUrl: result.coverUrl ?? null,
       icon: result.icon ?? null,
       description: result.description ?? null,
+      inlineDatabases: result.inlineDatabases ?? [],
     };
     console.log("[notion-page-viewer] finalState:", finalState);
     return finalState;

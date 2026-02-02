@@ -55,6 +55,11 @@ export class NotionApiClient {
     coverUrl?: string | null;
     icon?: { type: string; emoji?: string; url?: string } | null;
     description?: string | null;
+    inlineDatabases?: Array<{
+      databaseId: string;
+      title: string;
+      tableData: { columns: string[]; rows: { id: string; cells: string[] }[] };
+    }>;
   }> {
     console.log("[notion-api-client] getPageDataById called with id:", id);
 
@@ -83,6 +88,11 @@ export class NotionApiClient {
     coverUrl?: string | null;
     icon?: { type: string; emoji?: string; url?: string } | null;
     description?: string | null;
+    inlineDatabases?: Array<{
+      databaseId: string;
+      title: string;
+      tableData: { columns: string[]; rows: { id: string; cells: string[] }[] };
+    }>;
   }> {
     if (!this.officialClient) {
       throw new Error("Official API client is not configured");
@@ -104,17 +114,41 @@ export class NotionApiClient {
       const result = await convertPageToMarkdownHelper(
         pageResult.value,
         this.getPageBlocksRecursive.bind(this),
+        this.queryDatabaseRows.bind(this),
+        this.getDatabaseInfo.bind(this),
       );
-      return {
+      const response: {
+        data: string;
+        type: "page" | "database";
+        tableData?: any;
+        coverUrl?: string | null;
+        icon?: { type: string; emoji?: string; url?: string } | null;
+        description?: string | null;
+        inlineDatabases?: Array<{
+          databaseId: string;
+          title: string;
+          tableData: {
+            columns: string[];
+            rows: { id: string; cells: string[] }[];
+          };
+        }>;
+      } = {
         data: result.markdown,
         type: "page",
         coverUrl: result.coverUrl,
         icon: result.icon,
       };
+      if (result.inlineDatabases && result.inlineDatabases.length > 0) {
+        response.inlineDatabases = result.inlineDatabases;
+      }
+      return response;
     } else if (databaseResult.status === "fulfilled") {
       console.log("[notion-api-client] Retrieved as database");
       const databaseData = databaseResult.value as any;
-      console.log("[notion-api-client] database.description:", JSON.stringify(databaseData.description, null, 2));
+      console.log(
+        "[notion-api-client] database.description:",
+        JSON.stringify(databaseData.description, null, 2),
+      );
       const result = await convertDatabaseToMarkdownHelper(
         databaseResult.value,
         this.queryDatabaseRows.bind(this),
@@ -243,6 +277,38 @@ export class NotionApiClient {
           error instanceof Error ? error.message : String(error)
         }`,
       );
+    }
+  }
+
+  /**
+   * データベース情報を取得（is_inline判定用）
+   */
+  private async getDatabaseInfo(
+    databaseId: string,
+  ): Promise<{ is_inline: boolean; title: string }> {
+    if (!this.officialClient) {
+      throw new Error("Official API client is not configured");
+    }
+
+    try {
+      const database: any = await this.officialClient.databases.retrieve({
+        database_id: databaseId.replace(/-/g, ""),
+      });
+
+      const title = database.title?.[0]?.plain_text || "Untitled Database";
+      const is_inline = database.is_inline ?? false;
+
+      console.log("[notion-api-client] getDatabaseInfo:", {
+        databaseId,
+        title,
+        is_inline,
+      });
+
+      return { is_inline, title };
+    } catch (error) {
+      console.error("[notion-api-client] getDatabaseInfo error:", error);
+      // エラー時はis_inline: trueとして扱う（テーブル表示）
+      return { is_inline: true, title: "Untitled Database" };
     }
   }
 }

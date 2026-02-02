@@ -231,6 +231,114 @@ export function convertRowsToMarkdownTable(rows: any[]): string {
   // Markdownテーブルとして認識させるため、前後に空行を追加
   return "\n" + [header, separator, ...dataRows].join("\n") + "\n\n";
 }
+
+/**
+ * inline DB プレースホルダーからデータを収集
+ * is_inline: true のDBはテーブルデータを収集
+ * is_inline: false のDBはリンクに置換
+ * @param markdown - プレースホルダーを含むMarkdown
+ * @param queryRows - データベース行取得関数
+ * @param getDatabaseInfo - データベース情報取得関数
+ * @returns { markdown: string, inlineDatabases: array }
+ */
+async function collectInlineDbData(
+  markdown: string,
+  queryRows: (databaseId: string) => Promise<any[]>,
+  getDatabaseInfo?: (
+    databaseId: string,
+  ) => Promise<{ is_inline: boolean; title: string }>,
+): Promise<{
+  markdown: string;
+  inlineDatabases: Array<{
+    databaseId: string;
+    title: string;
+    tableData: { columns: string[]; rows: { id: string; cells: string[] }[] };
+  }>;
+}> {
+  // プレースホルダーのパターン: __INLINE_DB_PLACEHOLDER__id__title__
+  const placeholderPattern = /__INLINE_DB_PLACEHOLDER__([^_]+)__(.+?)__/g;
+  const matches = [...markdown.matchAll(placeholderPattern)];
+
+  if (matches.length === 0) {
+    return { markdown, inlineDatabases: [] };
+  }
+
+  const inlineDatabases: Array<{
+    databaseId: string;
+    title: string;
+    tableData: { columns: string[]; rows: { id: string; cells: string[] }[] };
+  }> = [];
+
+  let resultMarkdown = markdown;
+
+  for (const match of matches) {
+    const [fullMatch, databaseId, title] = match;
+
+    if (!databaseId || !title) {
+      continue;
+    }
+
+    console.log("[markdown-converter] Processing DB placeholder:", {
+      databaseId,
+      title,
+    });
+
+    try {
+      // is_inline を判定
+      let isInline = true; // デフォルトはinline扱い
+      let dbTitle = title;
+
+      if (getDatabaseInfo) {
+        const dbInfo = await getDatabaseInfo(databaseId);
+        isInline = dbInfo.is_inline;
+        dbTitle = dbInfo.title || title;
+        console.log("[markdown-converter] DB info:", {
+          databaseId,
+          isInline,
+          dbTitle,
+        });
+      }
+
+      if (!isInline) {
+        // Full Page DB: リンクに置換
+        console.log("[markdown-converter] Full Page DB - converting to link");
+        resultMarkdown = resultMarkdown.replace(
+          fullMatch,
+          `📊 [${dbTitle}](/${databaseId})`,
+        );
+        continue;
+      }
+
+      // Inline DB: テーブルデータを収集
+      console.log("[markdown-converter] Inline DB - fetching rows");
+      const rows = await queryRows(databaseId);
+      console.log("[markdown-converter] Inline DB rows:", rows.length);
+
+      if (rows.length > 0) {
+        // プロパティ名を抽出
+        const firstRow = rows[0];
+        const propertyNames = Object.keys(firstRow.properties || {});
+        const tableData = convertRowsToTableData(rows, propertyNames);
+
+        inlineDatabases.push({
+          databaseId,
+          title: dbTitle,
+          tableData,
+        });
+      }
+    } catch (error) {
+      console.error("[markdown-converter] Failed to process DB:", error);
+      // エラー時はリンクにフォールバック
+      resultMarkdown = resultMarkdown.replace(
+        fullMatch,
+        `📊 [${title}](/${databaseId})`,
+      );
+    }
+  }
+
+  return { markdown: resultMarkdown, inlineDatabases };
+}
+
 /**
  * NotionApiClient.getPageOrDatabaseWithOfficialApi() から呼ばれます。
  * ページ取得時に、ブロック取得処理をコールバック関数として受け取り、
@@ -238,22 +346,51 @@ export function convertRowsToMarkdownTable(rows: any[]): string {
  *
  * @param page - Notion API から取得したページオブジェクト
  * @param getBlocks - ページのブロック取得関数（NotionApiClient.getPageBlocksRecursive）
- * @returns { markdown, coverUrl } オブジェクト
+ * @param queryRows - データベース行取得関数（オプション、inline DB用）
+ * @param getDatabaseInfo - データベース情報取得関数（オプション、is_inline判定用）
+ * @returns { markdown, coverUrl, inlineDatabases } オブジェクト
  * @see NotionApiClient.getPageOrDatabaseWithOfficialApi
  */
 export async function convertPageToMarkdownHelper(
   page: any,
   getBlocks: (pageId: string) => Promise<any[]>,
+  queryRows?: (databaseId: string) => Promise<any[]>,
+  getDatabaseInfo?: (
+    databaseId: string,
+  ) => Promise<{ is_inline: boolean; title: string }>,
 ): Promise<{
   markdown: string;
   coverUrl: string | null;
   icon: { type: string; emoji?: string; url?: string } | null;
+  inlineDatabases?: Array<{
+    databaseId: string;
+    title: string;
+    tableData: { columns: string[]; rows: { id: string; cells: string[] }[] };
+  }>;
 }> {
   const blocks = await getBlocks(page.id);
-  const markdown = await convertPageToMarkdown(page, blocks, getBlocks);
+  let markdown = await convertPageToMarkdown(page, blocks, getBlocks);
+
+  let inlineDatabases: Array<{
+    databaseId: string;
+    title: string;
+    tableData: { columns: string[]; rows: { id: string; cells: string[] }[] };
+  }> = [];
+
+  // inline DB データを収集（is_inline判定含む）
+  if (queryRows) {
+    const result = await collectInlineDbData(
+      markdown,
+      queryRows,
+      getDatabaseInfo,
+    );
+    markdown = result.markdown;
+    inlineDatabases = result.inlineDatabases;
+  }
+
   const coverUrl = extractPageCover(page);
   const icon = extractPageIcon(page);
-  return { markdown, coverUrl, icon };
+  return { markdown, coverUrl, icon, inlineDatabases };
 }
 
 /**

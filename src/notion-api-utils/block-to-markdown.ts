@@ -88,7 +88,8 @@ export function blockToMarkdown(block: any): string {
         const databaseId = block.id;
         const databaseTitle =
           block.child_database?.title || "Untitled Database";
-        return `📊 [${databaseTitle}](/${databaseId})`;
+        // inline DB のプレースホルダーを返す（後で実データに置換される）
+        return `__INLINE_DB_PLACEHOLDER__${databaseId}__${databaseTitle}__`;
       }
 
       case "quote": {
