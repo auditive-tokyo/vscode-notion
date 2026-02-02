@@ -1,4 +1,4 @@
-import React, { type ComponentProps } from "react";
+import React, { type ComponentProps, useState } from "react";
 import { createRoot } from "react-dom/client";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -25,12 +25,32 @@ const root = createRoot(document.getElementById("root")!);
 const state = window.vscode.getState();
 console.log("[webview] state received:", state);
 
-if (!state || !state.data) {
-  console.error("[webview] ERROR: No page data found in state");
-  root.render(
-    <div className="p-5 text-red-500">Error: No page data available</div>,
-  );
-} else {
+// メインアプリケーションコンポーネント
+const App: React.FC = () => {
+  const [viewModes, setViewModes] = useState<
+    Record<string, "calendar" | "table">
+  >({});
+
+  const toggleViewMode = (databaseId: string) => {
+    const currentMode = viewModes[databaseId] || "calendar";
+    setViewModes({
+      ...viewModes,
+      [databaseId]: currentMode === "calendar" ? "table" : "calendar",
+    });
+    console.log(
+      "[webview] toggleViewMode called for databaseId:",
+      databaseId,
+      "newMode:",
+      currentMode === "calendar" ? "table" : "calendar",
+    );
+  };
+
+  if (!state || !state.data) {
+    return (
+      <div className="p-5 text-red-500">Error: No page data available</div>
+    );
+  }
+
   console.log("[webview] rendering markdown with length:", state.data.length);
   console.log("[webview] state.tableData:", state.tableData);
 
@@ -192,6 +212,9 @@ if (!state || !state.data) {
     let markdown = state.data;
     const inlineDbComponents: React.ReactElement[] = [];
 
+    console.log("[webview] state.inlineDatabases:", state.inlineDatabases);
+    console.log("[webview] markdown content:", markdown);
+
     // プレースホルダーを特殊マーカーに置換し、コンポーネントを準備
     const placeholderPattern = /__INLINE_DB_PLACEHOLDER__([^_]+)__(.+?)__/g;
     let match;
@@ -207,22 +230,52 @@ if (!state || !state.data) {
         const marker = `___INLINE_DB_${index}___`;
         markdown = markdown.replace(fullMatch, marker);
 
-        // カレンダービューかテーブルビューか判定
-        if (inlineDb.viewType === "calendar" && inlineDb.datePropertyName) {
-          inlineDbComponents.push(
-            <div key={index} className="my-6" data-marker={marker}>
-              <h3 className="text-xl font-semibold mb-4">📅 {title}</h3>
-              {renderCalendar(inlineDb)}
-            </div>,
-          );
-        } else {
-          inlineDbComponents.push(
-            <div key={index} className="my-6" data-marker={marker}>
-              <h3 className="text-xl font-semibold mb-4">📊 {title}</h3>
-              {renderTable(inlineDb.tableData, false)}
-            </div>,
-          );
-        }
+        // 現在のビューモード（デフォルト: カレンダービュー）
+        const currentViewMode = viewModes[databaseId] || "calendar";
+        const isCalendarView =
+          currentViewMode === "calendar" &&
+          inlineDb.viewType === "calendar" &&
+          inlineDb.datePropertyName;
+
+        console.log("[webview] DB render:", {
+          databaseId,
+          currentViewMode,
+          isCalendarView,
+          viewType: inlineDb.viewType,
+        });
+
+        // ビューモード切り替えボタン
+        const toggleViewButton =
+          inlineDb.viewType === "calendar" && inlineDb.datePropertyName ? (
+            <button
+              className="ml-3 px-3 py-1 text-sm font-semibold bg-gray-600 hover:bg-gray-500 text-white rounded transition"
+              onClick={() => toggleViewMode(databaseId)}
+            >
+              {isCalendarView ? "📊 Table View" : "📅 Calendar View"}
+            </button>
+          ) : null;
+
+        // ビューモード別にコンテンツをレンダリング
+        const dbContent = isCalendarView
+          ? renderCalendar(inlineDb)
+          : renderTable(inlineDb.tableData, false);
+
+        inlineDbComponents.push(
+          <div
+            key={index}
+            className="my-6"
+            data-marker={marker}
+            data-db-index={index}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold">
+                {isCalendarView ? "📅" : "📊"} {title}
+              </h3>
+              {toggleViewButton}
+            </div>
+            {dbContent}
+          </div>,
+        );
         index++;
       }
     }
@@ -357,5 +410,7 @@ if (!state || !state.data) {
     );
   };
 
-  root.render(renderContent());
-}
+  return renderContent();
+};
+
+root.render(<App />);
