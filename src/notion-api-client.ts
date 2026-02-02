@@ -58,6 +58,8 @@ export class NotionApiClient {
     inlineDatabases?: Array<{
       databaseId: string;
       title: string;
+      viewType: "table" | "calendar";
+      datePropertyName?: string;
       tableData: { columns: string[]; rows: { id: string; cells: string[] }[] };
     }>;
   }> {
@@ -91,6 +93,8 @@ export class NotionApiClient {
     inlineDatabases?: Array<{
       databaseId: string;
       title: string;
+      viewType: "table" | "calendar";
+      datePropertyName?: string;
       tableData: { columns: string[]; rows: { id: string; cells: string[] }[] };
     }>;
   }> {
@@ -127,6 +131,8 @@ export class NotionApiClient {
         inlineDatabases?: Array<{
           databaseId: string;
           title: string;
+          viewType: "table" | "calendar";
+          datePropertyName?: string;
           tableData: {
             columns: string[];
             rows: { id: string; cells: string[] }[];

@@ -79,3 +79,32 @@ td {
 hr {
   @apply border-t border-gray-500 my-6;
 }
+
+/* Calendar styling */
+.notion-calendar {
+  @apply my-4;
+}
+
+.notion-calendar .react-calendar {
+  @apply w-full bg-gray-800 border border-gray-600 rounded-lg;
+}
+
+.notion-calendar .react-calendar__tile {
+  @apply text-white p-2 hover:bg-gray-700;
+}
+
+.notion-calendar .react-calendar__tile--active {
+  @apply bg-blue-600;
+}
+
+.notion-calendar .react-calendar__tile--now {
+  @apply bg-gray-700;
+}
+
+.calendar-events {
+  @apply mt-1 space-y-1;
+}
+
+.calendar-event-link {
+  @apply block text-xs bg-blue-500 hover:bg-blue-400 rounded px-1 py-0.5 text-white no-underline truncate;
+}

@@ -252,6 +252,8 @@ async function collectInlineDbData(
   inlineDatabases: Array<{
     databaseId: string;
     title: string;
+    viewType: "table" | "calendar";
+    datePropertyName?: string;
     tableData: { columns: string[]; rows: { id: string; cells: string[] }[] };
   }>;
 }> {
@@ -266,6 +268,8 @@ async function collectInlineDbData(
   const inlineDatabases: Array<{
     databaseId: string;
     title: string;
+    viewType: "table" | "calendar";
+    datePropertyName?: string;
     tableData: { columns: string[]; rows: { id: string; cells: string[] }[] };
   }> = [];
 
@@ -317,14 +321,31 @@ async function collectInlineDbData(
       if (rows.length > 0) {
         // プロパティ名を抽出
         const firstRow = rows[0];
-        const propertyNames = Object.keys(firstRow.properties || {});
+        const properties = firstRow.properties || {};
+        const propertyNames = Object.keys(properties);
+
+        // 日付プロパティを検出
+        let datePropertyName: string | undefined;
+        for (const [propName, propValue] of Object.entries(properties)) {
+          if ((propValue as any).type === "date") {
+            datePropertyName = propName;
+            console.log("[markdown-converter] Date property found:", propName);
+            break;
+          }
+        }
+
+        const viewType = datePropertyName ? "calendar" : "table";
         const tableData = convertRowsToTableData(rows, propertyNames);
 
         inlineDatabases.push({
           databaseId,
           title: dbTitle,
+          viewType,
+          ...(datePropertyName ? { datePropertyName } : {}),
           tableData,
         });
+
+        console.log("[markdown-converter] DB added as:", viewType);
       }
     } catch (error) {
       console.error("[markdown-converter] Failed to process DB:", error);
@@ -365,6 +386,8 @@ export async function convertPageToMarkdownHelper(
   inlineDatabases?: Array<{
     databaseId: string;
     title: string;
+    viewType: "table" | "calendar";
+    datePropertyName?: string;
     tableData: { columns: string[]; rows: { id: string; cells: string[] }[] };
   }>;
 }> {
@@ -374,6 +397,8 @@ export async function convertPageToMarkdownHelper(
   let inlineDatabases: Array<{
     databaseId: string;
     title: string;
+    viewType: "table" | "calendar";
+    datePropertyName?: string;
     tableData: { columns: string[]; rows: { id: string; cells: string[] }[] };
   }> = [];
 

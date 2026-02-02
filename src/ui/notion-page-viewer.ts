@@ -30,6 +30,8 @@ export type NotionWebviewState = {
   inlineDatabases?: {
     databaseId: string;
     title: string;
+    viewType: "table" | "calendar";
+    datePropertyName?: string;
     tableData: {
       columns: string[];
       rows: {

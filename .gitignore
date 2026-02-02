@@ -3,3 +3,5 @@ node_modules/
 dist/
 *.bak
 *.vsix
+.env
+.DS_Store

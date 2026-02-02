@@ -2,6 +2,8 @@ import React, { type ComponentProps } from "react";
 import { createRoot } from "react-dom/client";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import Calendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
 import type { CommandId } from "../constants";
 import type { NotionWebviewState } from "../ui/notion-page-viewer";
 import type { OpenPageCommandArgs } from "../ui/open-page-command";
@@ -130,10 +132,65 @@ if (!state || !state.data) {
     );
   };
 
+  // カレンダー表示（react-calendar使用）
+  const renderCalendar = (
+    db: NonNullable<typeof state.inlineDatabases>[number],
+  ) => {
+    const dateColumnIndex = db.tableData.columns.indexOf(db.datePropertyName!);
+    const titleColumnIndex = 0; // 最初の列をタイトルとする
+
+    // 日付ごとにイベントをマッピング
+    const eventsByDate = new Map<
+      string,
+      (typeof db.tableData.rows)[number][]
+    >();
+    db.tableData.rows.forEach((row) => {
+      const dateStr = row.cells[dateColumnIndex];
+      if (dateStr) {
+        if (!eventsByDate.has(dateStr)) {
+          eventsByDate.set(dateStr, []);
+        }
+        eventsByDate.get(dateStr)!.push(row);
+      }
+    });
+
+    // カレンダーのタイル内容
+    const tileContent = ({ date }: { date: Date; view: string }) => {
+      const dateStr = date.toISOString().split("T")[0];
+      const events = eventsByDate.get(dateStr);
+
+      if (events && events.length > 0) {
+        return (
+          <div className="calendar-events">
+            {events.map((event, idx) => (
+              <a
+                key={idx}
+                href={`command:${openPageCommand}?${encodeURI(
+                  JSON.stringify({ id: event.id } as OpenPageCommandArgs),
+                )}`}
+                className="calendar-event-link"
+                title={event.cells[titleColumnIndex]}
+              >
+                {event.cells[titleColumnIndex]}
+              </a>
+            ))}
+          </div>
+        );
+      }
+      return null;
+    };
+
+    return (
+      <div className="notion-calendar">
+        <Calendar tileContent={tileContent} />
+      </div>
+    );
+  };
+
   // inline DB プレースホルダーを検出してテーブルを挿入
   const renderMarkdownWithInlineDatabases = () => {
     let markdown = state.data;
-    const inlineDbComponents: JSX.Element[] = [];
+    const inlineDbComponents: React.ReactElement[] = [];
 
     // プレースホルダーを特殊マーカーに置換し、コンポーネントを準備
     const placeholderPattern = /__INLINE_DB_PLACEHOLDER__([^_]+)__(.+?)__/g;
@@ -149,19 +206,30 @@ if (!state || !state.data) {
       if (inlineDb) {
         const marker = `___INLINE_DB_${index}___`;
         markdown = markdown.replace(fullMatch, marker);
-        inlineDbComponents.push(
-          <div key={index} className="my-6" data-marker={marker}>
-            <h3 className="text-xl font-semibold mb-4">📊 {title}</h3>
-            {renderTable(inlineDb.tableData, false)}
-          </div>,
-        );
+
+        // カレンダービューかテーブルビューか判定
+        if (inlineDb.viewType === "calendar" && inlineDb.datePropertyName) {
+          inlineDbComponents.push(
+            <div key={index} className="my-6" data-marker={marker}>
+              <h3 className="text-xl font-semibold mb-4">📅 {title}</h3>
+              {renderCalendar(inlineDb)}
+            </div>,
+          );
+        } else {
+          inlineDbComponents.push(
+            <div key={index} className="my-6" data-marker={marker}>
+              <h3 className="text-xl font-semibold mb-4">📊 {title}</h3>
+              {renderTable(inlineDb.tableData, false)}
+            </div>,
+          );
+        }
         index++;
       }
     }
 
     // markdownを分割してテーブルを挿入
     const parts = markdown.split(/___INLINE_DB_(\d+)___/);
-    const elements: (JSX.Element | string)[] = [];
+    const elements: (React.ReactElement | string)[] = [];
 
     for (let i = 0; i < parts.length; i++) {
       if (i % 2 === 0) {
