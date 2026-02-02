@@ -108,3 +108,23 @@ hr {
 .calendar-event-link {
   @apply block text-xs bg-blue-500 hover:bg-blue-400 rounded px-1 py-0.5 text-white no-underline truncate;
 }
+
+/* View toggle button */
+.view-toggle-btn {
+  font-size: 11px;
+  padding: 2px 8px;
+  background-color: #3b82f6;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+  width: auto;
+  flex-shrink: 0;
+}
+
+.view-toggle-btn:hover {
+  background-color: #2563eb;
+  color: #ffffff;
+}

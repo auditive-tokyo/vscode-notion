@@ -248,7 +248,7 @@ const App: React.FC = () => {
         const toggleViewButton =
           inlineDb.viewType === "calendar" && inlineDb.datePropertyName ? (
             <button
-              className="ml-3 px-3 py-1 text-sm font-semibold bg-gray-600 hover:bg-gray-500 text-white rounded transition"
+              className="view-toggle-btn"
               onClick={() => toggleViewMode(databaseId)}
             >
               {isCalendarView ? "📊 Table View" : "📅 Calendar View"}
@@ -267,8 +267,8 @@ const App: React.FC = () => {
             data-marker={marker}
             data-db-index={index}
           >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold">
+            <div className="flex items-center mb-4">
+              <h3 className="text-xl font-semibold grow">
                 {isCalendarView ? "📅" : "📊"} {title}
               </h3>
               {toggleViewButton}
