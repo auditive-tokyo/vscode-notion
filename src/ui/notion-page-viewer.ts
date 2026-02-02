@@ -240,13 +240,6 @@ export class NotionWebviewPanelSerializer
       ? trustedSources.join(" ")
       : "'none'";
 
-    const styleSheets = ["reset.css", "vscode.css", "notion.css", "prism.css"];
-    const styleSheetUris = styleSheets.map((cssPath) =>
-      webviewPanel.webview.asWebviewUri(
-        vscode.Uri.joinPath(extensionUri, "resources/css", cssPath),
-      ),
-    );
-
     const reactWebviewUri = webviewPanel.webview.asWebviewUri(
       vscode.Uri.joinPath(extensionUri, "dist/webview.js"),
     );
@@ -261,9 +254,6 @@ export class NotionWebviewPanelSerializer
       http-equiv="Content-Security-Policy" 
       content="frame-src ${frameSrcCsp}; default-src 'none';  style-src ${cspSource} 'unsafe-inline'; img-src ${cspSource} https:; script-src 'nonce-${nonce}';"
     />
-    ${styleSheetUris
-      .map((x) => `<link href="${x}" rel="stylesheet" />`)
-      .join("\n")}
 </head>
 <body class="vscode-body">
     <div id="root"></div>

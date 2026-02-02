@@ -8,19 +8,19 @@
 
 /* Markdown elements styling */
 h1 {
-  @apply text-4xl font-bold mt-6 mb-3;
+  @apply text-3xl font-bold mt-6 mb-3;
 }
 
 h2 {
-  @apply text-3xl font-bold mt-5 mb-2;
+  @apply text-2xl font-bold mt-5 mb-2;
 }
 
 h3 {
-  @apply text-2xl font-bold mt-4 mb-2;
+  @apply text-xl font-bold mt-4 mb-2;
 }
 
 p {
-  @apply text-lg mb-3 whitespace-pre-wrap;
+  @apply text-base mb-3 whitespace-pre-wrap;
 }
 
 a {
@@ -33,11 +33,11 @@ a > code {
 }
 
 ul {
-  @apply text-lg list-disc ml-6 mb-3;
+  @apply text-base list-disc ml-6 mb-3;
 }
 
 ol {
-  @apply text-lg list-decimal ml-6 mb-3;
+  @apply text-base list-decimal ml-6 mb-3;
 }
 
 li {
@@ -45,7 +45,7 @@ li {
 }
 
 code {
-  @apply rounded px-1 py-0.5 text-base font-mono;
+  @apply rounded px-1 py-0.5 text-sm font-mono;
 }
 
 pre {
@@ -53,11 +53,11 @@ pre {
 }
 
 blockquote {
-  @apply text-lg border-l-4 pl-4 mb-3;
+  @apply text-base border-l-4 pl-4 italic mb-3 opacity-75;
 }
 
 table {
-  @apply text-lg w-full border border-gray-600 mb-3;
+  @apply w-full border border-gray-600 mb-3;
 }
 
 th,
@@ -72,7 +72,7 @@ td {
 
 /* Callout block */
 .notion-callout {
-  @apply text-lg rounded p-4 mb-3 bg-blue-900/30 border-l-4 border-blue-500;
+  @apply text-base rounded p-4 mb-3 bg-blue-900/30 border-l-4 border-blue-500;
 }
 
 /* Divider */
