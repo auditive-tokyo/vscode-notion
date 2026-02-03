@@ -218,6 +218,7 @@
   ],
   "dependencies": {
     "@notionhq/client": "^5.9.0",
+    "mermaid": "^11.12.2",
     "nanoid": "5",
     "notion-utils": "^7.7.3",
     "react": "^19.2.4",

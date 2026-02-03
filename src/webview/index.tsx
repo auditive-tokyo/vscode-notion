@@ -3,8 +3,8 @@ import { createRoot } from "react-dom/client";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import "react-calendar/dist/Calendar.css";
-import type { CommandId } from "../constants";
-import type { NotionWebviewState } from "../ui/notion-page-viewer";
+import type { CommandId } from "@/constants";
+import type { NotionWebviewState } from "@/ui/notion-page-viewer";
 import {
   usePageCover,
   useTableRenderer,

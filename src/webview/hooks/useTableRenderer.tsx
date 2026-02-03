@@ -1,7 +1,7 @@
 import React from "react";
-import type { NotionWebviewState } from "../../ui/notion-page-viewer";
-import type { OpenPageCommandArgs } from "../../ui/open-page-command";
-import type { CommandId } from "../../constants";
+import type { NotionWebviewState } from "@/ui/notion-page-viewer";
+import type { OpenPageCommandArgs } from "@/ui/open-page-command";
+import type { CommandId } from "@/constants";
 
 /**
  * テーブルをレンダリング（full page DB と inline DB で共通使用）

@@ -1,9 +1,10 @@
 import React, { type ComponentProps } from "react";
 import ReactMarkdown from "react-markdown";
 import type { PluggableList } from "unified";
-import type { NotionWebviewState } from "../../ui/notion-page-viewer";
-import type { OpenPageCommandArgs } from "../../ui/open-page-command";
-import type { CommandId } from "../../constants";
+import type { NotionWebviewState } from "@/ui/notion-page-viewer";
+import type { OpenPageCommandArgs } from "@/ui/open-page-command";
+import type { CommandId } from "@/constants";
+import { MermaidDiagram } from "../components";
 
 /**
  * inline DB プレースホルダーを検出してテーブルを挿入
@@ -156,6 +157,12 @@ export const useMarkdownWithInlineDatabases = (
                 }) => {
                   const match = /language-(\w+)/.exec(className || "");
                   const language = match ? match[1] : null;
+
+                  // Mermaid diagram rendering
+                  if (!inline && language === "mermaid") {
+                    const code = String(children).replace(/\n$/, "");
+                    return <MermaidDiagram chart={code} />;
+                  }
 
                   if (!inline && language === "callout") {
                     return <div className="notion-callout">{children}</div>;

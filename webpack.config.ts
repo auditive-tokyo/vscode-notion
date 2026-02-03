@@ -2,6 +2,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Config as SwcConfig } from "@swc/core";
 import type { Configuration } from "webpack";
+import webpack from "webpack";
 
 // ES Modules環境で__dirnameを定義
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -57,8 +58,11 @@ const sharedConfig = {
   },
   devtool: "source-map",
   resolve: {
-    extensions: [".ts", ".js"],
+    extensions: [".ts", ".tsx", ".js"],
     mainFields: ["main", "module"],
+    alias: {
+      "@": cwd("src"),
+    },
   },
   optimization: {
     minimize: true,
@@ -96,6 +100,17 @@ const webviewConfig = {
     ...sharedConfig.output,
     filename: "webview.js",
   },
+  // Disable code splitting for VS Code webview compatibility
+  optimization: {
+    ...sharedConfig.optimization,
+    splitChunks: false,
+  },
+  plugins: [
+    // Force all chunks into a single bundle (VS Code webview cannot load dynamic chunks)
+    new webpack.optimize.LimitChunkCountPlugin({
+      maxChunks: 1,
+    }),
+  ],
   module: {
     rules: [
       {

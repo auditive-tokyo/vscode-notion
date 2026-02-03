@@ -1,8 +1,8 @@
 import React from "react";
 import Calendar from "react-calendar";
-import type { NotionWebviewState } from "../../ui/notion-page-viewer";
-import type { OpenPageCommandArgs } from "../../ui/open-page-command";
-import type { CommandId } from "../../constants";
+import type { NotionWebviewState } from "@/ui/notion-page-viewer";
+import type { OpenPageCommandArgs } from "@/ui/open-page-command";
+import type { CommandId } from "@/constants";
 
 /**
  * カレンダー表示（react-calendar使用）

@@ -1,5 +1,5 @@
 import React from "react";
-import type { NotionWebviewState } from "../../ui/notion-page-viewer";
+import type { NotionWebviewState } from "@/ui/notion-page-viewer";
 
 /**
  * ページカバー画像とアイコンをレンダリング
