@@ -34,7 +34,12 @@ export const useCalendarRenderer = (
 
     // カレンダーのタイル内容
     const tileContent = ({ date }: { date: Date; view: string }) => {
-      const dateStr = date.toISOString().split("T")[0];
+      // ローカル時刻で日付文字列を作成（タイムゾーンのずれを防ぐ）
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      const dateStr = `${year}-${month}-${day}`;
+
       const events = eventsByDate.get(dateStr);
 
       if (events && events.length > 0) {
@@ -58,9 +63,25 @@ export const useCalendarRenderer = (
       return null;
     };
 
+    // イベントがある日付にクラスを追加
+    const tileClassName = ({ date, view }: { date: Date; view: string }) => {
+      if (view === "month") {
+        // ローカル時刻で日付文字列を作成（タイムゾーンのずれを防ぐ）
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        const dateStr = `${year}-${month}-${day}`;
+
+        if (eventsByDate.has(dateStr)) {
+          return "has-events";
+        }
+      }
+      return "";
+    };
+
     return (
       <div className="notion-calendar">
-        <Calendar tileContent={tileContent} />
+        <Calendar tileContent={tileContent} tileClassName={tileClassName} />
       </div>
     );
   };
