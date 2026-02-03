@@ -79,9 +79,37 @@ export const useCalendarRenderer = (
       return "";
     };
 
+    // タイル（日付）クリック時にイベントページに遷移
+    const onClickDay = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      const dateStr = `${year}-${month}-${day}`;
+
+      const events = eventsByDate.get(dateStr);
+      if (events && events.length > 0) {
+        // 最初のイベントに遷移
+        const firstEvent = events[0];
+        const href = `command:${openPageCommand}?${encodeURI(
+          JSON.stringify({ id: firstEvent.id } as OpenPageCommandArgs),
+        )}`;
+        // VS Code webviewでcommand: URLを発火させるためにa要素をDOMに追加してクリック
+        const a = document.createElement("a");
+        a.href = href;
+        a.style.display = "none";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+    };
+
     return (
       <div className="notion-calendar">
-        <Calendar tileContent={tileContent} tileClassName={tileClassName} />
+        <Calendar
+          tileContent={tileContent}
+          tileClassName={tileClassName}
+          onClickDay={onClickDay}
+        />
       </div>
     );
   };
