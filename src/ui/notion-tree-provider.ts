@@ -28,8 +28,16 @@ export class NotionTreeDataProvider
     await fs.mkdir(this.cacheDir, { recursive: true });
   }
 
-  refresh(): void {
+  async refresh(): Promise<void> {
     this.cache.clear();
+    // ディスクキャッシュもクリア
+    try {
+      await fs.rm(this.cacheDir, { recursive: true, force: true });
+      await fs.mkdir(this.cacheDir, { recursive: true });
+      console.log("[notion-tree] Cache cleared");
+    } catch (error) {
+      console.error("[notion-tree] Failed to clear cache:", error);
+    }
     this._onDidChangeTreeData.fire();
   }
 

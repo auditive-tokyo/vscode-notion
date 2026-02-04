@@ -63,9 +63,10 @@ export class NotionHierarchyTreeView
     if (!this.treeDataProvider) return;
 
     this.context.subscriptions.push(
-      vscode.commands.registerCommand("notion.hierarchy.refresh", () => {
+      vscode.commands.registerCommand("notion.hierarchy.refresh", async () => {
         console.log("[notion-hierarchy] Refreshing Notion hierarchy...");
-        this.treeDataProvider?.refresh();
+        await this.treeDataProvider?.refresh();
+        console.log("[notion-hierarchy] Refresh complete");
       }),
     );
   }
@@ -86,7 +87,7 @@ export class NotionHierarchyTreeView
         }
         if (event.affectsConfiguration("notion.rootPageId")) {
           console.log("[notion-hierarchy] Root Page ID updated");
-          this.treeDataProvider?.refresh();
+          void this.treeDataProvider?.refresh();
           this.updateHierarchyContext();
         }
       }),
