@@ -1,6 +1,8 @@
 import { nanoid } from "nanoid";
 import { InjectContext, Injectable } from "vedk";
 import * as vscode from "vscode";
+import * as fs from "fs/promises";
+import * as path from "path";
 import {
   CommandId,
   ConfigId,
@@ -67,11 +69,19 @@ export class NotionWebviewPanelSerializer
 {
   private readonly cache = new Map<string, CachedNotionWebview>();
   private readonly disposable: vscode.Disposable;
+  private readonly pageCacheDir: string;
+  private static readonly TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7日間
 
   constructor(
     @InjectContext() private readonly context: vscode.ExtensionContext,
     private readonly notionApi: NotionApiClient,
   ) {
+    this.pageCacheDir = path.join(
+      this.context.globalStorageUri.fsPath,
+      "page-cache",
+    );
+    void this.initializeCache();
+
     this.disposable = vscode.Disposable.from(
       vscode.commands.registerCommand(
         CommandId.RefreshPage,
@@ -100,6 +110,71 @@ export class NotionWebviewPanelSerializer
     this.disposable.dispose();
   }
 
+  /**
+   * キャッシュディレクトリを初期化
+   */
+  private async initializeCache(): Promise<void> {
+    try {
+      await fs.mkdir(this.pageCacheDir, { recursive: true });
+    } catch {
+      // 既に存在する場合は無視
+    }
+  }
+
+  /**
+   * ページデータをディスクキャッシュから読み込み
+   */
+  private async loadPageFromDiskCache(
+    id: string,
+  ): Promise<NotionWebviewState | null> {
+    const cacheFile = path.join(this.pageCacheDir, `${id}.json`);
+    try {
+      const content = await fs.readFile(cacheFile, "utf-8");
+      const cacheData = JSON.parse(content) as {
+        timestamp: number;
+        state: NotionWebviewState;
+      };
+
+      const cacheAgeMs = Date.now() - cacheData.timestamp;
+      if (cacheAgeMs > NotionWebviewPanelSerializer.TTL_MS) {
+        console.log(
+          `[notion-page-viewer] Cache for ${id} expired (${Math.round(
+            cacheAgeMs / 1000 / 60 / 60,
+          )} hours old)`,
+        );
+        await fs.unlink(cacheFile).catch(() => {});
+        return null;
+      }
+
+      // アクセス時にタイムスタンプを更新（LRU的な挙動）
+      await this.savePageToDiskCache(id, cacheData.state);
+      console.log(`[notion-page-viewer] Loaded from cache: ${id}`);
+      return cacheData.state;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * ページデータをディスクキャッシュに保存
+   */
+  private async savePageToDiskCache(
+    id: string,
+    state: NotionWebviewState,
+  ): Promise<void> {
+    const cacheFile = path.join(this.pageCacheDir, `${id}.json`);
+    try {
+      const cacheData = {
+        timestamp: Date.now(),
+        state,
+      };
+      await fs.writeFile(cacheFile, JSON.stringify(cacheData), "utf-8");
+      console.log(`[notion-page-viewer] Saved to cache: ${id}`);
+    } catch (error) {
+      console.error(`[notion-page-viewer] Failed to save cache: ${id}`, error);
+    }
+  }
+
   async createOrShowPage(id: string) {
     const cached = this.cache.get(id);
     if (cached) {
@@ -107,7 +182,14 @@ export class NotionWebviewPanelSerializer
       return;
     }
 
-    const state = await this.fetchDataAndGetPageState(id);
+    // まずディスクキャッシュから読み込み
+    let state = await this.loadPageFromDiskCache(id);
+    if (!state) {
+      // キャッシュがなければAPIから取得
+      state = await this.fetchDataAndGetPageState(id);
+      await this.savePageToDiskCache(id, state);
+    }
+
     const webviewPanel = vscode.window.createWebviewPanel(
       ViewType.NotionPageView,
       state.title,
@@ -156,7 +238,9 @@ export class NotionWebviewPanelSerializer
     if (!activePage) return;
     const [id, cache] = activePage;
 
+    // APIから最新データを取得してキャッシュも更新
     const state = await this.fetchDataAndGetPageState(id);
+    await this.savePageToDiskCache(id, state);
     this.renderWebview(cache.webviewPanel, state);
 
     // Tree 上で reveal + expand

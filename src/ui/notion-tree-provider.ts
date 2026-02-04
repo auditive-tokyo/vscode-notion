@@ -392,7 +392,7 @@ export class NotionTreeDataProvider
 
       const now = Date.now();
       const cacheAgeMs = now - cacheData.timestamp;
-      const TTL_MS = 24 * 60 * 60 * 1000; // 24時間
+      const TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7日間
 
       if (cacheAgeMs > TTL_MS) {
         console.log(
