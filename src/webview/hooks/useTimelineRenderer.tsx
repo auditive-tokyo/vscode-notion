@@ -11,7 +11,11 @@ export const useTimelineRenderer = (
     db: NonNullable<typeof state.inlineDatabases>[number],
   ) => {
     const dateColumnIndex = db.tableData.columns.indexOf(db.datePropertyName!);
-    const titleColumnIndex = 0; // 最初の列をタイトルとする
+    // Title/Name カラムを探す（見つからなければ最初の列）
+    const titleColumnIndex = db.tableData.columns.findIndex(
+      (col) => col.toLowerCase() === "name" || col.toLowerCase() === "title",
+    );
+    const actualTitleIndex = titleColumnIndex >= 0 ? titleColumnIndex : 0;
     const statusColumnIndex = db.tableData.columns.findIndex(
       (col) => col.toLowerCase() === "status",
     );
@@ -76,7 +80,7 @@ export const useTimelineRenderer = (
           const dateValue = row.cells[dateColumnIndex] as DateValue;
           const start = new Date(dateValue.start!);
           const end = dateValue.end ? new Date(dateValue.end) : start;
-          const titleValue = row.cells[titleColumnIndex];
+          const titleValue = row.cells[actualTitleIndex];
           const title =
             typeof titleValue === "string"
               ? titleValue
