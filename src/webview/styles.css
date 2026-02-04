@@ -89,6 +89,18 @@ hr {
   @apply w-full bg-gray-800 border border-gray-600 rounded-lg;
 }
 
+.notion-calendar .react-calendar__navigation__label {
+  @apply text-white;
+}
+
+.notion-calendar .react-calendar .react-calendar__navigation__label:hover {
+  @apply bg-gray-700;
+}
+
+.notion-calendar .react-calendar .react-calendar__navigation__arrow:hover {
+  @apply bg-gray-700;
+}
+
 .notion-calendar .react-calendar__tile {
   @apply text-white p-2 hover:bg-gray-700;
 }
