@@ -5,11 +5,6 @@ import * as vscode from "vscode";
 import { NotionApiClient } from "./notion-api-client";
 import { NotionWebviewPanelSerializer } from "./ui/notion-page-viewer";
 import { OpenPageCommand } from "./ui/open-page-command";
-import {
-  RecentsStateProvider,
-  RecentsTreeDataProvider,
-  RecentsTreeView,
-} from "./ui/recents";
 import { NotionHierarchyTreeView } from "./ui/notion-hierarchy-tree-view";
 
 const extension = new Extension({
@@ -17,10 +12,6 @@ const extension = new Extension({
     NotionApiClient,
     NotionWebviewPanelSerializer,
     OpenPageCommand,
-    // Recents
-    RecentsStateProvider,
-    RecentsTreeDataProvider,
-    RecentsTreeView,
     // Page Tree
     NotionHierarchyTreeView,
   ],

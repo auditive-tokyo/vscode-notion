@@ -10,7 +10,6 @@ import {
   untitledPageTitle,
 } from "../constants";
 import { NotionApiClient } from "../notion-api-client";
-import { RecentsStateProvider } from "./recents";
 
 /**
  * State that gets serialized and passed into webview.
@@ -72,7 +71,6 @@ export class NotionWebviewPanelSerializer
   constructor(
     @InjectContext() private readonly context: vscode.ExtensionContext,
     private readonly notionApi: NotionApiClient,
-    private readonly recentsState: RecentsStateProvider,
   ) {
     this.disposable = vscode.Disposable.from(
       vscode.commands.registerCommand(
@@ -105,7 +103,6 @@ export class NotionWebviewPanelSerializer
   async createOrShowPage(id: string) {
     const cached = this.cache.get(id);
     if (cached) {
-      this.recentsState.addRecent(id, cached.state.title, cached.state.type);
       cached.reveal();
       return;
     }
@@ -122,7 +119,6 @@ export class NotionWebviewPanelSerializer
       },
     );
 
-    this.recentsState.addRecent(id, state.title, state.type);
     await this.deserializeWebviewPanel(webviewPanel, state);
   }
 
@@ -162,6 +158,24 @@ export class NotionWebviewPanelSerializer
 
     const state = await this.fetchDataAndGetPageState(id);
     this.renderWebview(cache.webviewPanel, state);
+
+    // Tree 上で reveal + expand
+    const { NotionHierarchyTreeView } = await import(
+      "./notion-hierarchy-tree-view"
+    );
+    const hierarchyView = NotionHierarchyTreeView.getInstance();
+    const treeView = hierarchyView?.getTreeView();
+    const dataProvider = hierarchyView?.getDataProvider();
+    if (treeView && dataProvider) {
+      const treeItem = dataProvider.getItemById(id);
+      if (treeItem) {
+        await treeView.reveal(treeItem, {
+          select: true,
+          focus: false,
+          expand: true,
+        });
+      }
+    }
   }
 
   private async rerenderCachedWebviews() {

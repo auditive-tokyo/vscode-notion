@@ -46,7 +46,6 @@ export class NotionHierarchyTreeView
 
   async onExtensionBootstrap() {
     await this.initializeTreeView();
-    this.registerCommands();
     this.registerConfigListeners();
   }
 
@@ -72,23 +71,11 @@ export class NotionHierarchyTreeView
     this.treeView = treeView;
     this.context.subscriptions.push(treeView);
 
+    // isReady コンテキストを設定（ボタン表示用）
+    vscode.commands.executeCommand("setContext", "notion:isReady", true);
+
     // 初期コンテキスト設定
     this.updateHierarchyContext();
-  }
-
-  /**
-   * コマンドを登録
-   */
-  private registerCommands(): void {
-    if (!this.treeDataProvider) return;
-
-    this.context.subscriptions.push(
-      vscode.commands.registerCommand("notion.hierarchy.refresh", async () => {
-        console.log("[notion-tree] Refreshing Notion tree...");
-        await this.treeDataProvider?.refresh();
-        console.log("[notion-tree] Refresh complete");
-      }),
-    );
   }
 
   /**

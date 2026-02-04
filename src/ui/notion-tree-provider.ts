@@ -49,6 +49,39 @@ export class NotionTreeDataProvider
     this._onDidChangeTreeData.fire();
   }
 
+  /**
+   * 特定のアイテムのみ更新（子ページ再取得）
+   */
+  async refreshItem(pageId: string): Promise<void> {
+    // そのページのキャッシュをクリア
+    this.cache.delete(pageId);
+
+    // ディスクキャッシュも削除
+    const cacheFile = path.join(this.cacheDir, `${pageId}.json`);
+    try {
+      await fs.unlink(cacheFile);
+      console.log("[notion-tree] Item cache cleared:", pageId);
+    } catch {
+      // ファイルがなければ無視
+    }
+
+    // そのアイテムの変更を通知（子を再取得させる）
+    const item = this.itemCache.get(pageId);
+    if (item) {
+      this._onDidChangeTreeData.fire(item);
+    } else {
+      // アイテムがなければツリー全体を更新
+      this._onDidChangeTreeData.fire();
+    }
+  }
+
+  /**
+   * ID からアイテムを取得
+   */
+  getItemById(id: string): NotionPageTreeItem | undefined {
+    return this.itemCache.get(id);
+  }
+
   async getTreeItem(element: NotionPageTreeItem): Promise<vscode.TreeItem> {
     // ページとデータベースは展開可能（子がいるか lazy load で確認）
     const treeItem = new vscode.TreeItem(
@@ -82,14 +115,6 @@ export class NotionTreeDataProvider
     return parent || null;
   }
 
-  /**
-   * ID からツリーアイテムを取得
-   * reveal() で使用する正確なアイテム参照を提供
-   */
-  getItemById(id: string): NotionPageTreeItem | undefined {
-    return this.itemCache.get(id);
-  }
-
   async getChildren(
     element?: NotionPageTreeItem,
   ): Promise<NotionPageTreeItem[]> {
@@ -116,16 +141,17 @@ export class NotionTreeDataProvider
       }
 
       try {
-        console.log("[notion-tree] Fetching root page children...");
-        const children = await this.fetchPageChildren(rootPageId, "page");
-        console.log(
-          "[notion-tree] Root page children fetched:",
-          children.length,
-        );
-        // 親情報を記録（ルートの子なので親はなし）
-        return children;
+        // ルートページ自体を取得して表示
+        console.log("[notion-tree] Fetching root page info...");
+        const rootPage = await this.fetchPageInfo(rootPageId);
+        if (rootPage) {
+          this.itemCache.set(rootPage.id, rootPage);
+          console.log("[notion-tree] Root page:", rootPage.title);
+          return [rootPage];
+        }
+        return [];
       } catch (error) {
-        console.error("[notion-tree] Failed to fetch root children:", error);
+        console.error("[notion-tree] Failed to fetch root page:", error);
         return [];
       }
     }
@@ -230,6 +256,47 @@ export class NotionTreeDataProvider
         error,
       );
       return [];
+    }
+  }
+
+  /**
+   * ページの基本情報を取得
+   */
+  private async fetchPageInfo(
+    pageId: string,
+  ): Promise<NotionPageTreeItem | null> {
+    try {
+      const officialClient = (this.notionClient as any).officialClient;
+      if (!officialClient) {
+        return null;
+      }
+
+      const page = await officialClient.pages.retrieve({ page_id: pageId });
+
+      // タイトルを取得
+      let title = "Untitled";
+      const properties = (page as any).properties || {};
+
+      // Title プロパティを探す
+      for (const [, value] of Object.entries(properties)) {
+        const prop = value as any;
+        if (prop.type === "title" && prop.title?.length > 0) {
+          title = prop.title.map((t: any) => t.plain_text).join("");
+          break;
+        }
+      }
+
+      return {
+        id: page.id,
+        title,
+        type: "page",
+      };
+    } catch (error) {
+      console.error(
+        `[notion-tree] Failed to fetch page info for ${pageId}:`,
+        error,
+      );
+      return null;
     }
   }
 

@@ -74,30 +74,6 @@
         "command": "notion.refreshPage",
         "title": "Refresh Page",
         "icon": "$(extensions-refresh)"
-      },
-      {
-        "category": "Notion",
-        "command": "notion.recents.refresh",
-        "title": "Refresh Recents",
-        "icon": "$(extensions-refresh)"
-      },
-      {
-        "category": "Notion",
-        "command": "notion.recents.clear",
-        "title": "Clear Recents",
-        "icon": "$(clear-all)"
-      },
-      {
-        "category": "Notion",
-        "command": "notion.recents.remove",
-        "title": "Remove Item",
-        "icon": "$(close)"
-      },
-      {
-        "category": "Notion",
-        "command": "notion.hierarchy.refresh",
-        "title": "Refresh Page Tree",
-        "icon": "$(extensions-refresh)"
       }
     ],
     "viewsContainers": {
@@ -113,20 +89,11 @@
       "notion-sidebar": [
         {
           "type": "tree",
-          "id": "notion-recents",
-          "name": "Recents",
-          "icon": "$(history)",
-          "contextualTitle": "Notion Recents",
-          "visibility": "visible"
-        },
-        {
-          "type": "tree",
           "id": "notion-hierarchy",
           "name": "Page Tree",
           "icon": "$(list-tree)",
           "contextualTitle": "Notion Page Tree",
-          "visibility": "visible",
-          "when": "notion:hierarchyEnabled"
+          "visibility": "visible"
         }
       ]
     },
@@ -144,71 +111,31 @@
         {
           "command": "notion.refreshPage",
           "when": "false"
-        },
-        {
-          "command": "notion.recents.refresh",
-          "when": "false"
-        },
-        {
-          "command": "notion.recents.clear",
-          "when": "false"
-        },
-        {
-          "command": "notion.recents.remove",
-          "when": "false"
-        },
-        {
-          "command": "notion.hierarchy.refresh",
-          "when": "false"
         }
       ],
       "view/title": [
         {
           "command": "notion.openPage",
-          "when": "notion:isReady && view == notion-recents",
+          "when": "notion:isReady && view == notion-hierarchy",
           "group": "navigation@1"
         },
-        {
-          "command": "notion.recents.refresh",
-          "when": "notion:isReady && view == notion-recents",
-          "group": "navigation@2"
-        },
-        {
-          "command": "notion.recents.clear",
-          "when": "notion:isReady && view == notion-recents",
-          "group": "navigation@3"
-        },
-        {
-          "command": "notion.hierarchy.refresh",
-          "when": "notion:hierarchyEnabled && view == notion-hierarchy",
-          "group": "navigation@1"
-        }
-      ],
-      "editor/title": [
         {
           "command": "notion.refreshPage",
-          "when": "activeWebviewPanelId == notion.pageView",
-          "group": "navigation"
-        }
-      ],
-      "view/item/context": [
-        {
-          "command": "notion.recents.remove",
-          "when": "view == notion-recents",
-          "group": "inline@1"
+          "when": "notion:isReady && view == notion-hierarchy",
+          "group": "navigation@2"
         }
       ]
     },
     "viewsWelcome": [
       {
-        "view": "notion-recents",
+        "view": "notion-hierarchy",
         "contents": "Loading...",
         "when": "!notion:isReady"
       },
       {
-        "view": "notion-recents",
-        "contents": "You have not opened any pages recently.\n[Open one](command:notion.openPage)",
-        "when": "notion:isReady"
+        "view": "notion-hierarchy",
+        "contents": "Set your Notion API key and Root Page ID in settings to get started.\n[Open Settings](command:workbench.action.openSettings?%22notion%22)",
+        "when": "notion:isReady && !config.notion.rootPageId"
       }
     ]
   },
