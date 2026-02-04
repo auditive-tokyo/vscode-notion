@@ -42,7 +42,7 @@
         },
         "notion.rootPageId": {
           "type": "string",
-          "description": "Root Notion page ID to load the page hierarchy (32-character ID without hyphens)",
+          "description": "Root Notion page ID to load the page tree (32-character ID without hyphens)",
           "default": ""
         },
         "notion.fontFamily": {
@@ -96,7 +96,7 @@
       {
         "category": "Notion",
         "command": "notion.hierarchy.refresh",
-        "title": "Refresh Page Hierarchy",
+        "title": "Refresh Page Tree",
         "icon": "$(extensions-refresh)"
       }
     ],
@@ -122,9 +122,9 @@
         {
           "type": "tree",
           "id": "notion-hierarchy",
-          "name": "Page Hierarchy",
+          "name": "Page Tree",
           "icon": "$(list-tree)",
-          "contextualTitle": "Notion Page Hierarchy",
+          "contextualTitle": "Notion Page Tree",
           "visibility": "visible",
           "when": "notion:hierarchyEnabled"
         }

@@ -21,7 +21,7 @@ const extension = new Extension({
     RecentsStateProvider,
     RecentsTreeDataProvider,
     RecentsTreeView,
-    // Page Hierarchy
+    // Page Tree
     NotionHierarchyTreeView,
   ],
 });

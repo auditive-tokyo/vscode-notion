@@ -5,7 +5,7 @@ import { NotionTreeDataProvider } from "./notion-tree-provider";
 import { NotionPageTreeItem } from "../notion-api-utils/page-discovery";
 
 /**
- * Notion ページ階層の TreeView 管理
+ * Notion ページツリーの TreeView 管理
  * TreeView の登録、コマンド登録、設定リスナーを一元管理
  */
 @Injectable()
@@ -60,14 +60,14 @@ export class NotionHierarchyTreeView
       this.context.globalStorageUri,
     );
     await this.treeDataProvider.initialize();
-    console.log("[notion-hierarchy] TreeDataProvider initialized");
+    console.log("[notion-tree] TreeDataProvider initialized");
 
     // TreeView を登録
     const treeView = vscode.window.createTreeView("notion-hierarchy", {
       treeDataProvider: this.treeDataProvider,
       showCollapseAll: true,
     });
-    console.log("[notion-hierarchy] TreeView registered");
+    console.log("[notion-tree] TreeView registered");
 
     this.treeView = treeView;
     this.context.subscriptions.push(treeView);
@@ -84,9 +84,9 @@ export class NotionHierarchyTreeView
 
     this.context.subscriptions.push(
       vscode.commands.registerCommand("notion.hierarchy.refresh", async () => {
-        console.log("[notion-hierarchy] Refreshing Notion hierarchy...");
+        console.log("[notion-tree] Refreshing Notion tree...");
         await this.treeDataProvider?.refresh();
-        console.log("[notion-hierarchy] Refresh complete");
+        console.log("[notion-tree] Refresh complete");
       }),
     );
   }
@@ -101,12 +101,12 @@ export class NotionHierarchyTreeView
           const config = vscode.workspace.getConfiguration("notion");
           const newApiKey = config.get<string>("apiKey", "");
           console.log(
-            "[notion-hierarchy] API Key updated:",
+            "[notion-tree] API Key updated:",
             newApiKey ? "***" + newApiKey.slice(-8) : "NOT SET",
           );
         }
         if (event.affectsConfiguration("notion.rootPageId")) {
-          console.log("[notion-hierarchy] Root Page ID updated");
+          console.log("[notion-tree] Root Page ID updated");
           void this.treeDataProvider?.refresh();
           this.updateHierarchyContext();
         }
@@ -121,7 +121,7 @@ export class NotionHierarchyTreeView
     const config = vscode.workspace.getConfiguration("notion");
     const rootPageId = config.get<string>("rootPageId", "");
     console.log(
-      "[notion-hierarchy] rootPageId:",
+      "[notion-tree] rootPageId:",
       rootPageId ? rootPageId.slice(0, 16) + "..." : "NOT SET",
     );
     vscode.commands.executeCommand(
