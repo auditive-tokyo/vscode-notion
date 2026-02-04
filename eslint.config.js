@@ -14,6 +14,7 @@ export default [
       "*.config.ts",
       "*.config.js",
       "webpack.config.ts",
+      "api_responses/",
     ],
   },
   eslint.configs.recommended,

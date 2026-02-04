@@ -30,13 +30,13 @@ export type NotionWebviewState = {
   inlineDatabases?: {
     databaseId: string;
     title: string;
-    viewType: "table" | "calendar";
+    viewType: "table" | "calendar" | "timeline";
     datePropertyName?: string;
     tableData: {
       columns: string[];
       rows: {
         id: string;
-        cells: string[];
+        cells: (string | { start: string | null; end: string | null })[];
       }[];
     };
   }[];

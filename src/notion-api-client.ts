@@ -58,9 +58,15 @@ export class NotionApiClient {
     inlineDatabases?: Array<{
       databaseId: string;
       title: string;
-      viewType: "table" | "calendar";
+      viewType: "table" | "calendar" | "timeline";
       datePropertyName?: string;
-      tableData: { columns: string[]; rows: { id: string; cells: string[] }[] };
+      tableData: {
+        columns: string[];
+        rows: {
+          id: string;
+          cells: (string | { start: string | null; end: string | null })[];
+        }[];
+      };
     }>;
   }> {
     console.log("[notion-api-client] getPageDataById called with id:", id);
@@ -93,9 +99,15 @@ export class NotionApiClient {
     inlineDatabases?: Array<{
       databaseId: string;
       title: string;
-      viewType: "table" | "calendar";
+      viewType: "table" | "calendar" | "timeline";
       datePropertyName?: string;
-      tableData: { columns: string[]; rows: { id: string; cells: string[] }[] };
+      tableData: {
+        columns: string[];
+        rows: {
+          id: string;
+          cells: (string | { start: string | null; end: string | null })[];
+        }[];
+      };
     }>;
   }> {
     if (!this.officialClient) {
@@ -131,11 +143,14 @@ export class NotionApiClient {
         inlineDatabases?: Array<{
           databaseId: string;
           title: string;
-          viewType: "table" | "calendar";
+          viewType: "table" | "calendar" | "timeline";
           datePropertyName?: string;
           tableData: {
             columns: string[];
-            rows: { id: string; cells: string[] }[];
+            rows: {
+              id: string;
+              cells: (string | { start: string | null; end: string | null })[];
+            }[];
           };
         }>;
       } = {

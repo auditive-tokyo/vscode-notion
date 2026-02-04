@@ -4,6 +4,24 @@
  */
 
 /**
+ * Date プロパティから start/end を抽出
+ * @param prop - Notion API から取得したdate型プロパティ
+ * @returns { start, end } オブジェクト
+ */
+export function extractDatePropertyValue(prop: any): {
+  start: string | null;
+  end: string | null;
+} {
+  if (!prop || prop.type !== "date") {
+    return { start: null, end: null };
+  }
+  return {
+    start: prop.date?.start || null,
+    end: prop.date?.end || null,
+  };
+}
+
+/**
  * 単一のプロパティから値を抽出
  * @param prop - Notion API から取得したプロパティオブジェクト
  * @returns 値の文字列表現
@@ -46,16 +64,19 @@ export function extractPropertyValue(prop: any): string {
  * @param propertyNames - テーブルのカラム名
  * @returns Markdown テーブル行の文字列
  */
-export function rowToMarkdownTableRow(row: any, propertyNames: string[]): string {
+export function rowToMarkdownTableRow(
+  row: any,
+  propertyNames: string[],
+): string {
   const cells = propertyNames.map((propName) => {
     const prop = row.properties[propName];
     const value = extractPropertyValue(prop);
     const escapedValue = value.replace(/\|/g, "\\|").replace(/\n/g, " ");
     return escapedValue;
   });
-  
+
   // 最初のセルの前に OPEN ボタンを追加
   const openButton = row.id ? `[OPEN](/${row.id})` : "";
-  
+
   return `| ${openButton} | ${cells.join(" | ")} |`;
 }

@@ -12,15 +12,21 @@ import { MermaidDiagram } from "../components";
 export const useMarkdownWithInlineDatabases = (
   state: NotionWebviewState,
   openPageCommand: `${CommandId.OpenPage}`,
-  viewModes: Record<string, "calendar" | "table">,
+  viewModes: Record<string, "calendar" | "timeline" | "table">,
   toggleViewMode: (databaseId: string) => void,
   renderCalendar: (
+    db: NonNullable<typeof state.inlineDatabases>[number],
+  ) => React.ReactElement,
+  renderTimeline: (
     db: NonNullable<typeof state.inlineDatabases>[number],
   ) => React.ReactElement,
   renderTable: (
     tableData: {
       columns: string[];
-      rows: { id: string; cells: string[] }[];
+      rows: {
+        id: string;
+        cells: (string | { start: string | null; end: string | null })[];
+      }[];
     },
     showDescription?: boolean,
   ) => React.ReactElement,
@@ -48,35 +54,72 @@ export const useMarkdownWithInlineDatabases = (
         const marker = `___INLINE_DB_${index}___`;
         markdown = markdown.replace(fullMatch, marker);
 
-        // 現在のビューモード（デフォルト: カレンダービュー）
-        const currentViewMode = viewModes[databaseId] || "calendar";
+        // デフォルトビューモード: timeline > calendar > table の優先順位
+        let defaultViewMode: "calendar" | "timeline" | "table" = "table";
+        if (inlineDb.datePropertyName) {
+          defaultViewMode =
+            inlineDb.viewType === "timeline" ? "timeline" : "calendar";
+        }
+
+        const currentViewMode = viewModes[databaseId] || defaultViewMode;
         const isCalendarView =
           currentViewMode === "calendar" &&
           inlineDb.viewType === "calendar" &&
+          inlineDb.datePropertyName;
+        const isTimelineView =
+          currentViewMode === "timeline" &&
+          inlineDb.viewType === "timeline" &&
           inlineDb.datePropertyName;
 
         console.log("[webview] DB render:", {
           databaseId,
           currentViewMode,
           isCalendarView,
+          isTimelineView,
           viewType: inlineDb.viewType,
         });
 
         // ビューモード切り替えボタン
-        const toggleViewButton =
-          inlineDb.viewType === "calendar" && inlineDb.datePropertyName ? (
+        let toggleViewButton: React.ReactElement | null = null;
+        if (inlineDb.viewType === "timeline") {
+          toggleViewButton = (
+            <button
+              className="view-toggle-btn"
+              onClick={() => toggleViewMode(databaseId)}
+            >
+              {currentViewMode === "timeline"
+                ? "📊 Table View"
+                : "📈 Timeline View"}
+            </button>
+          );
+        } else if (inlineDb.viewType === "calendar") {
+          toggleViewButton = (
             <button
               className="view-toggle-btn"
               onClick={() => toggleViewMode(databaseId)}
             >
               {isCalendarView ? "📊 Table View" : "📅 Calendar View"}
             </button>
-          ) : null;
+          );
+        }
 
         // ビューモード別にコンテンツをレンダリング
-        const dbContent = isCalendarView
-          ? renderCalendar(inlineDb)
-          : renderTable(inlineDb.tableData, false);
+        let dbContent: React.ReactElement;
+        if (isTimelineView) {
+          dbContent = renderTimeline(inlineDb);
+        } else if (isCalendarView) {
+          dbContent = renderCalendar(inlineDb);
+        } else {
+          dbContent = renderTable(inlineDb.tableData, false);
+        }
+
+        // アイコンを表示
+        let icon = "📊";
+        if (isTimelineView) {
+          icon = "📈";
+        } else if (isCalendarView) {
+          icon = "📅";
+        }
 
         inlineDbComponents.push(
           <div
@@ -87,7 +130,7 @@ export const useMarkdownWithInlineDatabases = (
           >
             <div className="flex items-center mb-4">
               <h3 className="text-xl font-semibold grow">
-                {isCalendarView ? "📅" : "📊"} {title}
+                {icon} {title}
               </h3>
               {toggleViewButton}
             </div>

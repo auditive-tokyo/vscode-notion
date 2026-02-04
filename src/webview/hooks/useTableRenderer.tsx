@@ -3,6 +3,25 @@ import type { NotionWebviewState } from "@/ui/notion-page-viewer";
 import type { OpenPageCommandArgs } from "@/ui/open-page-command";
 import type { CommandId } from "@/constants";
 
+type CellValue = string | { start: string | null; end: string | null };
+
+/**
+ * セルの値を文字列に変換
+ */
+const cellToString = (cell: CellValue): string => {
+  if (typeof cell === "string") {
+    return cell;
+  }
+  // DateValue オブジェクトの場合
+  if (cell && typeof cell === "object" && "start" in cell) {
+    if (cell.end && cell.start !== cell.end) {
+      return `${cell.start} → ${cell.end}`;
+    }
+    return cell.start || "";
+  }
+  return "";
+};
+
 /**
  * テーブルをレンダリング（full page DB と inline DB で共通使用）
  */
@@ -13,7 +32,7 @@ export const useTableRenderer = (
   const renderTable = (
     tableData: {
       columns: string[];
-      rows: { id: string; cells: string[] }[];
+      rows: { id: string; cells: CellValue[] }[];
     },
     showDescription = true,
   ) => {
@@ -43,7 +62,7 @@ export const useTableRenderer = (
             </thead>
             <tbody>
               {tableData.rows.map(
-                (row: { id: string; cells: string[] }, idx: number) => (
+                (row: { id: string; cells: CellValue[] }, idx: number) => (
                   <tr key={idx}>
                     <td className="border border-gray-600 px-4 py-2">
                       <a
@@ -57,12 +76,12 @@ export const useTableRenderer = (
                         OPEN
                       </a>
                     </td>
-                    {row.cells.map((cell: string, cellIdx: number) => (
+                    {row.cells.map((cell: CellValue, cellIdx: number) => (
                       <td
                         key={cellIdx}
                         className="border border-gray-600 px-4 py-2"
                       >
-                        {cell}
+                        {cellToString(cell)}
                       </td>
                     ))}
                   </tr>

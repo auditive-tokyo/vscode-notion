@@ -9,6 +9,7 @@ import {
   usePageCover,
   useTableRenderer,
   useCalendarRenderer,
+  useTimelineRenderer,
   useMarkdownWithInlineDatabases,
 } from "./hooks";
 import "./styles.css";
@@ -32,20 +33,27 @@ console.log("[webview] state received:", state);
 // メインアプリケーションコンポーネント
 const App: React.FC = () => {
   const [viewModes, setViewModes] = useState<
-    Record<string, "calendar" | "table">
+    Record<string, "calendar" | "timeline" | "table">
   >({});
 
   const toggleViewMode = (databaseId: string) => {
-    const currentMode = viewModes[databaseId] || "calendar";
+    const currentMode = viewModes[databaseId];
+    const nextMode =
+      currentMode === "calendar"
+        ? "timeline"
+        : currentMode === "timeline"
+        ? "table"
+        : "calendar";
+
     setViewModes({
       ...viewModes,
-      [databaseId]: currentMode === "calendar" ? "table" : "calendar",
+      [databaseId]: nextMode,
     });
     console.log(
       "[webview] toggleViewMode called for databaseId:",
       databaseId,
       "newMode:",
-      currentMode === "calendar" ? "table" : "calendar",
+      nextMode,
     );
   };
 
@@ -65,12 +73,15 @@ const App: React.FC = () => {
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const renderCalendar = useCalendarRenderer(state, openPageCommand);
   // eslint-disable-next-line react-hooks/rules-of-hooks
+  const { renderTimeline } = useTimelineRenderer(state, openPageCommand);
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const renderMarkdownWithInlineDatabases = useMarkdownWithInlineDatabases(
     state,
     openPageCommand,
     viewModes,
     toggleViewMode,
     renderCalendar,
+    renderTimeline,
     renderTable,
     [remarkGfm],
   );

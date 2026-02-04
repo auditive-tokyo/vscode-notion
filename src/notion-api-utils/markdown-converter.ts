@@ -7,6 +7,7 @@ import { blocksToMarkdown } from "./block-to-markdown";
 import {
   rowToMarkdownTableRow,
   extractPropertyValue,
+  extractDatePropertyValue,
 } from "./property-extractor";
 
 /**
@@ -157,13 +158,24 @@ export async function convertPageToMarkdown(
 export function convertRowsToTableData(
   rows: any[],
   propertyNames: string[],
-): { columns: string[]; rows: { id: string; cells: string[] }[] } {
+): {
+  columns: string[];
+  rows: {
+    id: string;
+    cells: (string | { start: string | null; end: string | null })[];
+  }[];
+} {
   return {
     columns: propertyNames,
     rows: rows.map((row) => ({
       id: row.id,
       cells: propertyNames.map((propName) => {
         const prop = row.properties[propName];
+        // date 型は start/end オブジェクトを返す
+        if (prop && prop.type === "date") {
+          return extractDatePropertyValue(prop);
+        }
+        // その他は文字列を返す
         const value = extractPropertyValue(prop);
         return value;
       }),
@@ -252,9 +264,15 @@ async function collectInlineDbData(
   inlineDatabases: Array<{
     databaseId: string;
     title: string;
-    viewType: "table" | "calendar";
+    viewType: "table" | "calendar" | "timeline";
     datePropertyName?: string;
-    tableData: { columns: string[]; rows: { id: string; cells: string[] }[] };
+    tableData: {
+      columns: string[];
+      rows: {
+        id: string;
+        cells: (string | { start: string | null; end: string | null })[];
+      }[];
+    };
   }>;
 }> {
   // プレースホルダーのパターン: __INLINE_DB_PLACEHOLDER__id__title__
@@ -268,9 +286,15 @@ async function collectInlineDbData(
   const inlineDatabases: Array<{
     databaseId: string;
     title: string;
-    viewType: "table" | "calendar";
+    viewType: "table" | "calendar" | "timeline";
     datePropertyName?: string;
-    tableData: { columns: string[]; rows: { id: string; cells: string[] }[] };
+    tableData: {
+      columns: string[];
+      rows: {
+        id: string;
+        cells: (string | { start: string | null; end: string | null })[];
+      }[];
+    };
   }> = [];
 
   let resultMarkdown = markdown;
@@ -326,15 +350,33 @@ async function collectInlineDbData(
 
         // 日付プロパティを検出
         let datePropertyName: string | undefined;
+        let hasDateRange = false;
+
         for (const [propName, propValue] of Object.entries(properties)) {
           if ((propValue as any).type === "date") {
             datePropertyName = propName;
-            console.log("[markdown-converter] Date property found:", propName);
+            // end があるかチェック（Timeline view判定用）
+            hasDateRange =
+              (propValue as any).date?.end !== null &&
+              (propValue as any).date?.end !== undefined;
+            console.log("[markdown-converter] Date property found:", propName, {
+              hasDateRange,
+            });
             break;
           }
         }
 
-        const viewType = datePropertyName ? "calendar" : "table";
+        // viewType: timeline（end あり） > calendar（start のみ） > table（date なし）
+        let viewType: "table" | "calendar" | "timeline" = "table";
+        if (datePropertyName) {
+          // rows の中で end を持つレコードがあるかチェック
+          const hasAnyDateRange = rows.some((row) => {
+            const prop = row.properties[datePropertyName];
+            return prop && prop.type === "date" && prop.date?.end !== null;
+          });
+          viewType = hasAnyDateRange ? "timeline" : "calendar";
+        }
+
         const tableData = convertRowsToTableData(rows, propertyNames);
 
         inlineDatabases.push({
@@ -386,9 +428,15 @@ export async function convertPageToMarkdownHelper(
   inlineDatabases?: Array<{
     databaseId: string;
     title: string;
-    viewType: "table" | "calendar";
+    viewType: "table" | "calendar" | "timeline";
     datePropertyName?: string;
-    tableData: { columns: string[]; rows: { id: string; cells: string[] }[] };
+    tableData: {
+      columns: string[];
+      rows: {
+        id: string;
+        cells: (string | { start: string | null; end: string | null })[];
+      }[];
+    };
   }>;
 }> {
   const blocks = await getBlocks(page.id);
@@ -397,9 +445,15 @@ export async function convertPageToMarkdownHelper(
   let inlineDatabases: Array<{
     databaseId: string;
     title: string;
-    viewType: "table" | "calendar";
+    viewType: "table" | "calendar" | "timeline";
     datePropertyName?: string;
-    tableData: { columns: string[]; rows: { id: string; cells: string[] }[] };
+    tableData: {
+      columns: string[];
+      rows: {
+        id: string;
+        cells: (string | { start: string | null; end: string | null })[];
+      }[];
+    };
   }> = [];
 
   // inline DB データを収集（is_inline判定含む）

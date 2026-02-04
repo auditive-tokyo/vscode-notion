@@ -1,0 +1,30 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "npm",
+      "script": "watch",
+      "label": "watch",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "webpack",
+        "source": "webpack",
+        "applyTo": "allDocuments",
+        "fileLocation": "absolute",
+        "severity": "error",
+        "pattern": {
+          "regexp": "^ERROR in (.*)$",
+          "file": 1
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*webpack.*$",
+          "endsPattern": "^.*compiled.*$"
+        }
+      },
+      "presentation": {
+        "reveal": "never"
+      }
+    }
+  ]
+}

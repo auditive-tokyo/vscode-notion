@@ -5,3 +5,5 @@ dist/
 *.vsix
 .env
 .DS_Store
+*.log
+api_responses/

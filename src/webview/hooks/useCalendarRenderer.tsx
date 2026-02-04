@@ -23,7 +23,10 @@ export const useCalendarRenderer = (
       (typeof db.tableData.rows)[number][]
     >();
     db.tableData.rows.forEach((row) => {
-      const dateStr = row.cells[dateColumnIndex];
+      const dateValue = row.cells[dateColumnIndex];
+      // Date 型オブジェクトの場合は start を使用
+      const dateStr =
+        typeof dateValue === "string" ? dateValue : dateValue?.start;
       if (dateStr) {
         if (!eventsByDate.has(dateStr)) {
           eventsByDate.set(dateStr, []);
@@ -45,18 +48,25 @@ export const useCalendarRenderer = (
       if (events && events.length > 0) {
         return (
           <div className="calendar-events">
-            {events.map((event, idx) => (
-              <a
-                key={idx}
-                href={`command:${openPageCommand}?${encodeURI(
-                  JSON.stringify({ id: event.id } as OpenPageCommandArgs),
-                )}`}
-                className="calendar-event-link"
-                title={event.cells[titleColumnIndex]}
-              >
-                {event.cells[titleColumnIndex]}
-              </a>
-            ))}
+            {events.map((event, idx) => {
+              const titleValue = event.cells[titleColumnIndex];
+              const titleStr =
+                typeof titleValue === "string"
+                  ? titleValue
+                  : titleValue?.start || "Untitled";
+              return (
+                <a
+                  key={idx}
+                  href={`command:${openPageCommand}?${encodeURI(
+                    JSON.stringify({ id: event.id } as OpenPageCommandArgs),
+                  )}`}
+                  className="calendar-event-link"
+                  title={titleStr}
+                >
+                  {titleStr}
+                </a>
+              );
+            })}
           </div>
         );
       }
