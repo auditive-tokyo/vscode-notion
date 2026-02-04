@@ -67,7 +67,7 @@ export const useTimelineRenderer = (
     return (
       <div className="timeline-container space-y-3">
         {/* タイムスケール */}
-        <div className="timeline-scale bg-[var(--vscode-editor-inactiveSelectionBackground)] rounded p-2 text-xs text-[var(--vscode-descriptionForeground)]">
+        <div className="timeline-scale bg-(--vscode-editor-inactiveSelectionBackground) rounded p-2 text-xs text-(--vscode-descriptionForeground)">
           <div className="flex justify-between">
             <span>{minDate.toLocaleDateString()}</span>
             <span>{maxDate.toLocaleDateString()}</span>
@@ -101,7 +101,7 @@ export const useTimelineRenderer = (
                   href={`command:${openPageCommand}?${encodeURI(
                     JSON.stringify({ id: row.id } as OpenPageCommandArgs),
                   )}`}
-                  className="text-[var(--vscode-textLink-foreground)] hover:underline text-sm font-medium"
+                  className="text-(--vscode-textLink-foreground) hover:underline text-sm font-medium"
                   title={String(title)}
                 >
                   {title}
@@ -109,7 +109,7 @@ export const useTimelineRenderer = (
               </div>
 
               {/* Gantt バー */}
-              <div className="grow h-8 bg-[var(--vscode-editor-inactiveSelectionBackground)] rounded relative overflow-hidden">
+              <div className="grow h-8 bg-(--vscode-editor-inactiveSelectionBackground) rounded relative overflow-hidden">
                 <div
                   className="absolute h-full bg-blue-500 rounded hover:bg-blue-600 transition-colors cursor-pointer"
                   style={{
@@ -132,7 +132,7 @@ export const useTimelineRenderer = (
               {/* Status バッジ */}
               <div className="w-24 shrink-0 text-right">
                 {statusValue && (
-                  <span className="inline-block px-2 py-0.5 text-xs rounded bg-[var(--vscode-badge-background)] text-[var(--vscode-badge-foreground)]">
+                  <span className="inline-block px-2 py-0.5 text-xs rounded bg-(--vscode-badge-background) text-(--vscode-badge-foreground)">
                     {statusValue}
                   </span>
                 )}
