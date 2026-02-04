@@ -6,6 +6,8 @@ import {
   extractPagesAndDatabases,
   NotionPageTreeItem,
 } from "../notion-api-utils/page-discovery";
+import { CommandId } from "../constants";
+import { OpenPageCommandArgs } from "./open-page-command";
 
 export class NotionTreeDataProvider
   implements vscode.TreeDataProvider<NotionPageTreeItem>
@@ -18,6 +20,10 @@ export class NotionTreeDataProvider
   private notionClient: NotionApiClient;
   private cache: Map<string, NotionPageTreeItem[]> = new Map();
   private cacheDir: string;
+  // 親ノードを保持するマップ: 子ノードのID → 親ノード
+  private parentMap: Map<string, NotionPageTreeItem> = new Map();
+  // すべてのアイテムをキャッシュ: アイテムID → NotionPageTreeItem
+  private itemCache: Map<string, NotionPageTreeItem> = new Map();
 
   constructor(notionClient: NotionApiClient, globalStorageUri: vscode.Uri) {
     this.notionClient = notionClient;
@@ -30,6 +36,8 @@ export class NotionTreeDataProvider
 
   async refresh(): Promise<void> {
     this.cache.clear();
+    this.parentMap.clear();
+    this.itemCache.clear();
     // ディスクキャッシュもクリア
     try {
       await fs.rm(this.cacheDir, { recursive: true, force: true });
@@ -42,9 +50,10 @@ export class NotionTreeDataProvider
   }
 
   async getTreeItem(element: NotionPageTreeItem): Promise<vscode.TreeItem> {
+    // ページとデータベースは展開可能（子がいるか lazy load で確認）
     const treeItem = new vscode.TreeItem(
       element.title,
-      vscode.TreeItemCollapsibleState.Collapsed, // 常に展開可能にする
+      vscode.TreeItemCollapsibleState.Collapsed,
     );
 
     // アイコンを設定（VSCodeのビルトインアイコン使用）
@@ -53,10 +62,32 @@ export class NotionTreeDataProvider
     );
     treeItem.contextValue = element.type; // コンテキストメニュー用
 
+    // クリックでページを開くコマンドを設定（element全体を渡してreveal用に使う）
+    treeItem.command = {
+      command: CommandId.OpenPage,
+      title: "Open page",
+      arguments: [
+        { id: element.id, treeItem: element } satisfies OpenPageCommandArgs,
+      ],
+    };
+
     console.log(
       `[notion-tree] getTreeItem: ${element.title} (${element.type})`,
     );
     return treeItem;
+  }
+
+  getParent(element: NotionPageTreeItem): NotionPageTreeItem | null {
+    const parent = this.parentMap.get(element.id);
+    return parent || null;
+  }
+
+  /**
+   * ID からツリーアイテムを取得
+   * reveal() で使用する正確なアイテム参照を提供
+   */
+  getItemById(id: string): NotionPageTreeItem | undefined {
+    return this.itemCache.get(id);
   }
 
   async getChildren(
@@ -64,6 +95,7 @@ export class NotionTreeDataProvider
   ): Promise<NotionPageTreeItem[]> {
     console.log("[notion-tree] getChildren called", {
       element: element?.title,
+      type: element?.type,
     });
 
     if (!this.notionClient.isConfigured()) {
@@ -85,11 +117,12 @@ export class NotionTreeDataProvider
 
       try {
         console.log("[notion-tree] Fetching root page children...");
-        const children = await this.fetchPageChildren(rootPageId);
+        const children = await this.fetchPageChildren(rootPageId, "page");
         console.log(
           "[notion-tree] Root page children fetched:",
           children.length,
         );
+        // 親情報を記録（ルートの子なので親はなし）
         return children;
       } catch (error) {
         console.error("[notion-tree] Failed to fetch root children:", error);
@@ -97,16 +130,20 @@ export class NotionTreeDataProvider
       }
     }
 
-    // 子ページを取得
+    // データベースの場合はレコードを取得、ページの場合は子ページを取得
     try {
       console.log(
-        `[notion-tree] Fetching children for element: ${element.title}`,
+        `[notion-tree] Fetching children for element: ${element.title} (type: ${element.type})`,
       );
-      const children = await this.fetchPageChildren(element.id);
+      const children = await this.fetchPageChildren(element.id, element.type);
       console.log(
         `[notion-tree] Children for ${element.title}:`,
         children.length,
       );
+      // 親情報を記録
+      for (const child of children) {
+        this.parentMap.set(child.id, element);
+      }
       return children;
     } catch (error) {
       console.error(
@@ -119,58 +156,106 @@ export class NotionTreeDataProvider
 
   private async fetchPageChildren(
     pageId: string,
+    type: "page" | "database" = "page",
   ): Promise<NotionPageTreeItem[]> {
     // キャッシュを確認
-    if (this.cache.has(pageId)) {
-      return this.cache.get(pageId) || [];
+    const cacheKey = `${type}:${pageId}`;
+    if (this.cache.has(cacheKey)) {
+      return this.cache.get(cacheKey) || [];
     }
 
     try {
       // ディスクキャッシュを確認
-      const cachedData = await this.loadFromCache(pageId);
+      const cachedData = await this.loadFromCache(cacheKey);
       if (cachedData) {
-        this.cache.set(pageId, cachedData);
+        this.cache.set(cacheKey, cachedData);
         return cachedData;
       }
 
-      // Notionから取得
-      const blocks = await this.getPageBlocks(pageId);
-      const children: NotionPageTreeItem[] = [];
-      const seenIds = new Set<string>();
+      let children: NotionPageTreeItem[] = [];
 
-      console.log(`[notion-tree] Fetching children for page ${pageId}`);
-      console.log(`[notion-tree] Found ${blocks.length} blocks`);
+      // アイテムをキャッシュに追加するヘルパー
+      const addToItemCache = (items: NotionPageTreeItem[]) => {
+        for (const item of items) {
+          this.itemCache.set(item.id, item);
+        }
+      };
 
-      // ブロック内のすべてのページ/DBを再帰的に探索
-      for (const block of blocks) {
-        console.log(`[notion-tree] Processing block type: ${block.type}`);
-        const foundItems = extractPagesAndDatabases(block);
-        console.log(
-          `[notion-tree] Found ${foundItems.length} items from ${block.type}`,
-          foundItems,
-        );
-        for (const item of foundItems) {
-          // 重複を避ける
-          if (!seenIds.has(item.id)) {
-            children.push(item);
-            seenIds.add(item.id);
+      if (type === "database") {
+        // データベースの場合はレコードを取得
+        console.log(`[notion-tree] Fetching database records for ${pageId}`);
+        children = await this.fetchDatabaseRecords(pageId);
+        console.log(`[notion-tree] Found ${children.length} database records`);
+        addToItemCache(children);
+      } else {
+        // ページの場合はブロックから子ページ/DBを探索
+        console.log(`[notion-tree] Fetching children for page ${pageId}`);
+        const blocks = await this.getPageBlocks(pageId);
+        console.log(`[notion-tree] Found ${blocks.length} blocks`);
+
+        const seenIds = new Set<string>();
+
+        // ブロック内のすべてのページ/DBを再帰的に探索
+        for (const block of blocks) {
+          console.log(`[notion-tree] Processing block type: ${block.type}`);
+          const foundItems = extractPagesAndDatabases(block);
+          console.log(
+            `[notion-tree] Found ${foundItems.length} items from ${block.type}`,
+            foundItems,
+          );
+          for (const item of foundItems) {
+            // 重複を避ける
+            if (!seenIds.has(item.id)) {
+              children.push(item);
+              seenIds.add(item.id);
+            }
           }
         }
+
+        console.log(
+          `[notion-tree] Total children for page: ${children.length}`,
+          children,
+        );
+        addToItemCache(children);
       }
 
-      console.log(
-        `[notion-tree] Total children for page: ${children.length}`,
-        children,
-      );
-
       // キャッシュに保存
-      await this.saveToCache(pageId, children);
-      this.cache.set(pageId, children);
+      await this.saveToCache(cacheKey, children);
+      this.cache.set(cacheKey, children);
 
       return children;
     } catch (error) {
       console.error(
         `[notion-tree] Error fetching children for ${pageId}:`,
+        error,
+      );
+      return [];
+    }
+  }
+
+  private async fetchDatabaseRecords(
+    databaseId: string,
+  ): Promise<NotionPageTreeItem[]> {
+    try {
+      console.log(`[notion-tree] Fetching database records for ${databaseId}`);
+
+      // NotionApiClient の公開メソッドを使用
+      const records = await this.notionClient.getDatabaseRecords(databaseId);
+
+      // NotionPageTreeItem 形式に変換
+      const treeItems: NotionPageTreeItem[] = records.map((record) => ({
+        id: record.id,
+        title: record.title,
+        type: "page", // データベースレコードは page として扱う
+      }));
+
+      console.log(
+        `[notion-tree] Fetched ${treeItems.length} records from database ${databaseId}`,
+      );
+      return treeItems;
+    } catch (error) {
+      console.error(
+        `[notion-tree] Failed to fetch database records for ${databaseId}:`,
         error,
       );
       return [];

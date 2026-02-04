@@ -2,6 +2,7 @@ import { InjectContext, Injectable, OnExtensionBootstrap } from "vedk";
 import * as vscode from "vscode";
 import { NotionApiClient } from "../notion-api-client";
 import { NotionTreeDataProvider } from "./notion-tree-provider";
+import { NotionPageTreeItem } from "../notion-api-utils/page-discovery";
 
 /**
  * Notion ページ階層の TreeView 管理
@@ -12,17 +13,35 @@ export class NotionHierarchyTreeView
   implements OnExtensionBootstrap, vscode.Disposable
 {
   private treeDataProvider: NotionTreeDataProvider | null = null;
+  private treeView: vscode.TreeView<NotionPageTreeItem> | null = null;
   private readonly disposable: vscode.Disposable;
+
+  // 静的にアクセスするためのインスタンス
+  private static instance: NotionHierarchyTreeView | null = null;
 
   constructor(
     @InjectContext() private readonly context: vscode.ExtensionContext,
     private readonly notionClient: NotionApiClient,
   ) {
     this.disposable = vscode.Disposable.from();
+    NotionHierarchyTreeView.instance = this;
   }
 
   dispose() {
     this.disposable.dispose();
+    NotionHierarchyTreeView.instance = null;
+  }
+
+  static getInstance(): NotionHierarchyTreeView | null {
+    return NotionHierarchyTreeView.instance;
+  }
+
+  getTreeView(): vscode.TreeView<NotionPageTreeItem> | null {
+    return this.treeView;
+  }
+
+  getDataProvider(): NotionTreeDataProvider | null {
+    return this.treeDataProvider;
   }
 
   async onExtensionBootstrap() {
@@ -50,6 +69,7 @@ export class NotionHierarchyTreeView
     });
     console.log("[notion-hierarchy] TreeView registered");
 
+    this.treeView = treeView;
     this.context.subscriptions.push(treeView);
 
     // 初期コンテキスト設定

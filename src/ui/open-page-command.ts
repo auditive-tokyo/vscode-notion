@@ -3,8 +3,13 @@ import { Injectable } from "vedk";
 import * as vscode from "vscode";
 import { CommandId } from "../constants";
 import { NotionWebviewPanelSerializer } from "./notion-page-viewer";
+import { NotionHierarchyTreeView } from "./notion-hierarchy-tree-view";
+import { NotionPageTreeItem } from "../notion-api-utils/page-discovery";
 
-export type OpenPageCommandArgs = { id?: string };
+export type OpenPageCommandArgs = {
+  id?: string;
+  treeItem?: NotionPageTreeItem;
+};
 
 @Injectable()
 export class OpenPageCommand implements vscode.Disposable {
@@ -24,6 +29,8 @@ export class OpenPageCommand implements vscode.Disposable {
 
   private async run(args?: OpenPageCommandArgs) {
     let pageId = args?.id;
+    const treeItemFromArgs = args?.treeItem;
+
     if (!pageId) {
       const urlOrId = await vscode.window.showInputBox({
         prompt: "Enter a full URL or just ID of the page.",
@@ -39,6 +46,39 @@ export class OpenPageCommand implements vscode.Disposable {
 
     try {
       await this.notionPages.createOrShowPage(pageId);
+
+      // ツリービューで該当アイテムを展開・フォーカス（treeItem が渡された場合のみ）
+      if (treeItemFromArgs) {
+        const hierarchyTreeView = NotionHierarchyTreeView.getInstance();
+        const treeView = hierarchyTreeView?.getTreeView();
+        const dataProvider = hierarchyTreeView?.getDataProvider();
+
+        if (treeView && dataProvider) {
+          try {
+            // 子ページがあるかチェック
+            const children = await dataProvider.getChildren(treeItemFromArgs);
+            const hasChildren = children && children.length > 0;
+
+            // 渡された treeItem で reveal() を実行（子がある場合のみ展開）
+            await treeView.reveal(treeItemFromArgs, {
+              focus: true,
+              select: true,
+              expand: hasChildren ? 1 : false,
+            });
+            console.log(
+              "[open-page-command] Tree item revealed:",
+              treeItemFromArgs.title,
+              hasChildren ? "(expanded)" : "(no children)",
+            );
+          } catch (error) {
+            // reveal に失敗した場合はログのみ（ページオープンは成功）
+            console.log(
+              "[open-page-command] Could not reveal tree item:",
+              error,
+            );
+          }
+        }
+      }
     } catch (e) {
       const message =
         e instanceof Error

@@ -248,6 +248,77 @@ export class NotionApiClient {
   }
 
   /**
+   * データベースのレコード（ページ）を取得する公開メソッド
+   * ツリービューでデータベースを展開した際に呼び出される
+   */
+  async getDatabaseRecords(databaseId: string): Promise<
+    {
+      id: string;
+      title: string;
+    }[]
+  > {
+    if (!this.officialClient) {
+      throw new Error("Official API client is not configured");
+    }
+
+    try {
+      console.log(
+        `[notion-api-client] Fetching records for database: ${databaseId}`,
+      );
+
+      // queryDatabaseRows を使用してレコードを取得
+      const rawRecords = await this.queryDatabaseRows(databaseId);
+
+      // タイトルを抽出して変換
+      const records: { id: string; title: string }[] = [];
+
+      for (const record of rawRecords) {
+        if (!record.id) continue;
+
+        // タイトルを抽出（properties.Name または最初の title プロパティ）
+        let title = "Untitled";
+        const properties = record.properties;
+
+        if (properties) {
+          // Name プロパティを優先
+          if (properties.Name && properties.Name.type === "title") {
+            const titleArray = properties.Name.title;
+            if (titleArray && titleArray.length > 0) {
+              title = titleArray.map((t: any) => t.plain_text).join("");
+            }
+          } else {
+            // 最初の title 型プロパティを探す
+            for (const key of Object.keys(properties)) {
+              const prop = properties[key];
+              if (prop.type === "title") {
+                const titleArray = prop.title;
+                if (titleArray && titleArray.length > 0) {
+                  title = titleArray.map((t: any) => t.plain_text).join("");
+                  break;
+                }
+              }
+            }
+          }
+        }
+
+        records.push({
+          id: record.id,
+          title: title || "Untitled",
+        });
+      }
+
+      console.log(`[notion-api-client] Found ${records.length} records`);
+      return records;
+    } catch (error) {
+      console.error(
+        `[notion-api-client] Failed to get database records:`,
+        error,
+      );
+      throw error;
+    }
+  }
+
+  /**
    * ページのブロック一覧を再帰的に取得
    */
   private async getPageBlocksRecursive(pageId: string) {
