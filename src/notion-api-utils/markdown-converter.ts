@@ -332,7 +332,7 @@ async function collectInlineDbData(
         console.log("[markdown-converter] Full Page DB - converting to link");
         resultMarkdown = resultMarkdown.replace(
           fullMatch,
-          `📊 [${dbTitle}](/${databaseId})`,
+          `📋 [${dbTitle}](/${databaseId})`,
         );
         continue;
       }
@@ -394,7 +394,7 @@ async function collectInlineDbData(
       // エラー時はリンクにフォールバック
       resultMarkdown = resultMarkdown.replace(
         fullMatch,
-        `📊 [${title}](/${databaseId})`,
+        `📋 [${title}](/${databaseId})`,
       );
     }
   }

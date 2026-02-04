@@ -41,6 +41,9 @@ export function extractPropertyValue(prop: any): string {
     case "multi_select":
       return prop.multi_select?.map((s: any) => s.name).join(", ") || "";
     case "date":
+      if (prop.date?.end) {
+        return `${prop.date.start} → ${prop.date.end}`;
+      }
       return prop.date?.start || "";
     case "checkbox":
       return prop.checkbox ? "✓" : "";

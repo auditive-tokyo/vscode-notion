@@ -88,7 +88,7 @@ export const useMarkdownWithInlineDatabases = (
               onClick={() => toggleViewMode(databaseId)}
             >
               {currentViewMode === "timeline"
-                ? "📊 Table View"
+                ? "📋 Table View"
                 : "📈 Timeline View"}
             </button>
           );
@@ -98,7 +98,7 @@ export const useMarkdownWithInlineDatabases = (
               className="view-toggle-btn"
               onClick={() => toggleViewMode(databaseId)}
             >
-              {isCalendarView ? "📊 Table View" : "📅 Calendar View"}
+              {isCalendarView ? "📋 Table View" : "📅 Calendar View"}
             </button>
           );
         }
@@ -114,7 +114,7 @@ export const useMarkdownWithInlineDatabases = (
         }
 
         // アイコンを表示
-        let icon = "📊";
+        let icon = "📋";
         if (isTimelineView) {
           icon = "📈";
         } else if (isCalendarView) {
