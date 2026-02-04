@@ -223,8 +223,50 @@ export class NotionTreeDataProvider
     try {
       const cachePath = this.getCachePath(pageId);
       const data = await fs.readFile(cachePath, "utf-8");
-      return JSON.parse(data);
-    } catch {
+
+      const cacheData = JSON.parse(data) as {
+        timestamp: number;
+        data: NotionPageTreeItem[];
+      };
+
+      // タイムスタンプの妥当性をチェック
+      if (!cacheData.timestamp || typeof cacheData.timestamp !== "number") {
+        console.warn(
+          `[notion-tree] Invalid cache format for ${pageId}, removing old cache`,
+        );
+        await this.deleteCache(pageId);
+        return null;
+      }
+
+      const now = Date.now();
+      const cacheAgeMs = now - cacheData.timestamp;
+      const TTL_MS = 24 * 60 * 60 * 1000; // 24時間
+
+      if (cacheAgeMs > TTL_MS) {
+        console.log(
+          `[notion-tree] Cache for ${pageId} expired (${Math.round(
+            cacheAgeMs / 1000 / 60,
+          )} minutes old), removing`,
+        );
+        await this.deleteCache(pageId);
+        return null;
+      }
+
+      console.log(
+        `[notion-tree] Cache for ${pageId} is valid (${Math.round(
+          cacheAgeMs / 1000 / 60,
+        )} minutes old)`,
+      );
+      return cacheData.data;
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        (error as NodeJS.ErrnoException).code === "ENOENT"
+      ) {
+        // ファイルが存在しない場合は正常系
+        return null;
+      }
+      console.error(`[notion-tree] Failed to load cache for ${pageId}:`, error);
       return null;
     }
   }
@@ -235,9 +277,31 @@ export class NotionTreeDataProvider
   ): Promise<void> {
     try {
       const cachePath = this.getCachePath(pageId);
-      await fs.writeFile(cachePath, JSON.stringify(data, null, 2));
+      const cacheData = {
+        timestamp: Date.now(),
+        data,
+      };
+      await fs.writeFile(
+        cachePath,
+        JSON.stringify(cacheData, null, 2),
+        "utf-8",
+      );
+      console.log(`[notion-tree] Cache saved for ${pageId}`);
     } catch (error) {
-      console.error("[notion-tree] Failed to save cache:", error);
+      console.error(`[notion-tree] Failed to save cache for ${pageId}:`, error);
+    }
+  }
+
+  private async deleteCache(pageId: string): Promise<void> {
+    try {
+      const cachePath = this.getCachePath(pageId);
+      await fs.rm(cachePath, { force: true });
+      console.log(`[notion-tree] Cache deleted for ${pageId}`);
+    } catch (error) {
+      console.error(
+        `[notion-tree] Failed to delete cache for ${pageId}:`,
+        error,
+      );
     }
   }
 }
