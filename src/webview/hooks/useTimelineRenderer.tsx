@@ -12,6 +12,9 @@ export const useTimelineRenderer = (
   ) => {
     const dateColumnIndex = db.tableData.columns.indexOf(db.datePropertyName!);
     const titleColumnIndex = 0; // 最初の列をタイトルとする
+    const statusColumnIndex = db.tableData.columns.findIndex(
+      (col) => col.toLowerCase() === "status",
+    );
 
     // 日付範囲を取得
     const allDates: { start: Date; end: Date }[] = [];
@@ -60,12 +63,12 @@ export const useTimelineRenderer = (
     return (
       <div className="timeline-container space-y-3">
         {/* タイムスケール */}
-        <div className="timeline-scale bg-gray-100 rounded p-2 text-xs text-gray-600">
+        <div className="timeline-scale bg-[var(--vscode-editor-inactiveSelectionBackground)] rounded p-2 text-xs text-[var(--vscode-descriptionForeground)]">
           <div className="flex justify-between">
             <span>{minDate.toLocaleDateString()}</span>
             <span>{maxDate.toLocaleDateString()}</span>
           </div>
-          <div className="text-gray-400 mt-1">{dayCount} days</div>
+          <div className="opacity-60 mt-1">{dayCount} days</div>
         </div>
 
         {/* タイムライン アイテム */}
@@ -78,6 +81,10 @@ export const useTimelineRenderer = (
             typeof titleValue === "string"
               ? titleValue
               : titleValue?.start || "Untitled";
+          const statusValue =
+            statusColumnIndex >= 0
+              ? (row.cells[statusColumnIndex] as string)
+              : null;
 
           const startPos = dateToPosition(start);
           const width = dateRangeToWidth(start, end);
@@ -90,7 +97,7 @@ export const useTimelineRenderer = (
                   href={`command:${openPageCommand}?${encodeURI(
                     JSON.stringify({ id: row.id } as OpenPageCommandArgs),
                   )}`}
-                  className="text-blue-600 hover:underline text-sm font-medium"
+                  className="text-[var(--vscode-textLink-foreground)] hover:underline text-sm font-medium"
                   title={String(title)}
                 >
                   {title}
@@ -98,7 +105,7 @@ export const useTimelineRenderer = (
               </div>
 
               {/* Gantt バー */}
-              <div className="grow h-8 bg-gray-200 rounded relative overflow-hidden">
+              <div className="grow h-8 bg-[var(--vscode-editor-inactiveSelectionBackground)] rounded relative overflow-hidden">
                 <div
                   className="absolute h-full bg-blue-500 rounded hover:bg-blue-600 transition-colors cursor-pointer"
                   style={{
@@ -118,15 +125,13 @@ export const useTimelineRenderer = (
                 </div>
               </div>
 
-              {/* 日付テキスト */}
-              <div className="w-24 shrink-0 text-right text-xs text-gray-600">
-                {dateValue.end && dateValue.start !== dateValue.end
-                  ? `${Math.ceil(
-                      (new Date(dateValue.end).getTime() -
-                        new Date(dateValue.start).getTime()) /
-                        (1000 * 60 * 60 * 24),
-                    )}d`
-                  : "1d"}
+              {/* Status バッジ */}
+              <div className="w-24 shrink-0 text-right">
+                {statusValue && (
+                  <span className="inline-block px-2 py-0.5 text-xs rounded bg-[var(--vscode-badge-background)] text-[var(--vscode-badge-foreground)]">
+                    {statusValue}
+                  </span>
+                )}
               </div>
             </div>
           );
