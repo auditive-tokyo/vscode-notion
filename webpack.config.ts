@@ -100,6 +100,16 @@ const webviewConfig = {
     ...sharedConfig.output,
     filename: "webview.js",
   },
+  resolve: {
+    ...sharedConfig.resolve,
+    fallback: {
+      // Node.js core modules not available in browser/webview
+      tty: false,
+      os: false,
+      fs: false,
+      path: false,
+    },
+  },
   // Disable code splitting for VS Code webview compatibility
   optimization: {
     ...sharedConfig.optimization,
