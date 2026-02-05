@@ -112,7 +112,7 @@ export function blockToMarkdown(block: any): string {
       case "toggle": {
         const text =
           block.toggle?.rich_text?.map((t: any) => t.plain_text).join("") || "";
-        return `<details>\n<summary>${text}</summary>\n\n`;
+        return `<details>\n<summary>${text}</summary>\n`;
       }
 
       case "divider":
