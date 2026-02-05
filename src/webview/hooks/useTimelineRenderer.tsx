@@ -155,9 +155,7 @@ export const useTimelineRenderer = (
                       db.statusColorMap,
                     ),
                   }}
-                  title={`${dateValue.start} to ${
-                    dateValue.end || dateValue.start
-                  }`}
+                  title={statusValue || undefined}
                 >
                   <div className="h-full flex items-center px-1 text-white text-xs font-medium overflow-hidden">
                     {dateValue.end
@@ -165,15 +163,6 @@ export const useTimelineRenderer = (
                       : dateValue.start}
                   </div>
                 </div>
-              </div>
-
-              {/* Status バッジ */}
-              <div className="w-24 shrink-0 text-right">
-                {statusValue && (
-                  <span className="inline-block px-2 py-0.5 text-xs rounded bg-(--vscode-badge-background) text-(--vscode-badge-foreground)">
-                    {statusValue}
-                  </span>
-                )}
               </div>
             </div>
           );
