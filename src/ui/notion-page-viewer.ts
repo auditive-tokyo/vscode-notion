@@ -28,6 +28,9 @@ export type NotionWebviewState = {
       cells: string[];
     }[];
   };
+  viewType?: "table" | "calendar" | "timeline"; // For full-page databases
+  datePropertyName?: string; // For full-page databases
+  statusColorMap?: Record<string, string>; // Status名 -> 色コード (for full-page databases)
   inlineDatabases?: {
     databaseId: string;
     title: string;
@@ -301,7 +304,12 @@ export class NotionWebviewPanelSerializer
       title,
       data: result.data,
       type: result.type,
-      tableData: result.tableData,
+      ...(result.tableData && { tableData: result.tableData }),
+      ...(result.viewType && { viewType: result.viewType }),
+      ...(result.datePropertyName && {
+        datePropertyName: result.datePropertyName,
+      }),
+      ...(result.statusColorMap && { statusColorMap: result.statusColorMap }),
       coverUrl: result.coverUrl ?? null,
       icon: result.icon ?? null,
       description: result.description ?? null,

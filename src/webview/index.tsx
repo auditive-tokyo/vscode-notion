@@ -96,7 +96,32 @@ const App: React.FC = () => {
   const renderTableWrapper = (
     tableData: { columns: string[]; rows: { id: string; cells: string[] }[] },
     showDescription = true,
+    viewType?: "table" | "calendar" | "timeline",
   ) => {
+    // For full-page databases, convert to inline database format for rendering
+    if (viewType && state.datePropertyName) {
+      const dbWrapper: NonNullable<typeof state.inlineDatabases>[number] = {
+        databaseId: state.id,
+        title: state.title,
+        viewType: viewType as "table" | "calendar" | "timeline",
+        datePropertyName: state.datePropertyName,
+        statusColorMap: state.statusColorMap,
+        tableData: tableData as {
+          columns: string[];
+          rows: {
+            id: string;
+            cells: (string | { start: string | null; end: string | null })[];
+          }[];
+        },
+      };
+
+      if (viewType === "calendar") {
+        return renderCalendar(dbWrapper);
+      } else if (viewType === "timeline") {
+        return renderTimeline(dbWrapper);
+      }
+    }
+
     return renderTable(tableData, showDescription);
   };
 
@@ -104,12 +129,76 @@ const App: React.FC = () => {
   const renderContent = () => {
     if (state.tableData) {
       console.log("[webview] Rendering table with tableData:", state.tableData);
+      console.log("[webview] viewType:", state.viewType);
+
+      // Full-page database: ビューモード検出
+      const defaultViewMode: "calendar" | "timeline" | "table" = state.viewType
+        ? state.viewType
+        : "table";
+      const currentViewMode = viewModes[state.id] || defaultViewMode;
+      const isCalendarView =
+        currentViewMode === "calendar" &&
+        state.viewType === "calendar" &&
+        state.datePropertyName;
+      const isTimelineView =
+        currentViewMode === "timeline" &&
+        state.viewType === "timeline" &&
+        state.datePropertyName;
+
+      console.log("[webview] Full-page DB render:", {
+        databaseId: state.id,
+        currentViewMode,
+        isCalendarView,
+        isTimelineView,
+        viewType: state.viewType,
+      });
+
+      // ビューモード切り替えボタン
+      let toggleViewButton: React.ReactElement | null = null;
+      if (state.viewType === "timeline") {
+        toggleViewButton = (
+          <button
+            className="view-toggle-btn"
+            onClick={() => toggleViewMode(state.id)}
+          >
+            {currentViewMode === "timeline"
+              ? "📋 Table View"
+              : "📈 Timeline View"}
+          </button>
+        );
+      } else if (state.viewType === "calendar") {
+        toggleViewButton = (
+          <button
+            className="view-toggle-btn"
+            onClick={() => toggleViewMode(state.id)}
+          >
+            {isCalendarView ? "📋 Table View" : "📅 Calendar View"}
+          </button>
+        );
+      }
+
+      const renderActualContent = () => {
+        if (isTimelineView) {
+          return renderTableWrapper(state.tableData, true, state.viewType);
+        } else if (isCalendarView) {
+          return renderTableWrapper(state.tableData, true, state.viewType);
+        } else {
+          return renderTableWrapper(state.tableData, true);
+        }
+      };
+
       return (
         <div className="min-h-screen py-8 px-4">
           <div className="page-container">
             {renderCover()}
             <ReactMarkdown>{state.data}</ReactMarkdown>
-            {renderTableWrapper(state.tableData, true)}
+            {toggleViewButton && (
+              <div className="flex items-center justify-between mb-4">
+                <div></div>
+                {toggleViewButton}
+              </div>
+            )}
+            {renderActualContent()}
           </div>
         </div>
       );

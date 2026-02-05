@@ -55,11 +55,15 @@ export class NotionApiClient {
     coverUrl?: string | null;
     icon?: { type: string; emoji?: string; url?: string } | null;
     description?: string | null;
+    viewType?: "table" | "calendar" | "timeline"; // For full-page databases
+    datePropertyName?: string; // For full-page databases
+    statusColorMap?: Record<string, string>; // For full-page databases
     inlineDatabases?: Array<{
       databaseId: string;
       title: string;
       viewType: "table" | "calendar" | "timeline";
       datePropertyName?: string;
+      statusColorMap?: Record<string, string>;
       tableData: {
         columns: string[];
         rows: {
@@ -96,6 +100,9 @@ export class NotionApiClient {
     coverUrl?: string | null;
     icon?: { type: string; emoji?: string; url?: string } | null;
     description?: string | null;
+    viewType?: "table" | "calendar" | "timeline"; // For full-page databases
+    datePropertyName?: string; // For full-page databases
+    statusColorMap?: Record<string, string>; // For full-page databases
     inlineDatabases?: Array<{
       databaseId: string;
       title: string;
@@ -180,7 +187,7 @@ export class NotionApiClient {
         "[notion-api-client] convertDatabaseToMarkdownHelper result:",
         result,
       );
-      return {
+      const response: any = {
         data: result.markdown,
         type: "database",
         tableData: result.tableData,
@@ -188,6 +195,16 @@ export class NotionApiClient {
         icon: result.icon,
         description: result.description,
       };
+
+      // Include viewType and datePropertyName for full-page databases
+      if (result.viewType) {
+        response.viewType = result.viewType;
+      }
+      if (result.datePropertyName) {
+        response.datePropertyName = result.datePropertyName;
+      }
+
+      return response;
     } else {
       throw new Error("Failed to retrieve page or database");
     }

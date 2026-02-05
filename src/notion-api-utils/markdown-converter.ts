@@ -197,6 +197,8 @@ export function convertDatabaseToMarkdownAndTable(
   markdown: string;
   tableData: any;
   statusColorMap?: Record<string, string>;
+  viewType?: "table" | "calendar" | "timeline";
+  datePropertyName?: string;
 } {
   // データベースタイトルを取得
   let title = "Untitled Database";
@@ -210,6 +212,33 @@ export function convertDatabaseToMarkdownAndTable(
 
   const markdown = `# ${title}`;
   const tableData = convertRowsToTableData(rows, propertyNames);
+
+  // 日付プロパティを検出して viewType を決定
+  let datePropertyName: string | undefined;
+  let viewType: "table" | "calendar" | "timeline" = "table";
+
+  if (firstRow) {
+    const properties = firstRow.properties || {};
+    for (const [propName, propValue] of Object.entries(properties)) {
+      if ((propValue as any).type === "date") {
+        datePropertyName = propName;
+        // rows の中で end を持つレコードがあるかチェック
+        const hasAnyDateRange = rows.some((row) => {
+          const prop = row.properties[propName];
+          return prop && prop.type === "date" && prop.date?.end !== null;
+        });
+        viewType = hasAnyDateRange ? "timeline" : "calendar";
+        console.log(
+          "[markdown-converter] Date property found for full-page DB:",
+          propName,
+          {
+            viewType,
+          },
+        );
+        break;
+      }
+    }
+  }
 
   // Status プロパティの色情報を収集
   const statusColorMap: Record<string, string> = {};
@@ -232,15 +261,22 @@ export function convertDatabaseToMarkdownAndTable(
 
   console.log("[markdown-converter] tableData created:", tableData);
   console.log("[markdown-converter] statusColorMap:", statusColorMap);
+  console.log("[markdown-converter] viewType for full-page DB:", viewType);
 
   const result: {
     markdown: string;
     tableData: any;
     statusColorMap?: Record<string, string>;
-  } = { markdown, tableData };
+    viewType?: "table" | "calendar" | "timeline";
+    datePropertyName?: string;
+  } = { markdown, tableData, viewType };
 
   if (Object.keys(statusColorMap).length > 0) {
     result.statusColorMap = statusColorMap;
+  }
+
+  if (datePropertyName) {
+    result.datePropertyName = datePropertyName;
   }
 
   return result;
@@ -543,6 +579,8 @@ export async function convertDatabaseToMarkdownHelper(
   coverUrl: string | null;
   icon: { type: string; emoji?: string; url?: string } | null;
   description: string | null;
+  viewType?: "table" | "calendar" | "timeline";
+  datePropertyName?: string;
 }> {
   console.log("[notion-api-utils] Database ID:", database.id);
   console.log(
