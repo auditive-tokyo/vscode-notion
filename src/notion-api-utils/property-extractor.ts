@@ -22,6 +22,24 @@ export function extractDatePropertyValue(prop: any): {
 }
 
 /**
+ * Status プロパティから名前と色を抽出
+ * @param prop - Notion API から取得したstatus型プロパティ
+ * @returns { name, color } オブジェクト
+ */
+export function extractStatusPropertyValue(prop: any): {
+  name: string;
+  color: string;
+} {
+  if (!prop || prop.type !== "status") {
+    return { name: "", color: "default" };
+  }
+  return {
+    name: prop.status?.name || "",
+    color: prop.status?.color || "default",
+  };
+}
+
+/**
  * 単一のプロパティから値を抽出
  * @param prop - Notion API から取得したプロパティオブジェクト
  * @returns 値の文字列表現

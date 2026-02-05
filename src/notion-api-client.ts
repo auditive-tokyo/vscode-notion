@@ -101,6 +101,7 @@ export class NotionApiClient {
       title: string;
       viewType: "table" | "calendar" | "timeline";
       datePropertyName?: string;
+      statusColorMap?: Record<string, string>;
       tableData: {
         columns: string[];
         rows: {
@@ -145,6 +146,7 @@ export class NotionApiClient {
           title: string;
           viewType: "table" | "calendar" | "timeline";
           datePropertyName?: string;
+          statusColorMap?: Record<string, string>;
           tableData: {
             columns: string[];
             rows: {

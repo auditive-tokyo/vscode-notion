@@ -33,6 +33,7 @@ export type NotionWebviewState = {
     title: string;
     viewType: "table" | "calendar" | "timeline";
     datePropertyName?: string;
+    statusColorMap?: Record<string, string>; // Status名 -> 色コード
     tableData: {
       columns: string[];
       rows: {

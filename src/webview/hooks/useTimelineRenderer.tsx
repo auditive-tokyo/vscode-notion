@@ -3,6 +3,40 @@ import type { NotionWebviewState } from "@/ui/notion-page-viewer";
 import type { OpenPageCommandArgs } from "@/ui/open-page-command";
 import type { CommandId } from "@/constants";
 import type { DateValue } from "@/notion-api-utils/types";
+
+/**
+ * Notion status 色コードから CSS カラー値を取得
+ */
+function getBarColor(
+  statusName: string | null,
+  statusColorMap?: Record<string, string>,
+): string {
+  if (!statusName || !statusColorMap) {
+    return "#3b82f6"; // デフォルト: blue-500
+  }
+
+  const colorName = statusColorMap[statusName];
+  if (!colorName) {
+    return "#3b82f6";
+  }
+
+  // Notion のカラーマッピング
+  const colorMap: Record<string, string> = {
+    blue: "#3b82f6",
+    red: "#ef4444",
+    green: "#22c55e",
+    gray: "#6b7280",
+    yellow: "#eab308",
+    purple: "#a855f7",
+    pink: "#ec4899",
+    brown: "#8b5cf6",
+    orange: "#f97316",
+    default: "#6b7280",
+  };
+
+  return colorMap[colorName] || colorMap.default;
+}
+
 export const useTimelineRenderer = (
   state: NotionWebviewState,
   openPageCommand: `${CommandId.OpenPage}`,
@@ -111,11 +145,15 @@ export const useTimelineRenderer = (
               {/* Gantt バー */}
               <div className="grow h-8 bg-(--vscode-editor-inactiveSelectionBackground) rounded relative overflow-hidden">
                 <div
-                  className="absolute h-full bg-blue-500 rounded hover:bg-blue-600 transition-colors cursor-pointer"
+                  className="absolute h-full rounded cursor-pointer"
                   style={{
                     left: `${startPos}%`,
                     width: `${width}%`,
                     minWidth: "2px",
+                    backgroundColor: getBarColor(
+                      statusValue,
+                      db.statusColorMap,
+                    ),
                   }}
                   title={`${dateValue.start} to ${
                     dateValue.end || dateValue.start

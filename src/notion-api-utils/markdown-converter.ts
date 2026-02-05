@@ -8,6 +8,7 @@ import {
   rowToMarkdownTableRow,
   extractPropertyValue,
   extractDatePropertyValue,
+  extractStatusPropertyValue,
 } from "./property-extractor";
 
 /**
@@ -187,12 +188,16 @@ export function convertRowsToTableData(
  * データベースオブジェクトを Markdown + テーブルデータに変換
  * @param database - データベースオブジェクト
  * @param rows - データベースの行配列
- * @returns { markdown, tableData }
+ * @returns { markdown, tableData, statusColorMap }
  */
 export function convertDatabaseToMarkdownAndTable(
   database: any,
   rows: any[],
-): { markdown: string; tableData: any } {
+): {
+  markdown: string;
+  tableData: any;
+  statusColorMap?: Record<string, string>;
+} {
   // データベースタイトルを取得
   let title = "Untitled Database";
   if (Array.isArray(database.title)) {
@@ -206,13 +211,39 @@ export function convertDatabaseToMarkdownAndTable(
   const markdown = `# ${title}`;
   const tableData = convertRowsToTableData(rows, propertyNames);
 
-  console.log("[markdown-converter] tableData created:", tableData);
-  console.log("[markdown-converter] returning tableData:", {
-    markdown,
-    tableData,
-  });
+  // Status プロパティの色情報を収集
+  const statusColorMap: Record<string, string> = {};
+  const firstRowProps = firstRow?.properties || {};
+  for (const propName in firstRowProps) {
+    const prop = firstRowProps[propName];
+    if (prop && prop.type === "status") {
+      // すべての行から status 値を集める
+      for (const row of rows) {
+        const rowProp = row.properties[propName];
+        if (rowProp && rowProp.status) {
+          const statusInfo = extractStatusPropertyValue(rowProp);
+          if (statusInfo.name) {
+            statusColorMap[statusInfo.name] = statusInfo.color;
+          }
+        }
+      }
+    }
+  }
 
-  return { markdown, tableData };
+  console.log("[markdown-converter] tableData created:", tableData);
+  console.log("[markdown-converter] statusColorMap:", statusColorMap);
+
+  const result: {
+    markdown: string;
+    tableData: any;
+    statusColorMap?: Record<string, string>;
+  } = { markdown, tableData };
+
+  if (Object.keys(statusColorMap).length > 0) {
+    result.statusColorMap = statusColorMap;
+  }
+
+  return result;
 }
 
 /**
@@ -379,11 +410,32 @@ async function collectInlineDbData(
 
         const tableData = convertRowsToTableData(rows, propertyNames);
 
+        // Status カラーマップを生成
+        let statusColorMap: Record<string, string> | undefined;
+        for (const propName in properties) {
+          const prop = properties[propName];
+          if (prop && prop.type === "status") {
+            statusColorMap = {};
+            // すべての行から status 値を集める
+            for (const row of rows) {
+              const rowProp = row.properties[propName];
+              if (rowProp && rowProp.status) {
+                const statusInfo = extractStatusPropertyValue(rowProp);
+                if (statusInfo.name) {
+                  statusColorMap[statusInfo.name] = statusInfo.color;
+                }
+              }
+            }
+            break;
+          }
+        }
+
         inlineDatabases.push({
           databaseId,
           title: dbTitle,
           viewType,
           ...(datePropertyName ? { datePropertyName } : {}),
+          ...(statusColorMap ? { statusColorMap } : {}),
           tableData,
         });
 
