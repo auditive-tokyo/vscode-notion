@@ -140,3 +140,27 @@ hr {
   background-color: #2563eb;
   color: #ffffff;
 }
+
+/* Toggle block styling */
+details {
+  @apply my-3;
+}
+
+details > summary {
+  @apply text-base font-semibold cursor-pointer list-none;
+}
+
+details > summary::before {
+  content: "▶";
+  display: inline-block;
+  margin-right: 0.5rem;
+  transition: transform 0.2s ease;
+}
+
+details[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+details > summary:hover {
+  @apply opacity-75;
+}

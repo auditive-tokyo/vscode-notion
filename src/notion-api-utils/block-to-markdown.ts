@@ -13,11 +13,13 @@ export function blockToMarkdown(block: any): string {
 
   try {
     switch (type) {
-      case "paragraph":
-        return (
+      case "paragraph": {
+        const text =
           block.paragraph?.rich_text?.map((t: any) => t.plain_text).join("") ||
-          ""
-        );
+          "";
+        // 空の段落は空行として扱う（remark-breaksが\nを<br>に変換）
+        return text;
+      }
 
       case "heading_1":
         return (
@@ -107,6 +109,12 @@ export function blockToMarkdown(block: any): string {
         return `\`\`\`callout\n${icon} ${text}\n\`\`\``;
       }
 
+      case "toggle": {
+        const text =
+          block.toggle?.rich_text?.map((t: any) => t.plain_text).join("") || "";
+        return `<details>\n<summary>${text}</summary>\n\n`;
+      }
+
       case "divider":
         console.log(
           "[block-to-markdown] divider block:",
@@ -190,6 +198,9 @@ export async function blocksToMarkdown(
     } else {
       // テーブル行以外のブロック
       markdown += blockToMarkdown(block) + "\n";
+      if (block.type === "toggle" && !block.has_children) {
+        markdown += "</details>\n\n";
+      }
       // テーブルコンテキストをリセット
       if (block.type !== "table") {
         currentTableParentId = null;
@@ -211,6 +222,11 @@ export async function blocksToMarkdown(
           getChildBlocks,
         );
         markdown += childMarkdown;
+
+        // toggle ブロックの場合は </details> で閉じる
+        if (block.type === "toggle") {
+          markdown += "</details>\n\n";
+        }
       } catch (error) {
         console.warn("[block-to-markdown] Failed to get child blocks:", error);
       }

@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { createRoot } from "react-dom/client";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
+import rehypeRaw from "rehype-raw";
 import "react-calendar/dist/Calendar.css";
 import type { CommandId } from "@/constants";
 import type { NotionWebviewState } from "@/ui/notion-page-viewer";
@@ -83,7 +85,7 @@ const App: React.FC = () => {
     renderCalendar,
     renderTimeline,
     renderTable,
-    [remarkGfm],
+    [remarkGfm, remarkBreaks],
   );
 
   if (!state || !state.data) {
@@ -191,7 +193,12 @@ const App: React.FC = () => {
         <div className="min-h-screen py-8 px-4">
           <div className="page-container">
             {renderCover()}
-            <ReactMarkdown>{state.data}</ReactMarkdown>
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm, remarkBreaks]}
+              rehypePlugins={[rehypeRaw]}
+            >
+              {state.data}
+            </ReactMarkdown>
             {toggleViewButton && (
               <div className="flex items-center justify-between mb-4">
                 <div></div>

@@ -1,5 +1,6 @@
 import React, { type ComponentProps } from "react";
 import ReactMarkdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
 import type { PluggableList } from "unified";
 import type { NotionWebviewState } from "@/ui/notion-page-viewer";
 import type { OpenPageCommandArgs } from "@/ui/open-page-command";
@@ -153,6 +154,7 @@ export const useMarkdownWithInlineDatabases = (
             <ReactMarkdown
               key={`md-${i}`}
               remarkPlugins={remarkPlugins}
+              rehypePlugins={[rehypeRaw]}
               components={{
                 a: (props) => {
                   const href = props.href || "";
