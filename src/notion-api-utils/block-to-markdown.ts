@@ -14,10 +14,21 @@ export function blockToMarkdown(block: any): string {
   try {
     switch (type) {
       case "paragraph": {
-        const text =
-          block.paragraph?.rich_text?.map((t: any) => t.plain_text).join("") ||
-          "";
-        // 空の段落は空行として扱う（remark-breaksが\nを<br>に変換）
+        const richTexts = block.paragraph?.rich_text || [];
+        // Extract text from richTexts array
+        // This preserves Shift+Enter (\n within richText) from Notion
+        // which remark-breaks will convert to <br> tags
+        // vs. Enter (separate paragraph blocks) which are handled separately
+          const text = richTexts.map((rt: any) => rt.plain_text).join("");
+        
+          // \n\n を Markdown の段落区切りとして処理
+          // （\n 1つは remark-breaks が <br> に変換）
+          if (text.includes("\n\n")) {
+            // \n\n で分割して、各部分を別の段落として返す
+              const parts = text.split("\n\n").filter((p: string) => p.length > 0);
+            return parts.join("\n\n"); // Markdownの段落区切り（空行）
+          }
+        
         return text;
       }
 
@@ -27,6 +38,7 @@ export function blockToMarkdown(block: any): string {
           "";
         const isToggleable = block.heading_1?.is_toggleable || false;
         if (isToggleable) {
+          // \n は HTML構造化のための区切り文字（コード側で生成）
           return `<details>\n<summary><h1>${text}</h1></summary>\n`;
         }
         return `# ${text}`;
@@ -38,6 +50,7 @@ export function blockToMarkdown(block: any): string {
           "";
         const isToggleable = block.heading_2?.is_toggleable || false;
         if (isToggleable) {
+          // \n は HTML構造化のための区切り文字（コード側で生成）
           return `<details>\n<summary><h2>${text}</h2></summary>\n`;
         }
         return `## ${text}`;
@@ -49,6 +62,7 @@ export function blockToMarkdown(block: any): string {
           "";
         const isToggleable = block.heading_3?.is_toggleable || false;
         if (isToggleable) {
+          // \n は HTML構造化のための区切り文字（コード側で生成）
           return `<details>\n<summary><h3>${text}</h3></summary>\n`;
         }
         return `### ${text}`;
@@ -124,6 +138,8 @@ export function blockToMarkdown(block: any): string {
       case "toggle": {
         const text =
           block.toggle?.rich_text?.map((t: any) => t.plain_text).join("") || "";
+        // \n は HTML構造化のための区切り文字（コード側で生成）
+        // Notion由来の Shift+Enter とは異なる
         return `<details>\n<summary>${text}</summary>\n`;
       }
 
@@ -209,7 +225,7 @@ export async function blocksToMarkdown(
       }
     } else {
       // テーブル行以外のブロック
-      markdown += blockToMarkdown(block) + "\n";
+      markdown += blockToMarkdown(block) + "\n\n";
       
       // toggle または toggle heading で子要素がない場合は </details> で閉じる
       const isToggle = block.type === "toggle";
@@ -242,16 +258,16 @@ export async function blocksToMarkdown(
           childBlocks,
           getChildBlocks,
         );
-        markdown += childMarkdown;
-
+        markdown += childMarkdown.endsWith("\n\n") ? childMarkdown : childMarkdown + "\n\n";
+        
         // toggle または toggle heading の場合は </details> で閉じる
-        const isToggle = block.type === "toggle";
-        const isToggleHeading = 
+        const isToggleBlock = block.type === "toggle";
+        const isToggleHeadingBlock = 
           (block.type === "heading_1" && block.heading_1?.is_toggleable) ||
           (block.type === "heading_2" && block.heading_2?.is_toggleable) ||
           (block.type === "heading_3" && block.heading_3?.is_toggleable);
         
-        if (isToggle || isToggleHeading) {
+        if (isToggleBlock || isToggleHeadingBlock) {
           markdown += "</details>\n";
         }
       } catch (error) {

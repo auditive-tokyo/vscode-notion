@@ -20,7 +20,7 @@ h3 {
 }
 
 p {
-  @apply text-base mb-3 whitespace-pre-wrap;
+  @apply text-base mb-3;
 }
 
 a {
