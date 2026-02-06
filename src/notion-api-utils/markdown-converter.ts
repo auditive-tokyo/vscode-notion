@@ -598,6 +598,7 @@ export async function convertDatabaseToMarkdownHelper(
   description: string | null;
   viewType?: "table" | "calendar" | "timeline";
   datePropertyName?: string;
+  statusColorMap?: Record<string, string>;
 }> {
   console.log("[notion-api-utils] Database ID:", database.id);
   console.log(

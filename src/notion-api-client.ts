@@ -203,6 +203,9 @@ export class NotionApiClient {
       if (result.datePropertyName) {
         response.datePropertyName = result.datePropertyName;
       }
+      if (result.statusColorMap) {
+        response.statusColorMap = result.statusColorMap;
+      }
 
       return response;
     } else {
