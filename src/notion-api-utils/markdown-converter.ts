@@ -221,8 +221,16 @@ export function convertDatabaseToMarkdownAndTable(
     const properties = firstRow.properties || {};
     for (const [propName, propValue] of Object.entries(properties)) {
       if ((propValue as any).type === "date") {
+        const hasAnyDateValue = rows.some((row) => {
+          const prop = row.properties[propName];
+          return prop && prop.type === "date" && prop.date?.start;
+        });
+
+        if (!hasAnyDateValue) {
+          continue;
+        }
+
         datePropertyName = propName;
-        // rows の中で end を持つレコードがあるかチェック
         const hasAnyDateRange = rows.some((row) => {
           const prop = row.properties[propName];
           return prop && prop.type === "date" && prop.date?.end !== null;
@@ -421,6 +429,15 @@ async function collectInlineDbData(
 
         for (const [propName, propValue] of Object.entries(properties)) {
           if ((propValue as any).type === "date") {
+            const hasAnyDateValue = rows.some((row) => {
+              const prop = row.properties[propName];
+              return prop && prop.type === "date" && prop.date?.start;
+            });
+
+            if (!hasAnyDateValue) {
+              continue;
+            }
+
             datePropertyName = propName;
             // end があるかチェック（Timeline view判定用）
             hasDateRange =
