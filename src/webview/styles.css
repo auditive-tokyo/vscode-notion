@@ -181,3 +181,38 @@ details > summary > h3 {
   display: inline;
   margin: 0;
 }
+/* Board View (Kanban) */
+.board-view {
+  @apply flex gap-4 overflow-x-auto pb-4;
+}
+
+.board-column {
+  @apply flex flex-col shrink-0 w-80 bg-gray-700 rounded-lg overflow-hidden;
+  border-top: 4px solid transparent;
+}
+
+.board-column-header {
+  @apply px-4 py-3 font-semibold flex items-center gap-2 shrink-0;
+}
+
+.status-badge {
+  @apply px-3 py-1 rounded text-white text-sm font-semibold;
+}
+
+.status-count {
+  @apply ml-auto text-gray-300 text-sm;
+}
+
+.board-cards {
+  @apply flex flex-col gap-3 p-3 overflow-y-auto flex-1;
+  max-height: 600px;
+}
+
+.board-card {
+  @apply bg-gray-800 rounded p-3 hover:bg-gray-700 transition cursor-pointer;
+  border-left: 3px solid #3b82f6;
+}
+
+.board-card-title {
+  @apply text-sm font-medium text-blue-400 hover:text-blue-300 no-underline block text-left;
+}

@@ -35,17 +35,40 @@ console.log("[webview] state received:", state);
 // メインアプリケーションコンポーネント
 const App: React.FC = () => {
   const [viewModes, setViewModes] = useState<
-    Record<string, "calendar" | "timeline" | "table">
+    Record<string, "calendar" | "timeline" | "table" | "board">
   >({});
 
   const toggleViewMode = (databaseId: string) => {
-    const currentMode = viewModes[databaseId];
-    const nextMode =
-      currentMode === "calendar"
-        ? "timeline"
-        : currentMode === "timeline"
-        ? "table"
-        : "calendar";
+    const db =
+      state.inlineDatabases?.find((d) => d.databaseId === databaseId) || null;
+    const hasDate = state.datePropertyName || db?.datePropertyName;
+    const hasStatus =
+      state.tableData?.columns?.some((col) => col.toLowerCase() === "status") ||
+      db?.tableData.columns?.some((col) => col.toLowerCase() === "status");
+
+    // Calculate default mode
+    let defaultMode: "calendar" | "timeline" | "table" | "board" = "table";
+    if (hasDate) {
+      const viewType = state.viewType || db?.viewType;
+      defaultMode = viewType === "timeline" ? "timeline" : "calendar";
+    } else if (hasStatus) {
+      defaultMode = "board";
+    }
+
+    const currentMode = viewModes[databaseId] || defaultMode;
+    let nextMode: "calendar" | "timeline" | "table" | "board";
+
+    // Cycle through available modes based on what data exists
+    if (currentMode === "calendar") {
+      nextMode = "timeline";
+    } else if (currentMode === "timeline") {
+      nextMode = hasStatus ? "board" : "table";
+    } else if (currentMode === "board") {
+      nextMode = "table";
+    } else {
+      // From table mode
+      nextMode = hasDate ? "calendar" : hasStatus ? "board" : "table";
+    }
 
     setViewModes({
       ...viewModes,
@@ -54,7 +77,9 @@ const App: React.FC = () => {
     console.log(
       "[webview] toggleViewMode called for databaseId:",
       databaseId,
-      "newMode:",
+      "currentMode:",
+      currentMode,
+      "nextMode:",
       nextMode,
     );
   };
@@ -71,7 +96,7 @@ const App: React.FC = () => {
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const renderCover = usePageCover(state);
   // eslint-disable-next-line react-hooks/rules-of-hooks
-  const renderTable = useTableRenderer(state, openPageCommand);
+  const { renderTable, renderBoard } = useTableRenderer(state, openPageCommand);
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const renderCalendar = useCalendarRenderer(state, openPageCommand);
   // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -85,6 +110,7 @@ const App: React.FC = () => {
     renderCalendar,
     renderTimeline,
     renderTable,
+    renderBoard,
     [remarkGfm, remarkBreaks],
   );
 
@@ -124,6 +150,23 @@ const App: React.FC = () => {
       }
     }
 
+    // Check for board view (status column exists but no date)
+    const hasStatusColumn = tableData.columns.some(
+      (col) => col.toLowerCase() === "status",
+    );
+    if (hasStatusColumn && !state.datePropertyName) {
+      return renderBoard(
+        tableData as {
+          columns: string[];
+          rows: {
+            id: string;
+            cells: (string | { start: string | null; end: string | null })[];
+          }[];
+        },
+        state.statusColorMap,
+      );
+    }
+
     return renderTable(tableData, showDescription);
   };
 
@@ -134,9 +177,11 @@ const App: React.FC = () => {
       console.log("[webview] viewType:", state.viewType);
 
       // Full-page database: ビューモード検出
-      const defaultViewMode: "calendar" | "timeline" | "table" = state.viewType
-        ? state.viewType
-        : "table";
+      const hasStatusColumn = state.tableData.columns.some(
+        (col) => col.toLowerCase() === "status",
+      );
+      const defaultViewMode: "calendar" | "timeline" | "table" | "board" =
+        state.viewType ? state.viewType : hasStatusColumn ? "board" : "table";
       const currentViewMode = viewModes[state.id] || defaultViewMode;
       const isCalendarView =
         currentViewMode === "calendar" &&
@@ -146,12 +191,15 @@ const App: React.FC = () => {
         currentViewMode === "timeline" &&
         state.viewType === "timeline" &&
         state.datePropertyName;
+      const isBoardView = currentViewMode === "board" && hasStatusColumn;
 
       console.log("[webview] Full-page DB render:", {
         databaseId: state.id,
         currentViewMode,
         isCalendarView,
         isTimelineView,
+        isBoardView,
+        hasStatusColumn,
         viewType: state.viewType,
       });
 
@@ -177,6 +225,15 @@ const App: React.FC = () => {
             {isCalendarView ? "📋 Table View" : "📅 Calendar View"}
           </button>
         );
+      } else if (hasStatusColumn) {
+        toggleViewButton = (
+          <button
+            className="view-toggle-btn"
+            onClick={() => toggleViewMode(state.id)}
+          >
+            {isBoardView ? "📋 Table View" : "📊 Board View"}
+          </button>
+        );
       }
 
       const renderActualContent = () => {
@@ -184,6 +241,8 @@ const App: React.FC = () => {
           return renderTableWrapper(state.tableData, true, state.viewType);
         } else if (isCalendarView) {
           return renderTableWrapper(state.tableData, true, state.viewType);
+        } else if (isBoardView) {
+          return renderBoard(state.tableData, state.statusColorMap);
         } else {
           return renderTableWrapper(state.tableData, true);
         }

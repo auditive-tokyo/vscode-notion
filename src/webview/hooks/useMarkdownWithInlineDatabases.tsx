@@ -1,4 +1,4 @@
-import React, { type ComponentProps } from "react";
+import React, { type ComponentProps, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import type { PluggableList } from "unified";
@@ -13,7 +13,7 @@ import { MermaidDiagram } from "../components";
 export const useMarkdownWithInlineDatabases = (
   state: NotionWebviewState,
   openPageCommand: `${CommandId.OpenPage}`,
-  viewModes: Record<string, "calendar" | "timeline" | "table">,
+  viewModes: Record<string, "calendar" | "timeline" | "table" | "board">,
   toggleViewMode: (databaseId: string) => void,
   renderCalendar: (
     db: NonNullable<typeof state.inlineDatabases>[number],
@@ -31,9 +31,19 @@ export const useMarkdownWithInlineDatabases = (
     },
     showDescription?: boolean,
   ) => React.ReactElement,
+  renderBoard: (
+    tableData: {
+      columns: string[];
+      rows: {
+        id: string;
+        cells: (string | { start: string | null; end: string | null })[];
+      }[];
+    },
+    statusColorMap?: Record<string, string>,
+  ) => React.ReactElement,
   remarkPlugins: PluggableList,
 ) => {
-  const renderMarkdownWithInlineDatabases = () => {
+  const renderMarkdownWithInlineDatabases = useCallback(() => {
     let markdown = state.data;
     const inlineDbComponents: React.ReactElement[] = [];
 
@@ -55,11 +65,17 @@ export const useMarkdownWithInlineDatabases = (
         const marker = `___INLINE_DB_${index}___`;
         markdown = markdown.replace(fullMatch, marker);
 
-        // デフォルトビューモード: timeline > calendar > table の優先順位
-        let defaultViewMode: "calendar" | "timeline" | "table" = "table";
+        // デフォルトビューモード: timeline > calendar > board > table の優先順位
+        const hasStatusColumn = inlineDb.tableData.columns.some(
+          (col) => col.toLowerCase() === "status",
+        );
+        let defaultViewMode: "calendar" | "timeline" | "table" | "board" =
+          "table";
         if (inlineDb.datePropertyName) {
           defaultViewMode =
             inlineDb.viewType === "timeline" ? "timeline" : "calendar";
+        } else if (hasStatusColumn) {
+          defaultViewMode = "board";
         }
 
         const currentViewMode = viewModes[databaseId] || defaultViewMode;
@@ -71,12 +87,14 @@ export const useMarkdownWithInlineDatabases = (
           currentViewMode === "timeline" &&
           inlineDb.viewType === "timeline" &&
           inlineDb.datePropertyName;
+        const isBoardView = currentViewMode === "board" && hasStatusColumn;
 
         console.log("[webview] DB render:", {
           databaseId,
           currentViewMode,
           isCalendarView,
           isTimelineView,
+          isBoardView,
           viewType: inlineDb.viewType,
         });
 
@@ -102,6 +120,15 @@ export const useMarkdownWithInlineDatabases = (
               {isCalendarView ? "📋 Table View" : "📅 Calendar View"}
             </button>
           );
+        } else if (hasStatusColumn) {
+          toggleViewButton = (
+            <button
+              className="view-toggle-btn"
+              onClick={() => toggleViewMode(databaseId)}
+            >
+              {isBoardView ? "📋 Table View" : "📊 Board View"}
+            </button>
+          );
         }
 
         // ビューモード別にコンテンツをレンダリング
@@ -110,6 +137,8 @@ export const useMarkdownWithInlineDatabases = (
           dbContent = renderTimeline(inlineDb);
         } else if (isCalendarView) {
           dbContent = renderCalendar(inlineDb);
+        } else if (isBoardView) {
+          dbContent = renderBoard(inlineDb.tableData, inlineDb.statusColorMap);
         } else {
           dbContent = renderTable(inlineDb.tableData, false);
         }
@@ -120,6 +149,8 @@ export const useMarkdownWithInlineDatabases = (
           icon = "📈";
         } else if (isCalendarView) {
           icon = "📅";
+        } else if (isBoardView) {
+          icon = "📊";
         }
 
         inlineDbComponents.push(
@@ -246,7 +277,17 @@ export const useMarkdownWithInlineDatabases = (
     }
 
     return <>{elements}</>;
-  };
+  }, [
+    state,
+    openPageCommand,
+    viewModes,
+    toggleViewMode,
+    renderCalendar,
+    renderTimeline,
+    renderTable,
+    renderBoard,
+    remarkPlugins,
+  ]);
 
   return renderMarkdownWithInlineDatabases;
 };
