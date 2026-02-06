@@ -164,3 +164,11 @@ details[open] > summary::before {
 details > summary:hover {
   @apply opacity-75;
 }
+
+/* Toggle heading styling */
+details > summary > h1,
+details > summary > h2,
+details > summary > h3 {
+  display: inline;
+  margin: 0;
+}

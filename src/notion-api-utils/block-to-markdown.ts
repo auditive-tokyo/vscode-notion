@@ -21,26 +21,38 @@ export function blockToMarkdown(block: any): string {
         return text;
       }
 
-      case "heading_1":
-        return (
-          "# " +
-          (block.heading_1?.rich_text?.map((t: any) => t.plain_text).join("") ||
-            "")
-        );
+      case "heading_1": {
+        const text =
+          block.heading_1?.rich_text?.map((t: any) => t.plain_text).join("") ||
+          "";
+        const isToggleable = block.heading_1?.is_toggleable || false;
+        if (isToggleable) {
+          return `<details>\n<summary><h1>${text}</h1></summary>\n`;
+        }
+        return `# ${text}`;
+      }
 
-      case "heading_2":
-        return (
-          "## " +
-          (block.heading_2?.rich_text?.map((t: any) => t.plain_text).join("") ||
-            "")
-        );
+      case "heading_2": {
+        const text =
+          block.heading_2?.rich_text?.map((t: any) => t.plain_text).join("") ||
+          "";
+        const isToggleable = block.heading_2?.is_toggleable || false;
+        if (isToggleable) {
+          return `<details>\n<summary><h2>${text}</h2></summary>\n`;
+        }
+        return `## ${text}`;
+      }
 
-      case "heading_3":
-        return (
-          "### " +
-          (block.heading_3?.rich_text?.map((t: any) => t.plain_text).join("") ||
-            "")
-        );
+      case "heading_3": {
+        const text =
+          block.heading_3?.rich_text?.map((t: any) => t.plain_text).join("") ||
+          "";
+        const isToggleable = block.heading_3?.is_toggleable || false;
+        if (isToggleable) {
+          return `<details>\n<summary><h3>${text}</h3></summary>\n`;
+        }
+        return `### ${text}`;
+      }
 
       case "bulleted_list_item":
         return (
@@ -198,9 +210,18 @@ export async function blocksToMarkdown(
     } else {
       // テーブル行以外のブロック
       markdown += blockToMarkdown(block) + "\n";
-      if (block.type === "toggle" && !block.has_children) {
-        markdown += "</details>\n\n";
+      
+      // toggle または toggle heading で子要素がない場合は </details> で閉じる
+      const isToggle = block.type === "toggle";
+      const isToggleHeading = 
+        (block.type === "heading_1" && block.heading_1?.is_toggleable) ||
+        (block.type === "heading_2" && block.heading_2?.is_toggleable) ||
+        (block.type === "heading_3" && block.heading_3?.is_toggleable);
+      
+      if ((isToggle || isToggleHeading) && !block.has_children) {
+        markdown += "</details>\n";
       }
+      
       // テーブルコンテキストをリセット
       if (block.type !== "table") {
         currentTableParentId = null;
@@ -223,9 +244,15 @@ export async function blocksToMarkdown(
         );
         markdown += childMarkdown;
 
-        // toggle ブロックの場合は </details> で閉じる
-        if (block.type === "toggle") {
-          markdown += "</details>\n\n";
+        // toggle または toggle heading の場合は </details> で閉じる
+        const isToggle = block.type === "toggle";
+        const isToggleHeading = 
+          (block.type === "heading_1" && block.heading_1?.is_toggleable) ||
+          (block.type === "heading_2" && block.heading_2?.is_toggleable) ||
+          (block.type === "heading_3" && block.heading_3?.is_toggleable);
+        
+        if (isToggle || isToggleHeading) {
+          markdown += "</details>\n";
         }
       } catch (error) {
         console.warn("[block-to-markdown] Failed to get child blocks:", error);
