@@ -17,6 +17,18 @@ export const useCalendarRenderer = (
     const dateColumnIndex = db.tableData.columns.indexOf(db.datePropertyName!);
     const titleColumnIndex = 0; // 最初の列をタイトルとする
 
+    // Check if there are any rows with dates
+    const rowsWithDates = db.tableData.rows.filter((row) => {
+      const dateValue = row.cells[dateColumnIndex];
+      const dateStr =
+        typeof dateValue === "string" ? dateValue : dateValue?.start;
+      return dateStr !== null && dateStr !== undefined;
+    });
+
+    if (rowsWithDates.length === 0) {
+      return <div className="text-gray-400">Date property is empty</div>;
+    }
+
     // 日付ごとにイベントをマッピング
     const eventsByDate = new Map<
       string,

@@ -68,7 +68,7 @@ export const useTimelineRenderer = (
     });
 
     if (rowsWithDates.length === 0) {
-      return <div className="text-gray-400">No timeline data available</div>;
+      return <div className="text-gray-400">Date property is empty</div>;
     }
 
     // 最小日付と最大日付を算出
