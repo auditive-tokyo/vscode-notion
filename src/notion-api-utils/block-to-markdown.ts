@@ -85,10 +85,11 @@ export function blockToMarkdown(block: any): string {
         );
 
       case "to_do": {
-        const checked = block.to_do?.checked ? "[x]" : "[ ]";
+        const checked = block.to_do?.checked || false;
         const text =
           block.to_do?.rich_text?.map((t: any) => t.plain_text).join("") || "";
-        return checked + " " + text;
+        const checkedAttr = checked ? " checked" : "";
+        return `<div class="notion-todo"><input type="checkbox" disabled${checkedAttr} /> ${text}</div>`;
       }
 
       case "code": {

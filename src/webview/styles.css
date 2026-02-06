@@ -75,6 +75,15 @@ td {
   @apply text-base rounded p-4 mb-3 bg-blue-900/30 border-l-4 border-blue-500;
 }
 
+/* To-do checkbox */
+.notion-todo {
+  @apply text-base mb-2 flex items-start gap-2;
+}
+
+.notion-todo input[type="checkbox"] {
+  @apply mt-1 cursor-default;
+}
+
 /* Divider */
 hr {
   @apply border-t border-gray-500 my-6;
