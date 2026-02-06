@@ -108,6 +108,7 @@ const webviewConfig = {
       os: false,
       fs: false,
       path: false,
+      util: false,
     },
   },
   // Disable code splitting for VS Code webview compatibility
