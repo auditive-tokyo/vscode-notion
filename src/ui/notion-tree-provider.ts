@@ -84,6 +84,177 @@ export class NotionTreeDataProvider
     return this.itemCache.get(id);
   }
 
+  /**
+   * 親チェーンを辿ってTreeViewで選択できる状態にする
+   */
+  async ensureItemVisible(pageId: string): Promise<NotionPageTreeItem | null> {
+    if (!this.notionClient.isConfigured()) {
+      return null;
+    }
+
+    const config = vscode.workspace.getConfiguration("notion");
+    const rawRootPage =
+      config.get<string>("rootPage", "") ||
+      config.get<string>("rootPageId", "");
+    const rootPageId = extractPageId(rawRootPage);
+    if (!rootPageId) {
+      return null;
+    }
+
+    const normalizeId = (value: string) => value.replace(/-/g, "");
+    const rootNormalized = normalizeId(rootPageId);
+
+    // ルートを先にキャッシュしておく
+    try {
+      await this.getChildren();
+    } catch {
+      // ルート取得失敗は無視
+    }
+
+    const chain = await this.getAncestorChain(pageId, rootNormalized);
+    if (!chain || chain.length === 0) {
+      return null;
+    }
+
+    // ルートから順に子要素を取得し、parentMap/itemCacheを構築
+    for (let i = 0; i < chain.length - 1; i += 1) {
+      const parent = chain[i]!;
+      const child = chain[i + 1]!;
+      const children = await this.getChildren(parent);
+      const match = children.find((item) => item.id === child.id);
+      if (!match) {
+        console.log(
+          `[notion-tree] Child ${child.id} not found under ${parent.id}`,
+        );
+        return null;
+      }
+    }
+
+    return this.getItemById(pageId) ?? chain[chain.length - 1] ?? null;
+  }
+
+  private async getAncestorChain(
+    pageId: string,
+    rootNormalized: string,
+  ): Promise<NotionPageTreeItem[] | null> {
+    const chain: NotionPageTreeItem[] = [];
+    const seen = new Set<string>();
+    const normalizeId = (value: string) => value.replace(/-/g, "");
+
+    let currentId: string | undefined = pageId;
+    let guard = 0;
+
+    while (currentId && guard < 50) {
+      guard += 1;
+      const normalized = normalizeId(currentId);
+      if (seen.has(normalized)) {
+        return null;
+      }
+      seen.add(normalized);
+
+      const info = await this.fetchItemInfoWithParent(currentId);
+      if (!info) {
+        return null;
+      }
+
+      chain.push(info.item);
+
+      const itemNormalized = normalizeId(info.item.id);
+      if (itemNormalized === rootNormalized) {
+        break;
+      }
+
+      if (!info.parentId) {
+        return null;
+      }
+      currentId = info.parentId;
+    }
+
+    if (chain.length === 0) {
+      return null;
+    }
+
+    chain.reverse();
+    return chain;
+  }
+
+  private async fetchItemInfoWithParent(pageId: string): Promise<{
+    item: NotionPageTreeItem;
+    parentId?: string;
+  } | null> {
+    try {
+      const officialClient = (this.notionClient as any).officialClient;
+      if (!officialClient) {
+        return null;
+      }
+
+      const getParentId = (parent: any): string | undefined => {
+        if (!parent || typeof parent !== "object") {
+          return undefined;
+        }
+        if (parent.type === "page_id") {
+          return parent.page_id;
+        }
+        if (parent.type === "database_id") {
+          return parent.database_id;
+        }
+        if (parent.type === "block_id") {
+          return parent.block_id;
+        }
+        return undefined;
+      };
+
+      // まずページとして取得を試みる
+      try {
+        const page = await officialClient.pages.retrieve({ page_id: pageId });
+        let title = "Untitled";
+        const properties = (page as any).properties || {};
+        for (const [, value] of Object.entries(properties)) {
+          const prop = value as any;
+          if (prop.type === "title" && prop.title?.length > 0) {
+            title = prop.title.map((t: any) => t.plain_text).join("");
+            break;
+          }
+        }
+
+        const parentId = getParentId((page as any).parent);
+        const item: NotionPageTreeItem = {
+          id: page.id,
+          title,
+          type: "page",
+        };
+        return parentId ? { item, parentId } : { item };
+      } catch (pageError) {
+        // データベースとして取得を試みる
+        try {
+          const database = await officialClient.databases.retrieve({
+            database_id: pageId,
+          });
+
+          const title =
+            (database as any).title?.map((t: any) => t.plain_text).join("") ||
+            "Untitled Database";
+
+          const parentId = getParentId((database as any).parent);
+          const item: NotionPageTreeItem = {
+            id: database.id,
+            title,
+            type: "database",
+          };
+          return parentId ? { item, parentId } : { item };
+        } catch {
+          throw pageError;
+        }
+      }
+    } catch (error) {
+      console.error(
+        `[notion-tree] Failed to fetch parent info for ${pageId}:`,
+        error,
+      );
+      return null;
+    }
+  }
+
   async getTreeItem(element: NotionPageTreeItem): Promise<vscode.TreeItem> {
     // ページとデータベースは展開可能（子がいるか lazy load で確認）
     const treeItem = new vscode.TreeItem(

@@ -11,6 +11,7 @@ import {
 } from "../constants";
 import { NotionApiClient } from "../notion-api-client";
 import { getCacheTtlMs } from "../lib/cache-utils";
+import { NotionHierarchyTreeView } from "./notion-hierarchy-tree-view";
 
 /**
  * State that gets serialized and passed into webview.
@@ -182,6 +183,8 @@ export class NotionWebviewPanelSerializer
     const cached = this.cache.get(id);
     if (cached) {
       cached.reveal();
+      // キャッシュから復元した場合もTreeViewとシンク
+      await this.revealInTreeView(id);
       return;
     }
 
@@ -205,6 +208,9 @@ export class NotionWebviewPanelSerializer
     );
 
     await this.deserializeWebviewPanel(webviewPanel, state);
+
+    // ページを開いたらTreeViewとシンク
+    await this.revealInTreeView(id);
   }
 
   async deserializeWebviewPanel(
@@ -216,17 +222,90 @@ export class NotionWebviewPanelSerializer
     const notionPage = new CachedNotionWebview(
       webviewPanel,
       state,
-      webviewPanel.onDidDispose(() => {
-        const cached = this.cache.get(state.id);
-        if (cached) {
-          cached.dispose();
-          this.cache.delete(state.id);
-        }
-      }, this),
+      vscode.Disposable.from(
+        webviewPanel.onDidDispose(() => {
+          const cached = this.cache.get(state.id);
+          if (cached) {
+            cached.dispose();
+            this.cache.delete(state.id);
+          }
+        }, this),
+        // タブがアクティブになった時にTreeViewとシンク
+        webviewPanel.onDidChangeViewState((e) => {
+          if (e.webviewPanel.active) {
+            void this.revealInTreeView(state.id);
+          }
+        }),
+        // Webviewからのメッセージを受け取る
+        webviewPanel.webview.onDidReceiveMessage(
+          async (message: {
+            command: string;
+            viewModes?: Record<string, string>;
+          }) => {
+            if (message.command === "saveViewModes" && message.viewModes) {
+              // viewModesをディスク cache にマージして保存
+              const updatedState: NotionWebviewState = {
+                ...state,
+                viewModes: message.viewModes as Record<
+                  string,
+                  "calendar" | "timeline" | "table" | "board"
+                >,
+              };
+              await this.savePageToDiskCache(state.id, updatedState);
+              console.log(
+                "[notion-page-viewer] viewModes saved to cache:",
+                JSON.stringify(message.viewModes),
+              );
+            }
+          },
+        ),
+      ),
     );
 
     this.renderWebview(notionPage.webviewPanel, state);
     this.cache.set(state.id, notionPage);
+  }
+
+  /**
+   * TreeView で該当ページを選択（展開済みの場合のみ）
+   */
+  private async revealInTreeView(pageId: string): Promise<void> {
+    try {
+      const hierarchyTreeView = NotionHierarchyTreeView.getInstance();
+      const treeView = hierarchyTreeView?.getTreeView();
+      const dataProvider = hierarchyTreeView?.getDataProvider();
+
+      if (!treeView || !dataProvider) {
+        return;
+      }
+
+      // itemCacheからアイテムを取得（展開済みの場合のみ）
+      const treeItem =
+        dataProvider.getItemById(pageId) ||
+        (await dataProvider.ensureItemVisible(pageId));
+      if (!treeItem) {
+        console.log(
+          `[notion-page-viewer] Page ${pageId.slice(
+            0,
+            16,
+          )}... not found in tree`,
+        );
+        return;
+      }
+
+      // TreeViewで該当アイテムを選択
+      await treeView.reveal(treeItem, {
+        focus: false, // ページにフォーカスを残す
+        select: true,
+        expand: true,
+      });
+
+      console.log(
+        `[notion-page-viewer] Synced tree view with page: ${treeItem.title}`,
+      );
+    } catch (error) {
+      console.log(`[notion-page-viewer] Could not sync tree view:`, error);
+    }
   }
 
   private async refreshActivePage() {

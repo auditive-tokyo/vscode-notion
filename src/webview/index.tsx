@@ -24,6 +24,7 @@ declare global {
     vscode: {
       getState: () => NotionWebviewState;
       setState: (state: NotionWebviewState) => void;
+      postMessage: (message: unknown) => void;
     };
   }
 }
@@ -54,6 +55,12 @@ const App: React.FC = () => {
       viewModes: newViewModes,
     };
     window.vscode.setState(updatedState);
+
+    // Notify extension to save viewModes to disk cache
+    window.vscode.postMessage({
+      command: "saveViewModes",
+      viewModes: newViewModes,
+    });
 
     console.log(
       "[webview] setViewMode called for databaseId:",
