@@ -88,6 +88,8 @@ export class NotionTreeDataProvider
    * 親チェーンを辿ってTreeViewで選択できる状態にする
    */
   async ensureItemVisible(pageId: string): Promise<NotionPageTreeItem | null> {
+    console.log("[notion-tree] ensureItemVisible called with pageId:", pageId);
+
     if (!this.notionClient.isConfigured()) {
       return null;
     }
@@ -112,6 +114,11 @@ export class NotionTreeDataProvider
     }
 
     const chain = await this.getAncestorChain(pageId, rootNormalized);
+    console.log(
+      "[notion-tree] Ancestor chain:",
+      chain?.map((c) => ({ id: c.id, title: c.title })) || null,
+    );
+
     if (!chain || chain.length === 0) {
       return null;
     }
@@ -189,7 +196,13 @@ export class NotionTreeDataProvider
       }
 
       const getParentId = (parent: any): string | undefined => {
+        console.log(
+          "[notion-tree] Raw parent object:",
+          JSON.stringify(parent, null, 2),
+        );
+
         if (!parent || typeof parent !== "object") {
+          console.log("[notion-tree] Parent is null or not an object");
           return undefined;
         }
         if (parent.type === "page_id") {
@@ -198,9 +211,14 @@ export class NotionTreeDataProvider
         if (parent.type === "database_id") {
           return parent.database_id;
         }
+        if (parent.type === "data_source_id") {
+          // データベースレコードの場合、database_id を返す
+          return parent.database_id;
+        }
         if (parent.type === "block_id") {
           return parent.block_id;
         }
+        console.log("[notion-tree] Parent type not recognized:", parent.type);
         return undefined;
       };
 
@@ -218,6 +236,8 @@ export class NotionTreeDataProvider
         }
 
         const parentId = getParentId((page as any).parent);
+        console.log("[notion-tree] Parent ID retrieved (page):", parentId);
+
         const item: NotionPageTreeItem = {
           id: page.id,
           title,
@@ -236,6 +256,11 @@ export class NotionTreeDataProvider
             "Untitled Database";
 
           const parentId = getParentId((database as any).parent);
+          console.log(
+            "[notion-tree] Parent ID retrieved (database):",
+            parentId,
+          );
+
           const item: NotionPageTreeItem = {
             id: database.id,
             title,

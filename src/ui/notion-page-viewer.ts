@@ -279,6 +279,12 @@ export class NotionWebviewPanelSerializer
         return;
       }
 
+      console.log("[notion-page-viewer] Attempting to reveal pageId:", pageId);
+      console.log(
+        "[notion-page-viewer] itemCache has:",
+        Array.from((dataProvider as any).itemCache?.keys() || []),
+      );
+
       // itemCacheからアイテムを取得（展開済みの場合のみ）
       const treeItem =
         dataProvider.getItemById(pageId) ||
