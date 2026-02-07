@@ -277,7 +277,7 @@ export const useMarkdownWithInlineDatabases = (
         }
       } else {
         // inline DB部分
-        const dbIndex = parseInt(parts[i], 10);
+        const dbIndex = Number.parseInt(parts[i], 10);
         if (inlineDbComponents[dbIndex]) {
           elements.push(inlineDbComponents[dbIndex]);
         }

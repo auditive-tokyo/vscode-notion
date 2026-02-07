@@ -250,7 +250,9 @@ export async function blocksToMarkdown(
 
       // 最初の行の後にセパレータを挿入
       if (isFirstRowInCurrentTable) {
-        const separator = `| ${Array(cellCount).fill("---").join(" | ")} |\n`;
+        const separator = `| ${new Array(cellCount)
+          .fill("---")
+          .join(" | ")} |\n`;
         console.log(
           "[blocksToMarkdown] Adding separator with",
           cellCount,

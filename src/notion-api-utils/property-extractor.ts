@@ -92,7 +92,7 @@ export function rowToMarkdownTableRow(
   const cells = propertyNames.map((propName) => {
     const prop = row.properties[propName];
     const value = extractPropertyValue(prop);
-    const escapedValue = value.replace(/\|/g, "\\|").replace(/\n/g, " ");
+    const escapedValue = value.replaceAll("|", "\\|").replaceAll("\n", " ");
     return escapedValue;
   });
 
