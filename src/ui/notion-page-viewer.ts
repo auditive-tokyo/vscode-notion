@@ -31,6 +31,7 @@ export type NotionWebviewState = {
   viewType?: "table" | "calendar" | "timeline"; // For full-page databases
   datePropertyName?: string; // For full-page databases
   statusColorMap?: Record<string, string>; // Status名 -> 色コード (for full-page databases)
+  viewModes?: Record<string, "calendar" | "timeline" | "table" | "board">; // User's view mode selections
   inlineDatabases?: {
     databaseId: string;
     title: string;

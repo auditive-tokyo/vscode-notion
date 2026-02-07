@@ -36,16 +36,25 @@ console.log("[webview] state received:", state);
 const App: React.FC = () => {
   const [viewModes, setViewModes] = useState<
     Record<string, "calendar" | "timeline" | "table" | "board">
-  >({});
+  >(state.viewModes || {});
 
   const setViewMode = (
     databaseId: string,
     mode: "calendar" | "timeline" | "table" | "board",
   ) => {
-    setViewModes({
+    const newViewModes = {
       ...viewModes,
       [databaseId]: mode,
-    });
+    };
+    setViewModes(newViewModes);
+
+    // Save to VS Code state
+    const updatedState: NotionWebviewState = {
+      ...state,
+      viewModes: newViewModes,
+    };
+    window.vscode.setState(updatedState);
+
     console.log(
       "[webview] setViewMode called for databaseId:",
       databaseId,
