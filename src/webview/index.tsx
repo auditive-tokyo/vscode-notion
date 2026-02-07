@@ -41,15 +41,31 @@ const App: React.FC = () => {
   const toggleViewMode = (databaseId: string) => {
     const db =
       state.inlineDatabases?.find((d) => d.databaseId === databaseId) || null;
-    const hasDate = state.datePropertyName || db?.datePropertyName;
-    const hasStatus =
-      state.tableData?.columns?.some((col) => col.toLowerCase() === "status") ||
-      db?.tableData.columns?.some((col) => col.toLowerCase() === "status");
+    const isFullPageDb = databaseId === state.id;
 
-    // Calculate default mode
+    // Determine if this database has date/status
+    let hasDate: boolean;
+    let hasStatus: boolean;
+
+    if (isFullPageDb) {
+      // Full-page database
+      hasDate = !!state.datePropertyName;
+      hasStatus =
+        state.tableData?.columns?.some(
+          (col) => col.toLowerCase() === "status",
+        ) ?? false;
+    } else {
+      // Inline database
+      hasDate = !!db?.datePropertyName;
+      hasStatus =
+        db?.tableData.columns?.some((col) => col.toLowerCase() === "status") ??
+        false;
+    }
+
+    // Calculate default mode based on available data
     let defaultMode: "calendar" | "timeline" | "table" | "board" = "table";
     if (hasDate) {
-      const viewType = state.viewType || db?.viewType;
+      const viewType = isFullPageDb ? state.viewType : db?.viewType;
       defaultMode = viewType === "timeline" ? "timeline" : "calendar";
     } else if (hasStatus) {
       defaultMode = "board";
@@ -69,6 +85,17 @@ const App: React.FC = () => {
       // From table mode
       nextMode = hasDate ? "calendar" : hasStatus ? "board" : "table";
     }
+
+    console.log(
+      "[webview] toggleViewMode - hasDate:",
+      hasDate,
+      "hasStatus:",
+      hasStatus,
+      "currentMode:",
+      currentMode,
+      "nextMode:",
+      nextMode,
+    );
 
     setViewModes({
       ...viewModes,
@@ -125,6 +152,7 @@ const App: React.FC = () => {
     tableData: { columns: string[]; rows: { id: string; cells: string[] }[] },
     showDescription = true,
     viewType?: "table" | "calendar" | "timeline",
+    currentViewMode?: "table" | "calendar" | "timeline" | "board",
   ) => {
     // For full-page databases, convert to inline database format for rendering
     if (viewType && state.datePropertyName) {
@@ -150,11 +178,15 @@ const App: React.FC = () => {
       }
     }
 
-    // Check for board view (status column exists but no date)
+    // Check for board view (status column exists but no date, and NOT requesting table view)
     const hasStatusColumn = tableData.columns.some(
       (col) => col.toLowerCase() === "status",
     );
-    if (hasStatusColumn && !state.datePropertyName) {
+    if (
+      hasStatusColumn &&
+      !state.datePropertyName &&
+      currentViewMode !== "table"
+    ) {
       return renderBoard(
         tableData as {
           columns: string[];
@@ -181,7 +213,13 @@ const App: React.FC = () => {
         (col) => col.toLowerCase() === "status",
       );
       const defaultViewMode: "calendar" | "timeline" | "table" | "board" =
-        state.viewType ? state.viewType : hasStatusColumn ? "board" : "table";
+        state.datePropertyName
+          ? state.viewType === "timeline"
+            ? "timeline"
+            : "calendar"
+          : hasStatusColumn
+          ? "board"
+          : "table";
       const currentViewMode = viewModes[state.id] || defaultViewMode;
       const isCalendarView =
         currentViewMode === "calendar" &&
@@ -238,13 +276,28 @@ const App: React.FC = () => {
 
       const renderActualContent = () => {
         if (isTimelineView) {
-          return renderTableWrapper(state.tableData, true, state.viewType);
+          return renderTableWrapper(
+            state.tableData,
+            true,
+            state.viewType,
+            currentViewMode,
+          );
         } else if (isCalendarView) {
-          return renderTableWrapper(state.tableData, true, state.viewType);
+          return renderTableWrapper(
+            state.tableData,
+            true,
+            state.viewType,
+            currentViewMode,
+          );
         } else if (isBoardView) {
           return renderBoard(state.tableData, state.statusColorMap);
         } else {
-          return renderTableWrapper(state.tableData, true);
+          return renderTableWrapper(
+            state.tableData,
+            true,
+            undefined,
+            currentViewMode,
+          );
         }
       };
 
