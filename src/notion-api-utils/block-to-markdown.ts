@@ -19,16 +19,16 @@ export function blockToMarkdown(block: any): string {
         // This preserves Shift+Enter (\n within richText) from Notion
         // which remark-breaks will convert to <br> tags
         // vs. Enter (separate paragraph blocks) which are handled separately
-          const text = richTexts.map((rt: any) => rt.plain_text).join("");
-        
-          // \n\n を Markdown の段落区切りとして処理
-          // （\n 1つは remark-breaks が <br> に変換）
-          if (text.includes("\n\n")) {
-            // \n\n で分割して、各部分を別の段落として返す
-              const parts = text.split("\n\n").filter((p: string) => p.length > 0);
-            return parts.join("\n\n"); // Markdownの段落区切り（空行）
-          }
-        
+        const text = richTexts.map((rt: any) => rt.plain_text).join("");
+
+        // \n\n を Markdown の段落区切りとして処理
+        // （\n 1つは remark-breaks が <br> に変換）
+        if (text.includes("\n\n")) {
+          // \n\n で分割して、各部分を別の段落として返す
+          const parts = text.split("\n\n").filter((p: string) => p.length > 0);
+          return parts.join("\n\n"); // Markdownの段落区切り（空行）
+        }
+
         return text;
       }
 
@@ -89,7 +89,8 @@ export function blockToMarkdown(block: any): string {
         const text =
           block.to_do?.rich_text?.map((t: any) => t.plain_text).join("") || "";
         const checkedAttr = checked ? " checked" : "";
-        return `<div class="notion-todo"><input type="checkbox" disabled${checkedAttr} /> ${text}</div>`;
+        const checkedClass = checked ? " is-checked" : "";
+        return `<div class="notion-todo${checkedClass}"><input type="checkbox" class="notion-todo-checkbox"${checkedAttr} tabindex="-1" aria-disabled="true" /> <span class="notion-todo-text">${text}</span></div>`;
       }
 
       case "code": {
@@ -112,13 +113,13 @@ export function blockToMarkdown(block: any): string {
           block.video?.external?.url || block.video?.file?.url || "";
         const videoCaption =
           block.video?.caption?.map((t: any) => t.plain_text).join("") || "";
-        
+
         if (!videoUrl) return "";
 
         // YouTube URL を埋め込み形式に変換
         let embedUrl = videoUrl;
         const youtubeMatch = videoUrl.match(
-          /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/
+          /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/,
         );
         if (youtubeMatch) {
           const videoId = youtubeMatch[1];
@@ -126,7 +127,9 @@ export function blockToMarkdown(block: any): string {
         }
 
         // HTML iframe で埋め込み（VS Code Webview sandbox 対応）
-        const caption = videoCaption ? `<p class="video-caption">${videoCaption}</p>` : "";
+        const caption = videoCaption
+          ? `<p class="video-caption">${videoCaption}</p>`
+          : "";
         return `<div class="notion-video" style="max-width: 560px; margin: 1em 0;">
   <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
     <iframe 
@@ -259,18 +262,18 @@ export async function blocksToMarkdown(
     } else {
       // テーブル行以外のブロック
       markdown += blockToMarkdown(block) + "\n\n";
-      
+
       // toggle または toggle heading で子要素がない場合は </details> で閉じる
       const isToggle = block.type === "toggle";
-      const isToggleHeading = 
+      const isToggleHeading =
         (block.type === "heading_1" && block.heading_1?.is_toggleable) ||
         (block.type === "heading_2" && block.heading_2?.is_toggleable) ||
         (block.type === "heading_3" && block.heading_3?.is_toggleable);
-      
+
       if ((isToggle || isToggleHeading) && !block.has_children) {
         markdown += "</details>\n";
       }
-      
+
       // テーブルコンテキストをリセット
       if (block.type !== "table") {
         currentTableParentId = null;
@@ -291,15 +294,17 @@ export async function blocksToMarkdown(
           childBlocks,
           getChildBlocks,
         );
-        markdown += childMarkdown.endsWith("\n\n") ? childMarkdown : childMarkdown + "\n\n";
-        
+        markdown += childMarkdown.endsWith("\n\n")
+          ? childMarkdown
+          : childMarkdown + "\n\n";
+
         // toggle または toggle heading の場合は </details> で閉じる
         const isToggleBlock = block.type === "toggle";
-        const isToggleHeadingBlock = 
+        const isToggleHeadingBlock =
           (block.type === "heading_1" && block.heading_1?.is_toggleable) ||
           (block.type === "heading_2" && block.heading_2?.is_toggleable) ||
           (block.type === "heading_3" && block.heading_3?.is_toggleable);
-        
+
         if (isToggleBlock || isToggleHeadingBlock) {
           markdown += "</details>\n";
         }

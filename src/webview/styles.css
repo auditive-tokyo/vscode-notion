@@ -121,6 +121,17 @@ th {
 
 .notion-todo input[type="checkbox"] {
   @apply mt-1 cursor-default;
+  pointer-events: none;
+  opacity: 1;
+}
+
+.notion-todo input[type="checkbox"]:checked {
+  accent-color: var(--vscode-button-background);
+}
+
+.notion-todo.is-checked .notion-todo-text {
+  text-decoration: line-through;
+  opacity: 0.7;
 }
 
 /* Divider */
