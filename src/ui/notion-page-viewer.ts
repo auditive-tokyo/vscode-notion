@@ -413,12 +413,10 @@ export class NotionWebviewPanelSerializer
    */
   private extractTitleFromMarkdown(markdown: string): string | null {
     const lines = markdown.split("\n");
-    for (let line of lines) {
-      if (line.endsWith("\r")) {
-        line = line.slice(0, -1);
-      }
-      if (line.startsWith("# ")) {
-        return line.slice(2).trim();
+    for (const line of lines) {
+      const normalizedLine = line.endsWith("\r") ? line.slice(0, -1) : line;
+      if (normalizedLine.startsWith("# ")) {
+        return normalizedLine.slice(2).trim();
       }
     }
     return null;
