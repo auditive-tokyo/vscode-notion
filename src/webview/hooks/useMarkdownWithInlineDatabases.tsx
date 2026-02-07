@@ -222,13 +222,8 @@ export const useMarkdownWithInlineDatabases = (
                   }
                   return <a {...props} />;
                 },
-                h1: (props) => <h1 {...props} />,
-                h2: (props) => <h2 {...props} />,
-                h3: (props) => <h3 {...props} />,
-                p: (props) => <p {...props} />,
                 ul: (props) => <ul className="list-disc" {...props} />,
                 ol: (props) => <ol className="list-decimal" {...props} />,
-                li: (props) => <li {...props} />,
                 pre: (props) => {
                   const code = props.children as React.ReactElement<{
                     className?: string;
@@ -272,7 +267,6 @@ export const useMarkdownWithInlineDatabases = (
                     <code {...props}>{children}</code>
                   );
                 },
-                blockquote: (props) => <blockquote {...props} />,
                 // Table elements are handled by rehypeTableHeaders plugin
                 // which ensures all tables have proper <th> headers with scope="col"
               }}
