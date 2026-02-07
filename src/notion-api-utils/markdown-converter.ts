@@ -231,10 +231,16 @@ export function convertDatabaseToMarkdownAndTable(
         }
 
         datePropertyName = propName;
-        viewType = "calendar"; // Always use calendar as default view
+        // Determine viewType based on date range: timeline if end exists, calendar if start only
+        const hasAnyDateRange = rows.some((row) => {
+          const prop = row.properties[propName];
+          return prop && prop.type === "date" && prop.date?.end !== null;
+        });
+        viewType = hasAnyDateRange ? "timeline" : "calendar";
         console.log(
           "[markdown-converter] Date property found for full-page DB:",
           propName,
+          { viewType },
         );
         break;
       }
@@ -443,10 +449,15 @@ async function collectInlineDbData(
           }
         }
 
-        // viewType: Always use calendar (Timeline is always available)
+        // viewType: timeline if end exists, calendar if start only, table if no date
         let viewType: "table" | "calendar" | "timeline" = "table";
         if (datePropertyName) {
-          viewType = "calendar";
+          // Check if any row has date range
+          const hasAnyDateRange = rows.some((row) => {
+            const prop = row.properties[datePropertyName];
+            return prop && prop.type === "date" && prop.date?.end !== null;
+          });
+          viewType = hasAnyDateRange ? "timeline" : "calendar";
         }
 
         const tableData = convertRowsToTableData(rows, propertyNames);

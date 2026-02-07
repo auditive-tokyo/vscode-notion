@@ -75,7 +75,9 @@ export const useMarkdownWithInlineDatabases = (
         let defaultViewMode: "calendar" | "timeline" | "table" | "board" =
           "table";
         if (inlineDb.datePropertyName) {
-          defaultViewMode = "calendar";
+          // Use viewType to determine default: timeline for date ranges, calendar for single dates
+          defaultViewMode =
+            inlineDb.viewType === "timeline" ? "timeline" : "calendar";
         } else if (hasStatusColumn) {
           defaultViewMode = "board";
         }

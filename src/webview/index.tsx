@@ -166,7 +166,9 @@ const App: React.FC = () => {
       );
       const defaultViewMode: "calendar" | "timeline" | "table" | "board" =
         state.datePropertyName
-          ? "calendar"
+          ? state.viewType === "timeline"
+            ? "timeline"
+            : "calendar"
           : hasStatusColumn
           ? "board"
           : "table";
