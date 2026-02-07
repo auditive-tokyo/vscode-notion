@@ -24,12 +24,29 @@ p {
 }
 
 a {
-  @apply text-blue-400 hover:text-blue-300 underline cursor-pointer;
+  color: var(--vscode-textLink-foreground);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+a:hover {
+  color: var(--vscode-textLink-activeForeground);
 }
 
 /* OPEN button styling in table cells */
 a > code {
-  @apply no-underline bg-gray-600 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs font-semibold inline-block;
+  text-decoration: none;
+  background-color: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+a > code:hover {
+  background-color: var(--vscode-button-hoverBackground);
 }
 
 ul {
@@ -45,11 +62,21 @@ li {
 }
 
 code {
-  @apply rounded px-1 py-0.5 text-sm font-mono;
+  background-color: var(--vscode-textCodeBlock-background);
+  color: var(--vscode-editor-foreground);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  font-family: monospace;
 }
 
 pre {
-  @apply rounded p-3 overflow-auto mb-3 bg-gray-700 text-gray-100;
+  background-color: var(--vscode-textCodeBlock-background);
+  color: var(--vscode-editor-foreground);
+  padding: 0.75rem;
+  border-radius: 0.25rem;
+  overflow: auto;
+  margin-bottom: 0.75rem;
 }
 
 blockquote {
@@ -57,12 +84,21 @@ blockquote {
 }
 
 table {
-  @apply w-full border border-gray-600 mb-3;
+  width: 100%;
+  border: 1px solid var(--vscode-textSeparator-foreground);
+  margin-bottom: 0.75rem;
 }
 
 th,
 td {
-  @apply border border-gray-600 px-3 py-2 text-left;
+  border: 1px solid var(--vscode-textSeparator-foreground);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+th {
+  background-color: var(--vscode-textCodeBlock-background);
+  font-weight: 600;
 }
 
 /* Page container */
@@ -86,56 +122,83 @@ td {
 
 /* Divider */
 hr {
-  @apply border-t border-gray-500 my-6;
+  border-top: 1px solid var(--vscode-textSeparator-foreground);
+  margin: 1.5rem 0;
 }
 
 /* Calendar styling */
 .notion-calendar {
-  @apply my-4;
+  margin: 1rem 0;
 }
 
 .notion-calendar .react-calendar {
-  @apply w-full bg-gray-800 border border-gray-600 rounded-lg;
+  width: 100%;
+  background-color: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-textSeparator-foreground);
+  border-radius: 0.5rem;
+  color: var(--vscode-editor-foreground);
 }
 
 .notion-calendar .react-calendar__navigation__label {
-  @apply text-white;
+  color: var(--vscode-editor-foreground);
 }
 
 .notion-calendar .react-calendar .react-calendar__navigation__label:hover {
-  @apply bg-gray-700;
+  background-color: var(--vscode-list-hoverBackground);
 }
 
 .notion-calendar .react-calendar .react-calendar__navigation__arrow:hover {
-  @apply bg-gray-700;
+  background-color: var(--vscode-list-hoverBackground);
 }
 
 .notion-calendar .react-calendar__tile {
-  @apply text-white p-2 hover:bg-gray-700;
+  color: var(--vscode-editor-foreground);
+  padding: 0.5rem;
+}
+
+.notion-calendar .react-calendar__tile:hover {
+  background-color: var(--vscode-list-hoverBackground);
 }
 
 .notion-calendar .react-calendar__tile--active {
-  @apply bg-blue-600;
+  background-color: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
 }
 
 .notion-calendar .react-calendar__tile--now {
-  @apply bg-gray-700;
+  background-color: var(--vscode-textCodeBlock-background);
 }
 
 .calendar-events {
-  @apply mt-1 space-y-1;
+  margin-top: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .calendar-event-link {
-  @apply block text-xs bg-blue-500 hover:bg-blue-400 rounded px-1 py-0.5 text-white no-underline truncate;
+  display: block;
+  font-size: 0.75rem;
+  background-color: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border-radius: 0.25rem;
+  padding: 0.125rem 0.25rem;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calendar-event-link:hover {
+  background-color: var(--vscode-button-hoverBackground);
 }
 
 /* View toggle button */
 .view-toggle-btn {
   font-size: 11px;
   padding: 2px 8px;
-  background-color: #3b82f6;
-  color: #ffffff;
+  background-color: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -146,17 +209,16 @@ hr {
 }
 
 .view-toggle-btn:hover {
-  background-color: #2563eb;
-  color: #ffffff;
+  background-color: var(--vscode-button-hoverBackground);
 }
 
 /* View selector dropdown */
 .view-selector {
   font-size: 11px;
   padding: 4px 8px;
-  background-color: #3b82f6;
-  color: #ffffff;
-  border: 1px solid #2563eb;
+  background-color: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border: 1px solid var(--vscode-textSeparator-foreground);
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.2s;
@@ -165,12 +227,12 @@ hr {
 }
 
 .view-selector:hover {
-  background-color: #2563eb;
+  background-color: var(--vscode-button-hoverBackground);
 }
 
 .view-selector:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+  outline: 2px solid var(--vscode-focusBorder);
+  outline-offset: -2px;
 }
 
 /* Toggle block styling */
@@ -206,36 +268,82 @@ details > summary > h3 {
 }
 /* Board View (Kanban) */
 .board-view {
-  @apply flex gap-4 overflow-x-auto pb-4;
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: 1rem;
 }
 
 .board-column {
-  @apply flex flex-col shrink-0 w-80 bg-gray-700 rounded-lg overflow-hidden;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  width: 20rem;
+  background-color: var(--vscode-textCodeBlock-background);
+  border-radius: 0.5rem;
+  overflow: hidden;
   border-top: 4px solid transparent;
 }
 
 .board-column-header {
-  @apply px-4 py-3 font-semibold flex items-center gap-2 shrink-0;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  background-color: var(--vscode-editor-background);
 }
 
 .status-badge {
-  @apply px-3 py-1 rounded text-white text-sm font-semibold;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.25rem;
+  color: var(--vscode-button-foreground);
+  background-color: var(--vscode-button-background);
+  font-size: 0.875rem;
+  font-weight: 600;
 }
 
 .status-count {
-  @apply ml-auto text-gray-300 text-sm;
+  margin-left: auto;
+  color: var(--vscode-editor-foreground);
+  opacity: 0.7;
+  font-size: 0.875rem;
 }
 
 .board-cards {
-  @apply flex flex-col gap-3 p-3 overflow-y-auto flex-1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  overflow-y: auto;
+  flex: 1;
   max-height: 600px;
 }
 
 .board-card {
-  @apply bg-gray-800 rounded p-3 hover:bg-gray-700 transition cursor-pointer;
-  border-left: 3px solid #3b82f6;
+  background-color: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-textSeparator-foreground);
+  border-left: 3px solid var(--vscode-button-background);
+  border-radius: 0.25rem;
+  padding: 0.75rem;
+  transition: background-color 0.2s;
+  cursor: pointer;
+}
+
+.board-card:hover {
+  background-color: var(--vscode-list-hoverBackground);
 }
 
 .board-card-title {
-  @apply text-sm font-medium text-blue-400 hover:text-blue-300 no-underline block text-left;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--vscode-textLink-foreground);
+  text-decoration: none;
+  display: block;
+  text-align: left;
+}
+
+.board-card-title:hover {
+  color: var(--vscode-textLink-activeForeground);
 }
