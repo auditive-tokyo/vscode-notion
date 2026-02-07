@@ -110,7 +110,7 @@ export class NotionTreeDataProvider
       return null;
     }
 
-    const normalizeId = (value: string) => value.replace(/-/g, "");
+    const normalizeId = (value: string) => value.replaceAll("-", "");
     const rootNormalized = normalizeId(rootPageId);
 
     // ルートを先にキャッシュしておく
@@ -153,7 +153,7 @@ export class NotionTreeDataProvider
   ): Promise<NotionPageTreeItem[] | null> {
     const chain: NotionPageTreeItem[] = [];
     const seen = new Set<string>();
-    const normalizeId = (value: string) => value.replace(/-/g, "");
+    const normalizeId = (value: string) => value.replaceAll("-", "");
 
     let currentId: string | undefined = pageId;
     let guard = 0;
@@ -599,7 +599,7 @@ export class NotionTreeDataProvider
   }
 
   private getCachePath(pageId: string): string {
-    const cleanId = pageId.replace(/-/g, "");
+    const cleanId = pageId.replaceAll("-", "");
     return path.join(this.cacheDir, `${cleanId}.json`);
   }
 

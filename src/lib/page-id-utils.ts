@@ -25,7 +25,7 @@ export function extractPageId(input: string): string | null {
       trimmed,
     )
   ) {
-    return trimmed.replace(/-/g, "");
+    return trimmed.replaceAll("-", "");
   }
 
   // URL の可能性

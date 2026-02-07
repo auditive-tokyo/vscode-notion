@@ -122,7 +122,7 @@ export class NotionApiClient {
       throw new Error("Official API client is not configured");
     }
 
-    const cleanId = id.replace(/-/g, "");
+    const cleanId = id.replaceAll("-", "");
 
     // ページとデータベースの両方を同時に試す
     const [pageResult, databaseResult] = await Promise.allSettled([
@@ -225,7 +225,7 @@ export class NotionApiClient {
     try {
       // まずdatabases.retrieveでデータベース情報を取得
       const database: any = await this.officialClient.databases.retrieve({
-        database_id: databaseId.replace(/-/g, ""),
+        database_id: databaseId.replaceAll("-", ""),
       });
 
       // data_sourcesからIDを取得
@@ -406,7 +406,7 @@ export class NotionApiClient {
 
     try {
       const database: any = await this.officialClient.databases.retrieve({
-        database_id: databaseId.replace(/-/g, ""),
+        database_id: databaseId.replaceAll("-", ""),
       });
 
       const title = database.title?.[0]?.plain_text || "Untitled Database";
