@@ -14,7 +14,10 @@ export const useMarkdownWithInlineDatabases = (
   state: NotionWebviewState,
   openPageCommand: `${CommandId.OpenPage}`,
   viewModes: Record<string, "calendar" | "timeline" | "table" | "board">,
-  toggleViewMode: (databaseId: string) => void,
+  setViewMode: (
+    databaseId: string,
+    mode: "calendar" | "timeline" | "table" | "board",
+  ) => void,
   renderCalendar: (
     db: NonNullable<typeof state.inlineDatabases>[number],
   ) => React.ReactElement,
@@ -72,21 +75,16 @@ export const useMarkdownWithInlineDatabases = (
         let defaultViewMode: "calendar" | "timeline" | "table" | "board" =
           "table";
         if (inlineDb.datePropertyName) {
-          defaultViewMode =
-            inlineDb.viewType === "timeline" ? "timeline" : "calendar";
+          defaultViewMode = "calendar";
         } else if (hasStatusColumn) {
           defaultViewMode = "board";
         }
 
         const currentViewMode = viewModes[databaseId] || defaultViewMode;
         const isCalendarView =
-          currentViewMode === "calendar" &&
-          inlineDb.viewType === "calendar" &&
-          inlineDb.datePropertyName;
+          currentViewMode === "calendar" && inlineDb.datePropertyName;
         const isTimelineView =
-          currentViewMode === "timeline" &&
-          inlineDb.viewType === "timeline" &&
-          inlineDb.datePropertyName;
+          currentViewMode === "timeline" && inlineDb.datePropertyName;
         const isBoardView = currentViewMode === "board" && hasStatusColumn;
 
         console.log("[webview] DB render:", {
@@ -98,38 +96,55 @@ export const useMarkdownWithInlineDatabases = (
           viewType: inlineDb.viewType,
         });
 
-        // ビューモード切り替えボタン
-        let toggleViewButton: React.ReactElement | null = null;
-        if (inlineDb.viewType === "timeline") {
-          toggleViewButton = (
-            <button
-              className="view-toggle-btn"
-              onClick={() => toggleViewMode(databaseId)}
-            >
-              {currentViewMode === "timeline"
-                ? "📋 Table View"
-                : "📈 Timeline View"}
-            </button>
-          );
-        } else if (inlineDb.viewType === "calendar") {
-          toggleViewButton = (
-            <button
-              className="view-toggle-btn"
-              onClick={() => toggleViewMode(databaseId)}
-            >
-              {isCalendarView ? "📋 Table View" : "📅 Calendar View"}
-            </button>
-          );
-        } else if (hasStatusColumn) {
-          toggleViewButton = (
-            <button
-              className="view-toggle-btn"
-              onClick={() => toggleViewMode(databaseId)}
-            >
-              {isBoardView ? "📋 Table View" : "📊 Board View"}
-            </button>
-          );
+        // ビューモード切り替えドロップダウン
+        const hasDateProperty = !!inlineDb.datePropertyName;
+        const availableModes: Array<
+          "table" | "calendar" | "timeline" | "board"
+        > = [];
+
+        if (hasDateProperty) {
+          availableModes.push("calendar");
+          availableModes.push("timeline"); // Always available when date exists
         }
+        if (hasStatusColumn) {
+          availableModes.push("board");
+        }
+        availableModes.push("table");
+
+        const getModeLabel = (
+          mode: "table" | "calendar" | "timeline" | "board",
+        ) => {
+          const labels: Record<
+            "table" | "calendar" | "timeline" | "board",
+            string
+          > = {
+            table: "📋 Table",
+            calendar: "📅 Calendar",
+            timeline: "📈 Timeline",
+            board: "📊 Board",
+          };
+          return labels[mode];
+        };
+
+        const viewSelector = (
+          <select
+            className="view-selector"
+            value={currentViewMode}
+            onChange={(e) =>
+              setViewMode(
+                databaseId,
+                e.target.value as "table" | "calendar" | "timeline" | "board",
+              )
+            }
+            style={{ minWidth: "120px" }}
+          >
+            {availableModes.map((mode) => (
+              <option key={mode} value={mode}>
+                {getModeLabel(mode)}
+              </option>
+            ))}
+          </select>
+        );
 
         // ビューモード別にコンテンツをレンダリング
         let dbContent: React.ReactElement;
@@ -164,7 +179,7 @@ export const useMarkdownWithInlineDatabases = (
               <h3 className="text-xl font-semibold grow">
                 {icon} {title}
               </h3>
-              {toggleViewButton}
+              {viewSelector}
             </div>
             {dbContent}
           </div>,
@@ -281,7 +296,7 @@ export const useMarkdownWithInlineDatabases = (
     state,
     openPageCommand,
     viewModes,
-    toggleViewMode,
+    setViewMode,
     renderCalendar,
     renderTimeline,
     renderTable,

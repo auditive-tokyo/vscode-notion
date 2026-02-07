@@ -231,17 +231,10 @@ export function convertDatabaseToMarkdownAndTable(
         }
 
         datePropertyName = propName;
-        const hasAnyDateRange = rows.some((row) => {
-          const prop = row.properties[propName];
-          return prop && prop.type === "date" && prop.date?.end !== null;
-        });
-        viewType = hasAnyDateRange ? "timeline" : "calendar";
+        viewType = "calendar"; // Always use calendar as default view
         console.log(
           "[markdown-converter] Date property found for full-page DB:",
           propName,
-          {
-            viewType,
-          },
         );
         break;
       }
@@ -450,15 +443,10 @@ async function collectInlineDbData(
           }
         }
 
-        // viewType: timeline（end あり） > calendar（start のみ） > table（date なし）
+        // viewType: Always use calendar (Timeline is always available)
         let viewType: "table" | "calendar" | "timeline" = "table";
         if (datePropertyName) {
-          // rows の中で end を持つレコードがあるかチェック
-          const hasAnyDateRange = rows.some((row) => {
-            const prop = row.properties[datePropertyName];
-            return prop && prop.type === "date" && prop.date?.end !== null;
-          });
-          viewType = hasAnyDateRange ? "timeline" : "calendar";
+          viewType = "calendar";
         }
 
         const tableData = convertRowsToTableData(rows, propertyNames);

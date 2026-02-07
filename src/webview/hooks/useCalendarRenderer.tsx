@@ -36,14 +36,39 @@ export const useCalendarRenderer = (
     >();
     db.tableData.rows.forEach((row) => {
       const dateValue = row.cells[dateColumnIndex];
-      // Date 型オブジェクトの場合は start を使用
-      const dateStr =
-        typeof dateValue === "string" ? dateValue : dateValue?.start;
-      if (dateStr) {
-        if (!eventsByDate.has(dateStr)) {
-          eventsByDate.set(dateStr, []);
+      // Date 型オブジェクトの場合
+      if (typeof dateValue === "object" && dateValue?.start) {
+        const startDate = new Date(dateValue.start);
+        const endDate = dateValue.end
+          ? new Date(dateValue.end)
+          : new Date(startDate);
+
+        // start から end までの全日付を追加
+        for (
+          let d = new Date(startDate);
+          d <= endDate;
+          d.setDate(d.getDate() + 1)
+        ) {
+          const year = d.getFullYear();
+          const month = String(d.getMonth() + 1).padStart(2, "0");
+          const day = String(d.getDate()).padStart(2, "0");
+          const dateStr = `${year}-${month}-${day}`;
+
+          if (!eventsByDate.has(dateStr)) {
+            eventsByDate.set(dateStr, []);
+          }
+          eventsByDate.get(dateStr)!.push(row);
         }
-        eventsByDate.get(dateStr)!.push(row);
+      } else {
+        // 文字列形式の日付
+        const dateStr =
+          typeof dateValue === "string" ? dateValue : dateValue?.start;
+        if (dateStr) {
+          if (!eventsByDate.has(dateStr)) {
+            eventsByDate.set(dateStr, []);
+          }
+          eventsByDate.get(dateStr)!.push(row);
+        }
       }
     });
 

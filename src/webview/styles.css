@@ -150,6 +150,29 @@ hr {
   color: #ffffff;
 }
 
+/* View selector dropdown */
+.view-selector {
+  font-size: 11px;
+  padding: 4px 8px;
+  background-color: #3b82f6;
+  color: #ffffff;
+  border: 1px solid #2563eb;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.view-selector:hover {
+  background-color: #2563eb;
+}
+
+.view-selector:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
 /* Toggle block styling */
 details {
   @apply my-3;

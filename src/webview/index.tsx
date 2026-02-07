@@ -38,76 +38,19 @@ const App: React.FC = () => {
     Record<string, "calendar" | "timeline" | "table" | "board">
   >({});
 
-  const toggleViewMode = (databaseId: string) => {
-    const db =
-      state.inlineDatabases?.find((d) => d.databaseId === databaseId) || null;
-    const isFullPageDb = databaseId === state.id;
-
-    // Determine if this database has date/status
-    let hasDate: boolean;
-    let hasStatus: boolean;
-
-    if (isFullPageDb) {
-      // Full-page database
-      hasDate = !!state.datePropertyName;
-      hasStatus =
-        state.tableData?.columns?.some(
-          (col) => col.toLowerCase() === "status",
-        ) ?? false;
-    } else {
-      // Inline database
-      hasDate = !!db?.datePropertyName;
-      hasStatus =
-        db?.tableData.columns?.some((col) => col.toLowerCase() === "status") ??
-        false;
-    }
-
-    // Calculate default mode based on available data
-    let defaultMode: "calendar" | "timeline" | "table" | "board" = "table";
-    if (hasDate) {
-      const viewType = isFullPageDb ? state.viewType : db?.viewType;
-      defaultMode = viewType === "timeline" ? "timeline" : "calendar";
-    } else if (hasStatus) {
-      defaultMode = "board";
-    }
-
-    const currentMode = viewModes[databaseId] || defaultMode;
-    let nextMode: "calendar" | "timeline" | "table" | "board";
-
-    // Cycle through available modes based on what data exists
-    if (currentMode === "calendar") {
-      nextMode = "timeline";
-    } else if (currentMode === "timeline") {
-      nextMode = hasStatus ? "board" : "table";
-    } else if (currentMode === "board") {
-      nextMode = "table";
-    } else {
-      // From table mode
-      nextMode = hasDate ? "calendar" : hasStatus ? "board" : "table";
-    }
-
-    console.log(
-      "[webview] toggleViewMode - hasDate:",
-      hasDate,
-      "hasStatus:",
-      hasStatus,
-      "currentMode:",
-      currentMode,
-      "nextMode:",
-      nextMode,
-    );
-
+  const setViewMode = (
+    databaseId: string,
+    mode: "calendar" | "timeline" | "table" | "board",
+  ) => {
     setViewModes({
       ...viewModes,
-      [databaseId]: nextMode,
+      [databaseId]: mode,
     });
     console.log(
-      "[webview] toggleViewMode called for databaseId:",
+      "[webview] setViewMode called for databaseId:",
       databaseId,
-      "currentMode:",
-      currentMode,
-      "nextMode:",
-      nextMode,
+      "newMode:",
+      mode,
     );
   };
 
@@ -133,7 +76,7 @@ const App: React.FC = () => {
     state,
     openPageCommand,
     viewModes,
-    toggleViewMode,
+    setViewMode,
     renderCalendar,
     renderTimeline,
     renderTable,
@@ -155,7 +98,7 @@ const App: React.FC = () => {
     currentViewMode?: "table" | "calendar" | "timeline" | "board",
   ) => {
     // For full-page databases, convert to inline database format for rendering
-    if (viewType && state.datePropertyName) {
+    if (viewType && state.datePropertyName && currentViewMode) {
       const dbWrapper: NonNullable<typeof state.inlineDatabases>[number] = {
         databaseId: state.id,
         title: state.title,
@@ -171,9 +114,9 @@ const App: React.FC = () => {
         },
       };
 
-      if (viewType === "calendar") {
+      if (currentViewMode === "calendar") {
         return renderCalendar(dbWrapper);
-      } else if (viewType === "timeline") {
+      } else if (currentViewMode === "timeline") {
         return renderTimeline(dbWrapper);
       }
     }
@@ -214,21 +157,15 @@ const App: React.FC = () => {
       );
       const defaultViewMode: "calendar" | "timeline" | "table" | "board" =
         state.datePropertyName
-          ? state.viewType === "timeline"
-            ? "timeline"
-            : "calendar"
+          ? "calendar"
           : hasStatusColumn
           ? "board"
           : "table";
       const currentViewMode = viewModes[state.id] || defaultViewMode;
       const isCalendarView =
-        currentViewMode === "calendar" &&
-        state.viewType === "calendar" &&
-        state.datePropertyName;
+        currentViewMode === "calendar" && state.datePropertyName;
       const isTimelineView =
-        currentViewMode === "timeline" &&
-        state.viewType === "timeline" &&
-        state.datePropertyName;
+        currentViewMode === "timeline" && state.datePropertyName;
       const isBoardView = currentViewMode === "board" && hasStatusColumn;
 
       console.log("[webview] Full-page DB render:", {
@@ -241,38 +178,55 @@ const App: React.FC = () => {
         viewType: state.viewType,
       });
 
-      // ビューモード切り替えボタン
-      let toggleViewButton: React.ReactElement | null = null;
-      if (state.viewType === "timeline") {
-        toggleViewButton = (
-          <button
-            className="view-toggle-btn"
-            onClick={() => toggleViewMode(state.id)}
-          >
-            {currentViewMode === "timeline"
-              ? "📋 Table View"
-              : "📈 Timeline View"}
-          </button>
-        );
-      } else if (state.viewType === "calendar") {
-        toggleViewButton = (
-          <button
-            className="view-toggle-btn"
-            onClick={() => toggleViewMode(state.id)}
-          >
-            {isCalendarView ? "📋 Table View" : "📅 Calendar View"}
-          </button>
-        );
-      } else if (hasStatusColumn) {
-        toggleViewButton = (
-          <button
-            className="view-toggle-btn"
-            onClick={() => toggleViewMode(state.id)}
-          >
-            {isBoardView ? "📋 Table View" : "📊 Board View"}
-          </button>
-        );
+      // ビューモード切り替えドロップダウン
+      const availableModesFullPage: Array<
+        "table" | "calendar" | "timeline" | "board"
+      > = [];
+
+      if (state.datePropertyName) {
+        availableModesFullPage.push("calendar");
+        availableModesFullPage.push("timeline"); // Always available when date exists
       }
+      if (hasStatusColumn) {
+        availableModesFullPage.push("board");
+      }
+      availableModesFullPage.push("table");
+
+      const getModeLabel = (
+        mode: "table" | "calendar" | "timeline" | "board",
+      ) => {
+        const labels: Record<
+          "table" | "calendar" | "timeline" | "board",
+          string
+        > = {
+          table: "📋 Table",
+          calendar: "📅 Calendar",
+          timeline: "📈 Timeline",
+          board: "📊 Board",
+        };
+        return labels[mode];
+      };
+
+      const toggleViewButton =
+        availableModesFullPage.length > 1 ? (
+          <select
+            className="view-selector"
+            value={currentViewMode}
+            onChange={(e) =>
+              setViewMode(
+                state.id,
+                e.target.value as "table" | "calendar" | "timeline" | "board",
+              )
+            }
+            style={{ minWidth: "120px" }}
+          >
+            {availableModesFullPage.map((mode) => (
+              <option key={mode} value={mode}>
+                {getModeLabel(mode)}
+              </option>
+            ))}
+          </select>
+        ) : null;
 
       const renderActualContent = () => {
         if (isTimelineView) {
