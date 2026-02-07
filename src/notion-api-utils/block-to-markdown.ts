@@ -107,6 +107,38 @@ export function blockToMarkdown(block: any): string {
         return `![${imageCaption}](${imageUrl})`;
       }
 
+      case "video": {
+        const videoUrl =
+          block.video?.external?.url || block.video?.file?.url || "";
+        const videoCaption =
+          block.video?.caption?.map((t: any) => t.plain_text).join("") || "";
+        
+        if (!videoUrl) return "";
+
+        // YouTube URL を埋め込み形式に変換
+        let embedUrl = videoUrl;
+        const youtubeMatch = videoUrl.match(
+          /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/
+        );
+        if (youtubeMatch) {
+          const videoId = youtubeMatch[1];
+          embedUrl = `https://www.youtube.com/embed/${videoId}`;
+        }
+
+        // HTML iframe で埋め込み（VS Code Webview sandbox 対応）
+        const caption = videoCaption ? `<p class="video-caption">${videoCaption}</p>` : "";
+        return `<div class="notion-video" style="max-width: 560px; margin: 1em 0;">
+  <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+    <iframe 
+      src="${embedUrl}" 
+      style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+      title="Video player"
+    ></iframe>
+  </div>
+  ${caption}
+</div>`;
+      }
+
       case "child_page": {
         const pageId = block.id;
         const pageTitle = block.child_page?.title || "Untitled Page";
