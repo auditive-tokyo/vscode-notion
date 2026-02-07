@@ -344,6 +344,9 @@ export class NotionWebviewPanelSerializer
     const treeView = hierarchyView?.getTreeView();
     const dataProvider = hierarchyView?.getDataProvider();
     if (treeView && dataProvider) {
+      // TreeView のキャッシュもクリア（子ページリストを再取得）
+      await dataProvider.refreshItem(id);
+
       const treeItem = dataProvider.getItemById(id);
       if (treeItem) {
         await treeView.reveal(treeItem, {

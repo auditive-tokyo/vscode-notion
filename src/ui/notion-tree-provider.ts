@@ -55,13 +55,14 @@ export class NotionTreeDataProvider
    * 特定のアイテムのみ更新（子ページ再取得）
    */
   async refreshItem(pageId: string): Promise<void> {
-    // そのページのキャッシュをクリア
-    this.cache.delete(pageId);
+    // そのページのキャッシュをクリア（page と database 両方の可能性）
+    this.cache.delete(`page:${pageId}`);
+    this.cache.delete(`database:${pageId}`);
 
     // ディスクキャッシュも削除
-    const cacheFile = path.join(this.cacheDir, `${pageId}.json`);
     try {
-      await fs.unlink(cacheFile);
+      await this.deleteCache(`page:${pageId}`);
+      await this.deleteCache(`database:${pageId}`);
       console.log("[notion-tree] Item cache cleared:", pageId);
     } catch {
       // ファイルがなければ無視

@@ -6,6 +6,37 @@ import {
   convertDatabaseToMarkdownHelper,
 } from "./notion-api-utils";
 
+// Type definitions
+type ViewType = "table" | "calendar" | "timeline";
+
+type InlineDatabaseRecord = {
+  databaseId: string;
+  title: string;
+  viewType: ViewType;
+  datePropertyName?: string;
+  statusColorMap?: Record<string, string>;
+  tableData: {
+    columns: string[];
+    rows: {
+      id: string;
+      cells: (string | { start: string | null; end: string | null })[];
+    }[];
+  };
+};
+
+type PageOrDatabaseResponse = {
+  data: string;
+  type: "page" | "database";
+  tableData?: any;
+  coverUrl?: string | null;
+  icon?: { type: string; emoji?: string; url?: string } | null;
+  description?: string | null;
+  viewType?: ViewType;
+  datePropertyName?: string;
+  statusColorMap?: Record<string, string>;
+  inlineDatabases?: InlineDatabaseRecord[];
+};
+
 /**
  * Notion APIクライアント
  * 公式API (@notionhq/client) を使用してページとデータベースを取得
@@ -48,31 +79,7 @@ export class NotionApiClient {
    * ページデータをMarkdownで取得（type情報付き）
    * 公式APIを使用してページとデータベースの両方に対応
    */
-  async getPageDataById(id: string): Promise<{
-    data: string;
-    type: "page" | "database";
-    tableData?: any;
-    coverUrl?: string | null;
-    icon?: { type: string; emoji?: string; url?: string } | null;
-    description?: string | null;
-    viewType?: "table" | "calendar" | "timeline"; // For full-page databases
-    datePropertyName?: string; // For full-page databases
-    statusColorMap?: Record<string, string>; // For full-page databases
-    inlineDatabases?: Array<{
-      databaseId: string;
-      title: string;
-      viewType: "table" | "calendar" | "timeline";
-      datePropertyName?: string;
-      statusColorMap?: Record<string, string>;
-      tableData: {
-        columns: string[];
-        rows: {
-          id: string;
-          cells: (string | { start: string | null; end: string | null })[];
-        }[];
-      };
-    }>;
-  }> {
+  async getPageDataById(id: string): Promise<PageOrDatabaseResponse> {
     console.log("[notion-api-client] getPageDataById called with id:", id);
 
     if (!this.officialClient) {
@@ -93,31 +100,9 @@ export class NotionApiClient {
    * ページまたはデータベースを取得（公式API）
    * Promise.allSettled で両方を同時に試し、どちらが成功するか判定
    */
-  private async getPageOrDatabaseWithOfficialApi(id: string): Promise<{
-    data: string;
-    type: "page" | "database";
-    tableData?: any;
-    coverUrl?: string | null;
-    icon?: { type: string; emoji?: string; url?: string } | null;
-    description?: string | null;
-    viewType?: "table" | "calendar" | "timeline"; // For full-page databases
-    datePropertyName?: string; // For full-page databases
-    statusColorMap?: Record<string, string>; // For full-page databases
-    inlineDatabases?: Array<{
-      databaseId: string;
-      title: string;
-      viewType: "table" | "calendar" | "timeline";
-      datePropertyName?: string;
-      statusColorMap?: Record<string, string>;
-      tableData: {
-        columns: string[];
-        rows: {
-          id: string;
-          cells: (string | { start: string | null; end: string | null })[];
-        }[];
-      };
-    }>;
-  }> {
+  private async getPageOrDatabaseWithOfficialApi(
+    id: string,
+  ): Promise<PageOrDatabaseResponse> {
     if (!this.officialClient) {
       throw new Error("Official API client is not configured");
     }
@@ -141,28 +126,7 @@ export class NotionApiClient {
         this.queryDatabaseRows.bind(this),
         this.getDatabaseInfo.bind(this),
       );
-      const response: {
-        data: string;
-        type: "page" | "database";
-        tableData?: any;
-        coverUrl?: string | null;
-        icon?: { type: string; emoji?: string; url?: string } | null;
-        description?: string | null;
-        inlineDatabases?: Array<{
-          databaseId: string;
-          title: string;
-          viewType: "table" | "calendar" | "timeline";
-          datePropertyName?: string;
-          statusColorMap?: Record<string, string>;
-          tableData: {
-            columns: string[];
-            rows: {
-              id: string;
-              cells: (string | { start: string | null; end: string | null })[];
-            }[];
-          };
-        }>;
-      } = {
+      const response: PageOrDatabaseResponse = {
         data: result.markdown,
         type: "page",
         coverUrl: result.coverUrl,

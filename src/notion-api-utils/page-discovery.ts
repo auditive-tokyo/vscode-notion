@@ -15,9 +15,7 @@ export interface NotionPageTreeItem {
  * @param block - Notion API ブロックオブジェクト
  * @returns 抽出されたページ/DB のリスト
  */
-export function extractPagesAndDatabases(
-  block: any,
-): NotionPageTreeItem[] {
+export function extractPagesAndDatabases(block: any): NotionPageTreeItem[] {
   const items: NotionPageTreeItem[] = [];
 
   if (!block) return items;
@@ -45,7 +43,10 @@ export function extractPagesAndDatabases(
         const syncedBlockId = block.synced_block.synced_from.block_id;
         items.push({
           id: syncedBlockId,
-          title: `Synced: ${block.synced_block.synced_from.block_id.slice(0, 8)}`,
+          title: `Synced: ${block.synced_block.synced_from.block_id.slice(
+            0,
+            8,
+          )}`,
           type: "page",
         });
       }
@@ -64,7 +65,9 @@ export function extractPagesAndDatabases(
       {
         const blockData = (block as any)[block.type];
         if (blockData?.rich_text) {
-          const pageRefs = extractPageReferencesFromRichText(blockData.rich_text);
+          const pageRefs = extractPageReferencesFromRichText(
+            blockData.rich_text,
+          );
           items.push(...pageRefs);
         }
       }
@@ -83,6 +86,7 @@ export function extractPageReferencesFromRichText(
   richTexts: any[],
 ): NotionPageTreeItem[] {
   const items: NotionPageTreeItem[] = [];
+  const seenIds = new Set<string>();
 
   if (!Array.isArray(richTexts)) return items;
 
@@ -95,36 +99,90 @@ export function extractPageReferencesFromRichText(
       type: text.type,
     });
 
+    if (text.type === "mention" && text.mention?.type === "page") {
+      const pageId = text.mention?.page?.id;
+      if (pageId && !seenIds.has(pageId)) {
+        items.push({
+          id: pageId,
+          title: text.plain_text || pageId.slice(0, 8),
+          type: "page",
+        });
+        seenIds.add(pageId);
+      }
+    }
+
     if (!text.href) continue;
 
     // Notion の内部リンク形式: /workspace/page-id や /database/page-id
     const notionLinkMatch = text.href.match(
       /\/(?:workspace|database|page)\/([a-f0-9]{32})/,
     );
+    const notionDashedMatch = text.href.match(
+      /\/(?:workspace|database|page)\/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/,
+    );
     if (notionLinkMatch) {
       const pageId = notionLinkMatch[1];
       console.log(
         `[page-discovery] Found Notion link: ${text.plain_text} -> ${pageId}`,
       );
-      items.push({
-        id: pageId,
-        title: text.plain_text || pageId.slice(0, 8),
-        type: "page",
-      });
+      if (!seenIds.has(pageId)) {
+        items.push({
+          id: pageId,
+          title: text.plain_text || pageId.slice(0, 8),
+          type: "page",
+        });
+        seenIds.add(pageId);
+      }
+    }
+
+    if (notionDashedMatch) {
+      const pageId = notionDashedMatch[1];
+      console.log(
+        `[page-discovery] Found Notion dashed link: ${text.plain_text} -> ${pageId}`,
+      );
+      if (!seenIds.has(pageId)) {
+        items.push({
+          id: pageId,
+          title: text.plain_text || pageId.slice(0, 8),
+          type: "page",
+        });
+        seenIds.add(pageId);
+      }
     }
 
     // 短いハイフン区切り形式も試す: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
     const shortIdMatch = text.href.match(/([a-f0-9]{32})/);
+    const dashedIdMatch = text.href.match(
+      /([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/,
+    );
     if (shortIdMatch && !notionLinkMatch) {
       const pageId = shortIdMatch[1];
       console.log(
         `[page-discovery] Found ID in href: ${text.plain_text} -> ${pageId}`,
       );
-      items.push({
-        id: pageId,
-        title: text.plain_text || pageId.slice(0, 8),
-        type: "page",
-      });
+      if (!seenIds.has(pageId)) {
+        items.push({
+          id: pageId,
+          title: text.plain_text || pageId.slice(0, 8),
+          type: "page",
+        });
+        seenIds.add(pageId);
+      }
+    }
+
+    if (dashedIdMatch && !notionDashedMatch) {
+      const pageId = dashedIdMatch[1];
+      console.log(
+        `[page-discovery] Found dashed ID in href: ${text.plain_text} -> ${pageId}`,
+      );
+      if (!seenIds.has(pageId)) {
+        items.push({
+          id: pageId,
+          title: text.plain_text || pageId.slice(0, 8),
+          type: "page",
+        });
+        seenIds.add(pageId);
+      }
     }
   }
 
