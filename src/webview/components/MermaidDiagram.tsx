@@ -32,6 +32,20 @@ export const MermaidDiagram: React.FC<MermaidDiagramProps> = ({ chart }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [svg, setSvg] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const renderCounterRef = useRef(0);
+
+  const createRenderId = (): string => {
+    const cryptoRef = globalThis.crypto;
+    if (cryptoRef?.getRandomValues) {
+      const bytes = new Uint32Array(2);
+      cryptoRef.getRandomValues(bytes);
+      return `mermaid-${bytes[0].toString(36)}${bytes[1].toString(36)}`;
+    }
+    renderCounterRef.current += 1;
+    return `mermaid-${Date.now().toString(
+      36,
+    )}-${renderCounterRef.current.toString(36)}`;
+  };
 
   useEffect(() => {
     const renderChart = async () => {
@@ -39,7 +53,7 @@ export const MermaidDiagram: React.FC<MermaidDiagramProps> = ({ chart }) => {
 
       try {
         // Generate unique ID for each render
-        const id = `mermaid-${Math.random().toString(36).substring(2, 11)}`;
+        const id = createRenderId();
         const { svg } = await mermaid.render(id, chart);
         setSvg(svg);
         setError(null);

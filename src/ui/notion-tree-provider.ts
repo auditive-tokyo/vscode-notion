@@ -85,6 +85,13 @@ export class NotionTreeDataProvider
   }
 
   /**
+   * itemCache のキー一覧を取得（デバッグ用）
+   */
+  getItemCacheKeys(): string[] {
+    return Array.from(this.itemCache.keys());
+  }
+
+  /**
    * 親チェーンを辿ってTreeViewで選択できる状態にする
    */
   async ensureItemVisible(pageId: string): Promise<NotionPageTreeItem | null> {
