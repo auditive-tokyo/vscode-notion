@@ -407,8 +407,16 @@ export class NotionWebviewPanelSerializer
    * Markdown の最初の # ヘッダーを抽出
    */
   private extractTitleFromMarkdown(markdown: string): string | null {
-    const match = markdown.match(/^#\s+(.+?)$/m);
-    return match && match[1] ? match[1].trim() : null;
+    const lines = markdown.split("\n");
+    for (let line of lines) {
+      if (line.endsWith("\r")) {
+        line = line.slice(0, -1);
+      }
+      if (line.startsWith("# ")) {
+        return line.slice(2).trim();
+      }
+    }
+    return null;
   }
 
   private renderWebview(
