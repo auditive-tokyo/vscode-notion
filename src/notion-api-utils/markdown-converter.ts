@@ -257,11 +257,6 @@ export function convertDatabaseToMarkdownAndTable(
           return prop && prop.type === "date" && prop.date?.end !== null;
         });
         viewType = hasAnyDateRange ? "timeline" : "calendar";
-        console.log(
-          "[markdown-converter] Date property found for full-page DB:",
-          propName,
-          { viewType },
-        );
         break;
       }
     }
@@ -285,10 +280,6 @@ export function convertDatabaseToMarkdownAndTable(
       }
     }
   }
-
-  console.log("[markdown-converter] tableData created:", tableData);
-  console.log("[markdown-converter] statusColorMap:", statusColorMap);
-  console.log("[markdown-converter] viewType for full-page DB:", viewType);
 
   const result: {
     markdown: string;
@@ -400,11 +391,6 @@ async function collectInlineDbData(
       continue;
     }
 
-    console.log("[markdown-converter] Processing DB placeholder:", {
-      databaseId,
-      title,
-    });
-
     try {
       // is_inline を判定
       let isInline = true; // デフォルトはinline扱い
@@ -414,16 +400,10 @@ async function collectInlineDbData(
         const dbInfo = await getDatabaseInfo(databaseId);
         isInline = dbInfo.is_inline;
         dbTitle = dbInfo.title || title;
-        console.log("[markdown-converter] DB info:", {
-          databaseId,
-          isInline,
-          dbTitle,
-        });
       }
 
       if (!isInline) {
         // Full Page DB: リンクに置換
-        console.log("[markdown-converter] Full Page DB - converting to link");
         resultMarkdown = resultMarkdown.replace(
           fullMatch,
           `📋 [${dbTitle}](/${databaseId})`,
@@ -432,9 +412,7 @@ async function collectInlineDbData(
       }
 
       // Inline DB: テーブルデータを収集
-      console.log("[markdown-converter] Inline DB - fetching rows");
       const rows = await queryRows(databaseId);
-      console.log("[markdown-converter] Inline DB rows:", rows.length);
 
       if (rows.length > 0) {
         // プロパティ名を抽出
@@ -444,7 +422,6 @@ async function collectInlineDbData(
 
         // 日付プロパティを検出
         let datePropertyName: string | undefined;
-        let hasDateRange = false;
 
         for (const [propName, propValue] of Object.entries(properties)) {
           if ((propValue as any).type === "date") {
@@ -458,13 +435,6 @@ async function collectInlineDbData(
             }
 
             datePropertyName = propName;
-            // end があるかチェック（Timeline view判定用）
-            hasDateRange =
-              (propValue as any).date?.end !== null &&
-              (propValue as any).date?.end !== undefined;
-            console.log("[markdown-converter] Date property found:", propName, {
-              hasDateRange,
-            });
             break;
           }
         }
@@ -510,8 +480,6 @@ async function collectInlineDbData(
           ...(statusColorMap ? { statusColorMap } : {}),
           tableData,
         });
-
-        console.log("[markdown-converter] DB added as:", viewType);
       }
     } catch (error) {
       console.error("[markdown-converter] Failed to process DB:", error);
@@ -619,15 +587,7 @@ export async function convertDatabaseToMarkdownHelper(
   datePropertyName?: string;
   statusColorMap?: Record<string, string>;
 }> {
-  console.log("[notion-api-utils] Database ID:", database.id);
-  console.log(
-    "[notion-api-utils] Database has",
-    database.data_sources?.length || 0,
-    "data sources",
-  );
-
   const rows = await queryRows(database.id);
-  console.log("[notion-api-utils] Retrieved", rows.length, "rows");
 
   const result = convertDatabaseToMarkdownAndTable(database, rows);
   const coverUrl = extractPageCover(database);

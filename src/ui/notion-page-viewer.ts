@@ -146,18 +146,12 @@ export class NotionWebviewPanelSerializer
 
       const cacheAgeMs = Date.now() - cacheData.timestamp;
       if (cacheAgeMs > getCacheTtlMs()) {
-        console.log(
-          `[notion-page-viewer] Cache for ${id} expired (${Math.round(
-            cacheAgeMs / 1000 / 60 / 60,
-          )} hours old)`,
-        );
         await fs.unlink(cacheFile).catch(() => {});
         return null;
       }
 
       // アクセス時にタイムスタンプを更新（LRU的な挙動）
       await this.savePageToDiskCache(id, cacheData.state);
-      console.log(`[notion-page-viewer] Loaded from cache: ${id}`);
       return cacheData.state;
     } catch {
       return null;
@@ -178,7 +172,6 @@ export class NotionWebviewPanelSerializer
         state,
       };
       await fs.writeFile(cacheFile, JSON.stringify(cacheData), "utf-8");
-      console.log(`[notion-page-viewer] Saved to cache: ${id}`);
     } catch (error) {
       console.error(`[notion-page-viewer] Failed to save cache: ${id}`, error);
     }
@@ -257,10 +250,6 @@ export class NotionWebviewPanelSerializer
                 >,
               };
               await this.savePageToDiskCache(state.id, updatedState);
-              console.log(
-                "[notion-page-viewer] viewModes saved to cache:",
-                JSON.stringify(message.viewModes),
-              );
             }
           },
         ),
@@ -284,23 +273,11 @@ export class NotionWebviewPanelSerializer
         return;
       }
 
-      console.log("[notion-page-viewer] Attempting to reveal pageId:", pageId);
-      console.log(
-        "[notion-page-viewer] itemCache has:",
-        dataProvider.getItemCacheKeys(),
-      );
-
       // itemCacheからアイテムを取得（展開済みの場合のみ）
       const treeItem =
         dataProvider.getItemById(pageId) ||
         (await dataProvider.ensureItemVisible(pageId));
       if (!treeItem) {
-        console.log(
-          `[notion-page-viewer] Page ${pageId.slice(
-            0,
-            16,
-          )}... not found in tree`,
-        );
         return;
       }
 
@@ -311,11 +288,8 @@ export class NotionWebviewPanelSerializer
         expand: true,
       });
 
-      console.log(
-        `[notion-page-viewer] Synced tree view with page: ${treeItem.title}`,
-      );
     } catch (error) {
-      console.log(`[notion-page-viewer] Could not sync tree view:`, error);
+      console.error("[notion-page-viewer] Could not sync tree view:", error);
     }
   }
 
@@ -368,10 +342,6 @@ export class NotionWebviewPanelSerializer
   }
 
   private async fetchDataAndGetPageState(id: string) {
-    console.log(
-      "[notion-page-viewer] fetchDataAndGetPageState called with id:",
-      id,
-    );
     const result = await vscode.window.withProgress(
       {
         title: "VSCode Notion",
@@ -382,15 +352,9 @@ export class NotionWebviewPanelSerializer
         return this.notionApi.getPageDataById(id);
       },
     );
-    console.log(
-      "[notion-page-viewer] page data fetched, data length:",
-      result.data?.length,
-    );
-    console.log("[notion-page-viewer] result:", result);
     // Markdown の最初のヘッダーからタイトルを抽出
     const title =
       this.extractTitleFromMarkdown(result.data) ?? untitledPageTitle;
-    console.log("[notion-page-viewer] page title:", title);
     const finalState: NotionWebviewState = {
       id,
       title,
@@ -407,7 +371,6 @@ export class NotionWebviewPanelSerializer
       description: result.description ?? null,
       inlineDatabases: result.inlineDatabases ?? [],
     };
-    console.log("[notion-page-viewer] finalState:", finalState);
     return finalState;
   }
 

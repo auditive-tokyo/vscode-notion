@@ -90,15 +90,7 @@ export function extractPageReferencesFromRichText(
 
   if (!Array.isArray(richTexts)) return items;
 
-  console.log(`[page-discovery] Scanning ${richTexts.length} rich text items`);
-
   for (const text of richTexts) {
-    console.log(`[page-discovery] Rich text item:`, {
-      plain_text: text.plain_text,
-      href: text.href,
-      type: text.type,
-    });
-
     if (text.type === "mention" && text.mention?.type === "page") {
       const pageId = text.mention?.page?.id;
       if (pageId && !seenIds.has(pageId)) {
@@ -122,9 +114,6 @@ export function extractPageReferencesFromRichText(
     );
     if (notionLinkMatch) {
       const pageId = notionLinkMatch[1];
-      console.log(
-        `[page-discovery] Found Notion link: ${text.plain_text} -> ${pageId}`,
-      );
       if (!seenIds.has(pageId)) {
         items.push({
           id: pageId,
@@ -137,9 +126,6 @@ export function extractPageReferencesFromRichText(
 
     if (notionDashedMatch) {
       const pageId = notionDashedMatch[1];
-      console.log(
-        `[page-discovery] Found Notion dashed link: ${text.plain_text} -> ${pageId}`,
-      );
       if (!seenIds.has(pageId)) {
         items.push({
           id: pageId,
@@ -157,9 +143,6 @@ export function extractPageReferencesFromRichText(
     );
     if (shortIdMatch && !notionLinkMatch) {
       const pageId = shortIdMatch[1];
-      console.log(
-        `[page-discovery] Found ID in href: ${text.plain_text} -> ${pageId}`,
-      );
       if (!seenIds.has(pageId)) {
         items.push({
           id: pageId,
@@ -172,9 +155,6 @@ export function extractPageReferencesFromRichText(
 
     if (dashedIdMatch && !notionDashedMatch) {
       const pageId = dashedIdMatch[1];
-      console.log(
-        `[page-discovery] Found dashed ID in href: ${text.plain_text} -> ${pageId}`,
-      );
       if (!seenIds.has(pageId)) {
         items.push({
           id: pageId,

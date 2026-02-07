@@ -44,7 +44,6 @@ export class NotionTreeDataProvider
     try {
       await fs.rm(this.cacheDir, { recursive: true, force: true });
       await fs.mkdir(this.cacheDir, { recursive: true });
-      console.log("[notion-tree] Cache cleared");
     } catch (error) {
       console.error("[notion-tree] Failed to clear cache:", error);
     }
@@ -63,7 +62,6 @@ export class NotionTreeDataProvider
     try {
       await this.deleteCache(`page:${pageId}`);
       await this.deleteCache(`database:${pageId}`);
-      console.log("[notion-tree] Item cache cleared:", pageId);
     } catch {
       // ファイルがなければ無視
     }
@@ -96,8 +94,6 @@ export class NotionTreeDataProvider
    * 親チェーンを辿ってTreeViewで選択できる状態にする
    */
   async ensureItemVisible(pageId: string): Promise<NotionPageTreeItem | null> {
-    console.log("[notion-tree] ensureItemVisible called with pageId:", pageId);
-
     if (!this.notionClient.isConfigured()) {
       return null;
     }
@@ -122,10 +118,6 @@ export class NotionTreeDataProvider
     }
 
     const chain = await this.getAncestorChain(pageId, rootNormalized);
-    console.log(
-      "[notion-tree] Ancestor chain:",
-      chain?.map((c) => ({ id: c.id, title: c.title })) || null,
-    );
 
     if (!chain || chain.length === 0) {
       return null;
@@ -138,9 +130,6 @@ export class NotionTreeDataProvider
       const children = await this.getChildren(parent);
       const match = children.find((item) => item.id === child.id);
       if (!match) {
-        console.log(
-          `[notion-tree] Child ${child.id} not found under ${parent.id}`,
-        );
         return null;
       }
     }
@@ -204,13 +193,7 @@ export class NotionTreeDataProvider
       }
 
       const getParentId = (parent: any): string | undefined => {
-        console.log(
-          "[notion-tree] Raw parent object:",
-          JSON.stringify(parent, null, 2),
-        );
-
         if (!parent || typeof parent !== "object") {
-          console.log("[notion-tree] Parent is null or not an object");
           return undefined;
         }
         if (parent.type === "page_id") {
@@ -226,7 +209,6 @@ export class NotionTreeDataProvider
         if (parent.type === "block_id") {
           return parent.block_id;
         }
-        console.log("[notion-tree] Parent type not recognized:", parent.type);
         return undefined;
       };
 
@@ -244,7 +226,6 @@ export class NotionTreeDataProvider
         }
 
         const parentId = getParentId((page as any).parent);
-        console.log("[notion-tree] Parent ID retrieved (page):", parentId);
 
         const item: NotionPageTreeItem = {
           id: page.id,
@@ -264,10 +245,6 @@ export class NotionTreeDataProvider
             "Untitled Database";
 
           const parentId = getParentId((database as any).parent);
-          console.log(
-            "[notion-tree] Parent ID retrieved (database):",
-            parentId,
-          );
 
           const item: NotionPageTreeItem = {
             id: database.id,
@@ -310,9 +287,6 @@ export class NotionTreeDataProvider
       ],
     };
 
-    console.log(
-      `[notion-tree] getTreeItem: ${element.title} (${element.type})`,
-    );
     return treeItem;
   }
 
@@ -324,13 +298,7 @@ export class NotionTreeDataProvider
   async getChildren(
     element?: NotionPageTreeItem,
   ): Promise<NotionPageTreeItem[]> {
-    console.log("[notion-tree] getChildren called", {
-      element: element?.title,
-      type: element?.type,
-    });
-
     if (!this.notionClient.isConfigured()) {
-      console.log("[notion-tree] notionClient not configured");
       return [];
     }
 
@@ -342,20 +310,15 @@ export class NotionTreeDataProvider
         config.get<string>("rootPageId", "");
       const rootPageId = extractPageId(rawRootPage);
 
-      console.log("[notion-tree] rootPage:", rootPageId);
-
       if (!rootPageId) {
-        console.log("[notion-tree] rootPage not set");
         return [];
       }
 
       try {
         // ルートページ自体を取得して表示
-        console.log("[notion-tree] Fetching root page info...");
         const rootPage = await this.fetchPageInfo(rootPageId);
         if (rootPage) {
           this.itemCache.set(rootPage.id, rootPage);
-          console.log("[notion-tree] Root page:", rootPage.title);
           return [rootPage];
         }
         return [];
@@ -367,14 +330,7 @@ export class NotionTreeDataProvider
 
     // データベースの場合はレコードを取得、ページの場合は子ページを取得
     try {
-      console.log(
-        `[notion-tree] Fetching children for element: ${element.title} (type: ${element.type})`,
-      );
       const children = await this.fetchPageChildren(element.id, element.type);
-      console.log(
-        `[notion-tree] Children for ${element.title}:`,
-        children.length,
-      );
       // 親情報を記録
       for (const child of children) {
         this.parentMap.set(child.id, element);
@@ -418,26 +374,17 @@ export class NotionTreeDataProvider
 
       if (type === "database") {
         // データベースの場合はレコードを取得
-        console.log(`[notion-tree] Fetching database records for ${pageId}`);
         children = await this.fetchDatabaseRecords(pageId);
-        console.log(`[notion-tree] Found ${children.length} database records`);
         addToItemCache(children);
       } else {
         // ページの場合はブロックから子ページ/DBを探索
-        console.log(`[notion-tree] Fetching children for page ${pageId}`);
         const blocks = await this.getPageBlocks(pageId);
-        console.log(`[notion-tree] Found ${blocks.length} blocks`);
 
         const seenIds = new Set<string>();
 
         // ブロック内のすべてのページ/DBを再帰的に探索
         for (const block of blocks) {
-          console.log(`[notion-tree] Processing block type: ${block.type}`);
           const foundItems = extractPagesAndDatabases(block);
-          console.log(
-            `[notion-tree] Found ${foundItems.length} items from ${block.type}`,
-            foundItems,
-          );
           for (const item of foundItems) {
             // 重複を避ける
             if (!seenIds.has(item.id)) {
@@ -446,11 +393,6 @@ export class NotionTreeDataProvider
             }
           }
         }
-
-        console.log(
-          `[notion-tree] Total children for page: ${children.length}`,
-          children,
-        );
         addToItemCache(children);
       }
 
@@ -504,9 +446,6 @@ export class NotionTreeDataProvider
         };
       } catch (pageError) {
         // ページとして取得失敗時、データベースとして取得を試みる
-        console.log(
-          `[notion-tree] Page retrieval failed for ${pageId}, trying database API...`,
-        );
         try {
           const database = await officialClient.databases.retrieve({
             database_id: pageId,
@@ -539,8 +478,6 @@ export class NotionTreeDataProvider
     databaseId: string,
   ): Promise<NotionPageTreeItem[]> {
     try {
-      console.log(`[notion-tree] Fetching database records for ${databaseId}`);
-
       // NotionApiClient の公開メソッドを使用
       const records = await this.notionClient.getDatabaseRecords(databaseId);
 
@@ -551,9 +488,6 @@ export class NotionTreeDataProvider
         type: "page", // データベースレコードは page として扱う
       }));
 
-      console.log(
-        `[notion-tree] Fetched ${treeItems.length} records from database ${databaseId}`,
-      );
       return treeItems;
     } catch (error) {
       console.error(
@@ -629,20 +563,9 @@ export class NotionTreeDataProvider
       const cacheAgeMs = now - cacheData.timestamp;
 
       if (cacheAgeMs > getCacheTtlMs()) {
-        console.log(
-          `[notion-tree] Cache for ${pageId} expired (${Math.round(
-            cacheAgeMs / 1000 / 60,
-          )} minutes old), removing`,
-        );
         await this.deleteCache(pageId);
         return null;
       }
-
-      console.log(
-        `[notion-tree] Cache for ${pageId} is valid (${Math.round(
-          cacheAgeMs / 1000 / 60,
-        )} minutes old)`,
-      );
       return cacheData.data;
     } catch (error) {
       if (
@@ -672,7 +595,6 @@ export class NotionTreeDataProvider
         JSON.stringify(cacheData, null, 2),
         "utf-8",
       );
-      console.log(`[notion-tree] Cache saved for ${pageId}`);
     } catch (error) {
       console.error(`[notion-tree] Failed to save cache for ${pageId}:`, error);
     }
@@ -682,7 +604,6 @@ export class NotionTreeDataProvider
     try {
       const cachePath = this.getCachePath(pageId);
       await fs.rm(cachePath, { force: true });
-      console.log(`[notion-tree] Cache deleted for ${pageId}`);
     } catch (error) {
       console.error(
         `[notion-tree] Failed to delete cache for ${pageId}:`,

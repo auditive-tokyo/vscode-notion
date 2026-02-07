@@ -65,17 +65,8 @@ export class OpenPageCommand implements vscode.Disposable {
               select: true,
               expand: hasChildren ? 1 : false,
             });
-            console.log(
-              "[open-page-command] Tree item revealed:",
-              treeItemFromArgs.title,
-              hasChildren ? "(expanded)" : "(no children)",
-            );
-          } catch (error) {
+          } catch {
             // reveal に失敗した場合はログのみ（ページオープンは成功）
-            console.log(
-              "[open-page-command] Could not reveal tree item:",
-              error,
-            );
           }
         }
       }

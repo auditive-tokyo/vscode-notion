@@ -51,9 +51,6 @@ export const useMarkdownWithInlineDatabases = (
     let markdown = state.data;
     const inlineDbComponents: React.ReactElement[] = [];
 
-    console.log("[webview] state.inlineDatabases:", state.inlineDatabases);
-    console.log("[webview] markdown content:", markdown);
-
     // プレースホルダーを特殊マーカーに置換し、コンポーネントを準備
     const placeholderPattern = /__INLINE_DB_PLACEHOLDER__([^_]+)__(.+?)__/g;
     let match;
@@ -89,15 +86,6 @@ export const useMarkdownWithInlineDatabases = (
         const isTimelineView =
           currentViewMode === "timeline" && inlineDb.datePropertyName;
         const isBoardView = currentViewMode === "board" && hasStatusColumn;
-
-        console.log("[webview] DB render:", {
-          databaseId,
-          currentViewMode,
-          isCalendarView,
-          isTimelineView,
-          isBoardView,
-          viewType: inlineDb.viewType,
-        });
 
         // ビューモード切り替えドロップダウン
         const hasDateProperty = !!inlineDb.datePropertyName;

@@ -80,8 +80,6 @@ export class NotionApiClient {
    * 公式APIを使用してページとデータベースの両方に対応
    */
   async getPageDataById(id: string): Promise<PageOrDatabaseResponse> {
-    console.log("[notion-api-client] getPageDataById called with id:", id);
-
     if (!this.officialClient) {
       throw new Error(
         "Notion API key is not configured. Please set notion.apiKey in settings.",
@@ -117,9 +115,6 @@ export class NotionApiClient {
 
     // ページを優先（データベースレコードはページとして扱われるため）
     if (pageResult.status === "fulfilled") {
-      console.log("[notion-api-client] Retrieved as page");
-      const pageData = pageResult.value as any;
-      console.log("[notion-api-client] page.icon:", pageData.icon);
       const result = await convertPageToMarkdownHelper(
         pageResult.value,
         this.getPageBlocksRecursive.bind(this),
@@ -137,19 +132,9 @@ export class NotionApiClient {
       }
       return response;
     } else if (databaseResult.status === "fulfilled") {
-      console.log("[notion-api-client] Retrieved as database");
-      const databaseData = databaseResult.value as any;
-      console.log(
-        "[notion-api-client] database.description:",
-        JSON.stringify(databaseData.description, null, 2),
-      );
       const result = await convertDatabaseToMarkdownHelper(
         databaseResult.value,
         this.queryDatabaseRows.bind(this),
-      );
-      console.log(
-        "[notion-api-client] convertDatabaseToMarkdownHelper result:",
-        result,
       );
       const response: any = {
         data: result.markdown,
@@ -248,10 +233,6 @@ export class NotionApiClient {
     }
 
     try {
-      console.log(
-        `[notion-api-client] Fetching records for database: ${databaseId}`,
-      );
-
       // queryDatabaseRows を使用してレコードを取得
       const rawRecords = await this.queryDatabaseRows(databaseId);
 
@@ -293,7 +274,6 @@ export class NotionApiClient {
         });
       }
 
-      console.log(`[notion-api-client] Found ${records.length} records`);
       return records;
     } catch (error) {
       console.error(
@@ -312,10 +292,6 @@ export class NotionApiClient {
       throw new Error("Official API client is not configured");
     }
 
-    console.log(
-      "[notion-api-client] getPageBlocksRecursive called with pageId:",
-      pageId,
-    );
     const allBlocks: any[] = [];
     let cursor: string | undefined = undefined;
 
@@ -330,11 +306,6 @@ export class NotionApiClient {
         }
         const response = await this.officialClient.blocks.children.list(params);
 
-        console.log(
-          "[notion-api-client] blocks.children.list response:",
-          response.results.length,
-          "blocks",
-        );
         allBlocks.push(...response.results);
 
         if (!response.has_more) {
@@ -343,10 +314,6 @@ export class NotionApiClient {
         cursor = response.next_cursor || undefined;
       }
 
-      console.log(
-        "[notion-api-client] Total blocks retrieved:",
-        allBlocks.length,
-      );
       return allBlocks;
     } catch (error) {
       console.error("[notion-api-client] getPageBlocksRecursive error:", error);
@@ -375,12 +342,6 @@ export class NotionApiClient {
 
       const title = database.title?.[0]?.plain_text || "Untitled Database";
       const is_inline = database.is_inline ?? false;
-
-      console.log("[notion-api-client] getDatabaseInfo:", {
-        databaseId,
-        title,
-        is_inline,
-      });
 
       return { is_inline, title };
     } catch (error) {

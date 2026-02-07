@@ -18,15 +18,5 @@ const extension = new Extension({
 });
 
 export async function activate(context: vscode.ExtensionContext) {
-  // API キー読み込みログ
-  const config = vscode.workspace.getConfiguration("notion");
-  const apiKey = config.get<string>("apiKey", "");
-  console.log(
-    "[notion-extension] ✓ API Key loaded:",
-    apiKey ? "***" + apiKey.slice(-8) : "NOT SET",
-  );
-
   await extension.activate(context);
-
-  console.log("[notion-extension] ✓ Extension activated");
 }

@@ -180,10 +180,6 @@ export function blockToMarkdown(block: any): string {
       }
 
       case "divider":
-        console.log(
-          "[block-to-markdown] divider block:",
-          JSON.stringify(block, null, 2),
-        );
         return "---";
 
       case "table":
@@ -239,10 +235,6 @@ export async function blocksToMarkdown(
       if (rowParentId !== currentTableParentId) {
         currentTableParentId = rowParentId;
         isFirstRowInCurrentTable = true;
-        console.log("[blocksToMarkdown] New table detected:", {
-          tableId: rowParentId,
-          cellCount,
-        });
       }
 
       // テーブル行を追加
@@ -253,11 +245,6 @@ export async function blocksToMarkdown(
         const separator = `| ${new Array(cellCount)
           .fill("---")
           .join(" | ")} |\n`;
-        console.log(
-          "[blocksToMarkdown] Adding separator with",
-          cellCount,
-          "columns",
-        );
         markdown += separator;
         isFirstRowInCurrentTable = false;
       }

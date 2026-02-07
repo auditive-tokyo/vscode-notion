@@ -31,7 +31,6 @@ declare global {
 
 const root = createRoot(document.getElementById("root")!);
 const state = window.vscode.getState();
-console.log("[webview] state received:", state);
 
 // メインアプリケーションコンポーネント
 const App: React.FC = () => {
@@ -61,13 +60,6 @@ const App: React.FC = () => {
       command: "saveViewModes",
       viewModes: newViewModes,
     });
-
-    console.log(
-      "[webview] setViewMode called for databaseId:",
-      databaseId,
-      "newMode:",
-      mode,
-    );
   };
 
   if (!state || !state.data) {
@@ -75,9 +67,6 @@ const App: React.FC = () => {
       <div className="p-5 text-red-500">Error: No page data available</div>
     );
   }
-
-  console.log("[webview] rendering markdown with length:", state.data.length);
-  console.log("[webview] state.tableData:", state.tableData);
 
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const renderCover = usePageCover(state);
@@ -164,9 +153,6 @@ const App: React.FC = () => {
   // テーブルデータがあった場合のレンダリング
   const renderContent = () => {
     if (state.tableData) {
-      console.log("[webview] Rendering table with tableData:", state.tableData);
-      console.log("[webview] viewType:", state.viewType);
-
       // Full-page database: ビューモード検出
       const hasStatusColumn = state.tableData.columns.some(
         (col) => col.toLowerCase() === "status",
@@ -185,16 +171,6 @@ const App: React.FC = () => {
       const isTimelineView =
         currentViewMode === "timeline" && state.datePropertyName;
       const isBoardView = currentViewMode === "board" && hasStatusColumn;
-
-      console.log("[webview] Full-page DB render:", {
-        databaseId: state.id,
-        currentViewMode,
-        isCalendarView,
-        isTimelineView,
-        isBoardView,
-        hasStatusColumn,
-        viewType: state.viewType,
-      });
 
       // ビューモード切り替えドロップダウン
       const availableModesFullPage: Array<

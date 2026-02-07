@@ -61,14 +61,12 @@ export class NotionHierarchyTreeView
       this.context.globalStorageUri,
     );
     await this.treeDataProvider.initialize();
-    console.log("[notion-tree] TreeDataProvider initialized");
 
     // TreeView を登録
     const treeView = vscode.window.createTreeView("notion-hierarchy", {
       treeDataProvider: this.treeDataProvider,
       showCollapseAll: true,
     });
-    console.log("[notion-tree] TreeView registered");
 
     this.treeView = treeView;
     this.context.subscriptions.push(treeView);
@@ -86,19 +84,10 @@ export class NotionHierarchyTreeView
   private registerConfigListeners(): void {
     this.context.subscriptions.push(
       vscode.workspace.onDidChangeConfiguration((event) => {
-        if (event.affectsConfiguration("notion.apiKey")) {
-          const config = vscode.workspace.getConfiguration("notion");
-          const newApiKey = config.get<string>("apiKey", "");
-          console.log(
-            "[notion-tree] API Key updated:",
-            newApiKey ? "***" + newApiKey.slice(-8) : "NOT SET",
-          );
-        }
         if (
           event.affectsConfiguration("notion.rootPage") ||
           event.affectsConfiguration("notion.rootPageId")
         ) {
-          console.log("[notion-tree] Root Page updated");
           void this.migrateRootPageSetting();
           void this.treeDataProvider?.refresh();
           this.updateHierarchyContext();
@@ -121,7 +110,6 @@ export class NotionHierarchyTreeView
 
     if (!rootPage && legacyRootPageId) {
       await config.update("rootPage", legacyRootPageId, true);
-      console.log("[notion-tree] Migrated rootPageId to rootPage");
     }
   }
 
@@ -130,10 +118,6 @@ export class NotionHierarchyTreeView
    */
   private updateHierarchyContext(): void {
     const rootPageId = extractPageId(this.getRootPageInput());
-    console.log(
-      "[notion-tree] rootPage:",
-      rootPageId ? rootPageId.slice(0, 16) + "..." : "NOT SET",
-    );
     vscode.commands.executeCommand(
       "setContext",
       "notion:hierarchyEnabled",
