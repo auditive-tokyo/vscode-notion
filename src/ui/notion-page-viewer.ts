@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { InjectContext, Injectable } from "vedk";
+import { InjectContext, Injectable, OnExtensionBootstrap } from "vedk";
 import * as vscode from "vscode";
 import * as fs from "fs/promises";
 import * as path from "path";
@@ -70,7 +70,10 @@ class CachedNotionWebview implements vscode.Disposable {
 
 @Injectable()
 export class NotionWebviewPanelSerializer
-  implements vscode.WebviewPanelSerializer, vscode.Disposable
+  implements
+    vscode.WebviewPanelSerializer,
+    vscode.Disposable,
+    OnExtensionBootstrap
 {
   private readonly cache = new Map<string, CachedNotionWebview>();
   private readonly disposable: vscode.Disposable;
@@ -84,8 +87,6 @@ export class NotionWebviewPanelSerializer
       this.context.globalStorageUri.fsPath,
       "page-cache",
     );
-    void this.initializeCache();
-
     this.disposable = vscode.Disposable.from(
       vscode.commands.registerCommand(
         CommandId.RefreshPage,
@@ -112,6 +113,10 @@ export class NotionWebviewPanelSerializer
 
   dispose() {
     this.disposable.dispose();
+  }
+
+  async onExtensionBootstrap() {
+    await this.initializeCache();
   }
 
   /**
