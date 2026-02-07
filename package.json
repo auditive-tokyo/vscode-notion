@@ -59,6 +59,12 @@
           "type": "boolean",
           "description": "Controls whether to allow embeds or not in Notion pages.",
           "default": true
+        },
+        "notion.cacheTtlDays": {
+          "type": "number",
+          "description": "Cache TTL for Notion pages and page tree in days. Set to 0 to disable caching.",
+          "default": 7,
+          "minimum": 0
         }
       }
     },

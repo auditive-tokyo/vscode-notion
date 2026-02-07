@@ -12,6 +12,7 @@ import {
   untitledPageTitle,
 } from "../constants";
 import { NotionApiClient } from "../notion-api-client";
+import { getCacheTtlMs } from "../lib/cache-utils";
 
 /**
  * State that gets serialized and passed into webview.
@@ -75,7 +76,6 @@ export class NotionWebviewPanelSerializer
   private readonly cache = new Map<string, CachedNotionWebview>();
   private readonly disposable: vscode.Disposable;
   private readonly pageCacheDir: string;
-  private static readonly TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7日間
 
   constructor(
     @InjectContext() private readonly context: vscode.ExtensionContext,
@@ -141,7 +141,7 @@ export class NotionWebviewPanelSerializer
       };
 
       const cacheAgeMs = Date.now() - cacheData.timestamp;
-      if (cacheAgeMs > NotionWebviewPanelSerializer.TTL_MS) {
+      if (cacheAgeMs > getCacheTtlMs()) {
         console.log(
           `[notion-page-viewer] Cache for ${id} expired (${Math.round(
             cacheAgeMs / 1000 / 60 / 60,

@@ -8,6 +8,7 @@ import {
 } from "../notion-api-utils/page-discovery";
 import { CommandId } from "../constants";
 import { OpenPageCommandArgs } from "./open-page-command";
+import { getCacheTtlMs } from "../lib/cache-utils";
 
 export class NotionTreeDataProvider
   implements vscode.TreeDataProvider<NotionPageTreeItem>
@@ -392,9 +393,8 @@ export class NotionTreeDataProvider
 
       const now = Date.now();
       const cacheAgeMs = now - cacheData.timestamp;
-      const TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7日間
 
-      if (cacheAgeMs > TTL_MS) {
+      if (cacheAgeMs > getCacheTtlMs()) {
         console.log(
           `[notion-tree] Cache for ${pageId} expired (${Math.round(
             cacheAgeMs / 1000 / 60,
