@@ -3,6 +3,7 @@ import * as vscode from "vscode";
 import { NotionApiClient } from "../notion-api-client";
 import { NotionTreeDataProvider } from "./notion-tree-provider";
 import { NotionPageTreeItem } from "../notion-api-utils/page-discovery";
+import { extractPageId } from "../lib/page-id-utils";
 
 /**
  * Notion ページツリーの TreeView 管理
@@ -106,7 +107,8 @@ export class NotionHierarchyTreeView
    */
   private updateHierarchyContext(): void {
     const config = vscode.workspace.getConfiguration("notion");
-    const rootPageId = config.get<string>("rootPageId", "");
+    const rawRootPageId = config.get<string>("rootPageId", "");
+    const rootPageId = extractPageId(rawRootPageId);
     console.log(
       "[notion-tree] rootPageId:",
       rootPageId ? rootPageId.slice(0, 16) + "..." : "NOT SET",

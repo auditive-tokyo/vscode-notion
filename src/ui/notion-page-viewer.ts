@@ -5,10 +5,8 @@ import * as fs from "fs/promises";
 import * as path from "path";
 import {
   CommandId,
-  ConfigId,
   ViewType,
   configurationPrefix,
-  trustedSources,
   untitledPageTitle,
 } from "../constants";
 import { NotionApiClient } from "../notion-api-client";
@@ -336,17 +334,7 @@ export class NotionWebviewPanelSerializer
     const extensionUri = this.context.extensionUri;
     const cspSource = webviewPanel.webview.cspSource;
 
-    const config = vscode.workspace.getConfiguration(configurationPrefix);
-    const fontFamily = config.get<string>(ConfigId.FontFamily);
-    const fontSize = config.get<number>(ConfigId.FontSize);
-    const fontSettings =
-      `--notion-font-family: ${fontFamily};--notion-font-size: ${fontSize}px;`.replace(
-        /"/g,
-        "&quot;",
-      );
-    const frameSrcCsp = config.get<boolean>(ConfigId.AllowEmbeds)
-      ? trustedSources.join(" ")
-      : "'none'";
+    const frameSrcCsp = "https:";
 
     const reactWebviewUri = webviewPanel.webview.asWebviewUri(
       vscode.Uri.joinPath(extensionUri, "dist/webview.js"),
@@ -354,7 +342,7 @@ export class NotionWebviewPanelSerializer
 
     webviewPanel.webview.html = `
 <!DOCTYPE html>
-<html lang="en" style="${fontSettings}">
+<html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />

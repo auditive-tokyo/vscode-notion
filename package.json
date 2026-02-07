@@ -45,21 +45,6 @@
           "description": "Root Notion page ID to load the page tree (32-character ID without hyphens)",
           "default": ""
         },
-        "notion.fontFamily": {
-          "type": "string",
-          "description": "Controls the font family used in Notion pages.",
-          "default": "ui-sans-serif, system-ui, apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, 'Apple Color Emoji', Arial, sans-serif, 'Segoe UI Emoji', 'Segoe UI Symbol'"
-        },
-        "notion.fontSize": {
-          "type": "number",
-          "description": "Controls the font size in pixels used in Notion pages.",
-          "default": 14
-        },
-        "notion.allowedEmbeds": {
-          "type": "boolean",
-          "description": "Controls whether to allow embeds or not in Notion pages.",
-          "default": true
-        },
         "notion.cacheTtlDays": {
           "type": "number",
           "description": "Cache TTL for Notion pages and page tree in days. Set to 0 to disable caching.",

@@ -9,6 +9,7 @@ import {
 import { CommandId } from "../constants";
 import { OpenPageCommandArgs } from "./open-page-command";
 import { getCacheTtlMs } from "../lib/cache-utils";
+import { extractPageId } from "../lib/page-id-utils";
 
 export class NotionTreeDataProvider
   implements vscode.TreeDataProvider<NotionPageTreeItem>
@@ -132,7 +133,8 @@ export class NotionTreeDataProvider
     if (!element) {
       // ルートページを取得（設定から）
       const config = vscode.workspace.getConfiguration("notion");
-      const rootPageId = config.get<string>("rootPageId", "");
+      const rawRootPageId = config.get<string>("rootPageId", "");
+      const rootPageId = extractPageId(rawRootPageId);
 
       console.log("[notion-tree] rootPageId:", rootPageId);
 
@@ -272,26 +274,52 @@ export class NotionTreeDataProvider
         return null;
       }
 
-      const page = await officialClient.pages.retrieve({ page_id: pageId });
+      // まずページとして取得を試みる
+      try {
+        const page = await officialClient.pages.retrieve({ page_id: pageId });
 
-      // タイトルを取得
-      let title = "Untitled";
-      const properties = (page as any).properties || {};
+        // タイトルを取得
+        let title = "Untitled";
+        const properties = (page as any).properties || {};
 
-      // Title プロパティを探す
-      for (const [, value] of Object.entries(properties)) {
-        const prop = value as any;
-        if (prop.type === "title" && prop.title?.length > 0) {
-          title = prop.title.map((t: any) => t.plain_text).join("");
-          break;
+        // Title プロパティを探す
+        for (const [, value] of Object.entries(properties)) {
+          const prop = value as any;
+          if (prop.type === "title" && prop.title?.length > 0) {
+            title = prop.title.map((t: any) => t.plain_text).join("");
+            break;
+          }
+        }
+
+        return {
+          id: page.id,
+          title,
+          type: "page",
+        };
+      } catch (pageError) {
+        // ページとして取得失敗時、データベースとして取得を試みる
+        console.log(
+          `[notion-tree] Page retrieval failed for ${pageId}, trying database API...`,
+        );
+        try {
+          const database = await officialClient.databases.retrieve({
+            database_id: pageId,
+          });
+
+          const title =
+            (database as any).title?.map((t: any) => t.plain_text).join("") ||
+            "Untitled Database";
+
+          return {
+            id: database.id,
+            title,
+            type: "database",
+          };
+        } catch {
+          // データベースとしても失敗時、元のエラーを投げる
+          throw pageError;
         }
       }
-
-      return {
-        id: page.id,
-        title,
-        type: "page",
-      };
     } catch (error) {
       console.error(
         `[notion-tree] Failed to fetch page info for ${pageId}:`,
