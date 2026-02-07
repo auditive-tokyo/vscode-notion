@@ -6,6 +6,7 @@ import type { NotionWebviewState } from "@/ui/notion-page-viewer";
 import type { OpenPageCommandArgs } from "@/ui/open-page-command";
 import type { CommandId } from "@/constants";
 import { MermaidDiagram } from "../components";
+import rehypeTableHeaders from "./rehypeTableHeaders";
 
 /**
  * inline DB プレースホルダーを検出してテーブルを挿入
@@ -202,7 +203,7 @@ export const useMarkdownWithInlineDatabases = (
             <ReactMarkdown
               key={`md-${i}`}
               remarkPlugins={remarkPlugins}
-              rehypePlugins={[rehypeRaw]}
+              rehypePlugins={[rehypeRaw, rehypeTableHeaders] as PluggableList}
               components={{
                 a: (props) => {
                   const href = props.href || "";
