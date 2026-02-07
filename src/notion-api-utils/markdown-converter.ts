@@ -184,6 +184,26 @@ export function convertRowsToTableData(
   };
 }
 
+function getOrderedPropertyNames(
+  properties: Record<string, any> | undefined,
+): string[] {
+  const names = Object.keys(properties || {});
+  if (names.length === 0 || !properties) {
+    return names;
+  }
+
+  const titleName = names.find((name) => {
+    const prop = properties[name];
+    return prop?.type === "title" || prop?.id === "title";
+  });
+
+  if (!titleName) {
+    return names;
+  }
+
+  return [titleName, ...names.filter((name) => name !== titleName)];
+}
+
 /**
  * データベースオブジェクトを Markdown + テーブルデータに変換
  * @param database - データベースオブジェクト
@@ -208,7 +228,7 @@ export function convertDatabaseToMarkdownAndTable(
 
   // プロパティ名を抽出
   const firstRow = rows[0];
-  const propertyNames = Object.keys(firstRow?.properties || {});
+  const propertyNames = getOrderedPropertyNames(firstRow?.properties);
 
   const markdown = `# ${title}`;
   const tableData = convertRowsToTableData(rows, propertyNames);
@@ -301,7 +321,7 @@ export function convertRowsToMarkdownTable(rows: any[]): string {
 
   // プロパティ名を抽出（最初の行から）
   const firstRow = rows[0];
-  const propertyNames = Object.keys(firstRow.properties || {});
+  const propertyNames = getOrderedPropertyNames(firstRow.properties);
 
   if (propertyNames.length === 0) {
     return "*プロパティが見つかりません。*\n\n";
@@ -420,7 +440,7 @@ async function collectInlineDbData(
         // プロパティ名を抽出
         const firstRow = rows[0];
         const properties = firstRow.properties || {};
-        const propertyNames = Object.keys(properties);
+        const propertyNames = getOrderedPropertyNames(properties);
 
         // 日付プロパティを検出
         let datePropertyName: string | undefined;

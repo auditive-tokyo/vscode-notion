@@ -133,13 +133,15 @@ export class NotionTreeDataProvider
     if (!element) {
       // ルートページを取得（設定から）
       const config = vscode.workspace.getConfiguration("notion");
-      const rawRootPageId = config.get<string>("rootPageId", "");
-      const rootPageId = extractPageId(rawRootPageId);
+      const rawRootPage =
+        config.get<string>("rootPage", "") ||
+        config.get<string>("rootPageId", "");
+      const rootPageId = extractPageId(rawRootPage);
 
-      console.log("[notion-tree] rootPageId:", rootPageId);
+      console.log("[notion-tree] rootPage:", rootPageId);
 
       if (!rootPageId) {
-        console.log("[notion-tree] rootPageId not set");
+        console.log("[notion-tree] rootPage not set");
         return [];
       }
 

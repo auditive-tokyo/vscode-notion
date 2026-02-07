@@ -46,6 +46,7 @@ export class NotionHierarchyTreeView
   }
 
   async onExtensionBootstrap() {
+    await this.migrateRootPageSetting();
     await this.initializeTreeView();
     this.registerConfigListeners();
   }
@@ -93,8 +94,12 @@ export class NotionHierarchyTreeView
             newApiKey ? "***" + newApiKey.slice(-8) : "NOT SET",
           );
         }
-        if (event.affectsConfiguration("notion.rootPageId")) {
-          console.log("[notion-tree] Root Page ID updated");
+        if (
+          event.affectsConfiguration("notion.rootPage") ||
+          event.affectsConfiguration("notion.rootPageId")
+        ) {
+          console.log("[notion-tree] Root Page updated");
+          void this.migrateRootPageSetting();
           void this.treeDataProvider?.refresh();
           this.updateHierarchyContext();
         }
@@ -102,15 +107,31 @@ export class NotionHierarchyTreeView
     );
   }
 
+  private getRootPageInput(): string {
+    const config = vscode.workspace.getConfiguration("notion");
+    return (
+      config.get<string>("rootPage", "") || config.get<string>("rootPageId", "")
+    );
+  }
+
+  private async migrateRootPageSetting(): Promise<void> {
+    const config = vscode.workspace.getConfiguration("notion");
+    const rootPage = config.get<string>("rootPage", "");
+    const legacyRootPageId = config.get<string>("rootPageId", "");
+
+    if (!rootPage && legacyRootPageId) {
+      await config.update("rootPage", legacyRootPageId, true);
+      console.log("[notion-tree] Migrated rootPageId to rootPage");
+    }
+  }
+
   /**
-   * ルートページID設定時にコンテキストを更新
+   * ルートページ設定時にコンテキストを更新
    */
   private updateHierarchyContext(): void {
-    const config = vscode.workspace.getConfiguration("notion");
-    const rawRootPageId = config.get<string>("rootPageId", "");
-    const rootPageId = extractPageId(rawRootPageId);
+    const rootPageId = extractPageId(this.getRootPageInput());
     console.log(
-      "[notion-tree] rootPageId:",
+      "[notion-tree] rootPage:",
       rootPageId ? rootPageId.slice(0, 16) + "..." : "NOT SET",
     );
     vscode.commands.executeCommand(

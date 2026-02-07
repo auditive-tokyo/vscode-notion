@@ -40,9 +40,9 @@
           "description": "Your Notion API key (from https://www.notion.so/my-integrations)",
           "default": ""
         },
-        "notion.rootPageId": {
+        "notion.rootPage": {
           "type": "string",
-          "description": "Root Notion page ID to load the page tree (32-character ID without hyphens)",
+          "description": "Root page (Notion URL or 32-character ID) used to load the page tree",
           "default": ""
         },
         "notion.cacheTtlDays": {
@@ -125,8 +125,8 @@
       },
       {
         "view": "notion-hierarchy",
-        "contents": "Set your Notion API key and Root Page ID in settings to get started.\n[Open Settings](command:workbench.action.openSettings?%22notion%22)",
-        "when": "notion:isReady && !config.notion.rootPageId"
+        "contents": "Set your Notion API key and Root Page in settings to get started.\n[Open Settings](command:workbench.action.openSettings?%22notion%22)",
+        "when": "notion:isReady && !config.notion.rootPage"
       }
     ]
   },
