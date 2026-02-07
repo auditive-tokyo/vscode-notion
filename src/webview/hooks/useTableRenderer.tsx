@@ -44,16 +44,27 @@ export const useTableRenderer = (
           </p>
         )}
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
+          <table className="notion-db-table w-full border-collapse">
             <thead>
               <tr>
-                <th className="border border-gray-600 px-4 py-2 bg-gray-800 text-left font-bold w-24">
+                <th
+                  className="px-4 py-2 text-left font-bold w-24"
+                  style={{
+                    border: "1px solid var(--vscode-textSeparator-foreground)",
+                    backgroundColor: "var(--vscode-textCodeBlock-background)",
+                  }}
+                >
                   ACTION
                 </th>
                 {tableData.columns.map((col: string) => (
                   <th
                     key={col}
-                    className="border border-gray-600 px-4 py-2 bg-gray-800 text-left font-bold"
+                    className="px-4 py-2 text-left font-bold"
+                    style={{
+                      border:
+                        "1px solid var(--vscode-textSeparator-foreground)",
+                      backgroundColor: "var(--vscode-textCodeBlock-background)",
+                    }}
                   >
                     {col}
                   </th>
@@ -64,14 +75,32 @@ export const useTableRenderer = (
               {tableData.rows.map(
                 (row: { id: string; cells: CellValue[] }, idx: number) => (
                   <tr key={idx}>
-                    <td className="border border-gray-600 px-4 py-2">
+                    <td
+                      className="px-4 py-2"
+                      style={{
+                        border:
+                          "1px solid var(--vscode-textSeparator-foreground)",
+                      }}
+                    >
                       <a
                         href={`command:${openPageCommand}?${encodeURI(
                           JSON.stringify({
                             id: row.id,
                           } as OpenPageCommandArgs),
                         )}`}
-                        className="bg-gray-600 hover:bg-gray-500 text-white px-3 py-1 rounded text-sm font-semibold transition inline-block no-underline"
+                        className="px-3 py-1 rounded text-sm font-semibold transition inline-block no-underline"
+                        style={{
+                          backgroundColor: "var(--vscode-button-background)",
+                          color: "var(--vscode-button-foreground)",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor =
+                            "var(--vscode-button-hoverBackground)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor =
+                            "var(--vscode-button-background)";
+                        }}
                       >
                         OPEN
                       </a>
@@ -79,7 +108,11 @@ export const useTableRenderer = (
                     {row.cells.map((cell: CellValue, cellIdx: number) => (
                       <td
                         key={cellIdx}
-                        className="border border-gray-600 px-4 py-2"
+                        className="px-4 py-2"
+                        style={{
+                          border:
+                            "1px solid var(--vscode-textSeparator-foreground)",
+                        }}
                       >
                         {cellToString(cell)}
                       </td>

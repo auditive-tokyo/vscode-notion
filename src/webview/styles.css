@@ -97,8 +97,11 @@ td {
 }
 
 th {
-  background-color: var(--vscode-textCodeBlock-background);
   font-weight: 600;
+}
+
+.notion-db-table th {
+  background-color: var(--vscode-textCodeBlock-background);
 }
 
 /* Page container */

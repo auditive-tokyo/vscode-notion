@@ -57,13 +57,32 @@ export const MermaidDiagram: React.FC<MermaidDiagramProps> = ({ chart }) => {
   if (error) {
     return (
       <div className="mermaid-error bg-red-900/30 border border-red-500 rounded p-4 my-4">
-        <div className="text-red-400 font-semibold mb-2">⚠️ Mermaid Error</div>
-        <pre className="text-red-300 text-sm whitespace-pre-wrap">{error}</pre>
+        <div
+          className="font-semibold mb-2"
+          style={{ color: "var(--vscode-errorForeground)" }}
+        >
+          ⚠️ Mermaid Error
+        </div>
+        <pre
+          className="text-sm whitespace-pre-wrap"
+          style={{ color: "var(--vscode-errorForeground)" }}
+        >
+          {error}
+        </pre>
         <details className="mt-2">
-          <summary className="text-gray-400 cursor-pointer text-sm">
+          <summary
+            className="cursor-pointer text-sm"
+            style={{ color: "var(--vscode-descriptionForeground)" }}
+          >
             Show source code
           </summary>
-          <pre className="mt-2 text-gray-300 text-xs bg-gray-800 p-2 rounded overflow-x-auto">
+          <pre
+            className="mt-2 text-xs p-2 rounded overflow-x-auto"
+            style={{
+              color: "var(--vscode-editor-foreground)",
+              backgroundColor: "var(--vscode-textCodeBlock-background)",
+            }}
+          >
             {chart}
           </pre>
         </details>
@@ -74,7 +93,8 @@ export const MermaidDiagram: React.FC<MermaidDiagramProps> = ({ chart }) => {
   return (
     <div
       ref={containerRef}
-      className="mermaid-diagram my-4 p-4 bg-gray-800 rounded-lg overflow-x-auto"
+      className="mermaid-diagram my-4 p-4 rounded-lg overflow-x-auto"
+      style={{ backgroundColor: "var(--vscode-textCodeBlock-background)" }}
       dangerouslySetInnerHTML={{ __html: svg }}
     />
   );

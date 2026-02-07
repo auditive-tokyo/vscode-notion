@@ -157,7 +157,10 @@ export const useTimelineRenderer = (
                   }}
                   title={statusValue || undefined}
                 >
-                  <div className="h-full flex items-center px-1 text-white text-xs font-medium overflow-hidden">
+                  <div
+                    className="h-full flex items-center px-1 text-xs font-medium overflow-hidden"
+                    style={{ color: "var(--vscode-button-foreground)" }}
+                  >
                     {dateValue.end
                       ? `${dateValue.start} → ${dateValue.end}`
                       : dateValue.start}
