@@ -1,13 +1,11 @@
-# vscode-notion
+# Changelog
 
-## 2.0.1
+All notable changes to Notion-VSCode will be documented in this file.
 
-### Patch Changes
+## [1.0.0] - 2026-02-07
 
-- 35d75e2: Fix broken open page command
+### 🎉 Initial Release
 
-## 2.0.0
+Complete rewrite using Official Notion API with modern TypeScript architecture, multi-view database support, accessibility compliance, and enhanced security.
 
-### Major Changes
-
-- b892d6d: Remove bookmarks, authentication for private pages to keep things only minimally usable.
+See [README.md](README.md) for full feature list and documentation.
