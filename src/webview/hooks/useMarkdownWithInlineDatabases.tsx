@@ -272,11 +272,11 @@ export const useMarkdownWithInlineDatabases = (
                   );
                 },
                 blockquote: (props) => <blockquote {...props} />,
-                table: (props) => <table {...props} />,
+                table: (props) => <table {...props} role="table" />,
                 thead: (props) => <thead {...props} />,
                 tbody: (props) => <tbody {...props} />,
                 tr: (props) => <tr {...props} />,
-                th: (props) => <th {...props} />,
+                th: (props) => <th {...props} scope={props.scope || "col"} />,
                 td: (props) => <td {...props} />,
               }}
             >
