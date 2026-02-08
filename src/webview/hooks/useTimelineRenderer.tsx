@@ -110,7 +110,7 @@ export const useTimelineRenderer = (
         </div>
 
         {/* タイムライン アイテム */}
-        {rowsWithDates.map((row, idx) => {
+        {rowsWithDates.map((row) => {
           const dateValue = row.cells[dateColumnIndex] as DateValue;
           const start = new Date(dateValue.start!);
           const end = dateValue.end ? new Date(dateValue.end) : start;
@@ -128,7 +128,7 @@ export const useTimelineRenderer = (
           const width = dateRangeToWidth(start, end);
 
           return (
-            <div key={idx} className="timeline-item flex items-center gap-3">
+            <div key={row.id} className="timeline-item flex items-center gap-3">
               {/* タイトル */}
               <div className="w-32 shrink-0 truncate">
                 <a

@@ -32,6 +32,10 @@ declare global {
 const root = createRoot(document.getElementById("root")!);
 const state = window.vscode.getState();
 
+const MarkdownInput = (props: ComponentProps<"input">) => (
+  <input {...props} readOnly />
+);
+
 // メインアプリケーションコンポーネント
 const App: React.FC = () => {
   const [viewModes, setViewModes] = useState<
@@ -269,9 +273,7 @@ const App: React.FC = () => {
               remarkPlugins={[remarkGfm, remarkBreaks]}
               rehypePlugins={[rehypeRaw]}
               components={{
-                input: (props: ComponentProps<"input">) => (
-                  <input {...props} readOnly />
-                ),
+                input: MarkdownInput,
               }}
             >
               {state.data}
