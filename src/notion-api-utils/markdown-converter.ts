@@ -210,6 +210,81 @@ function getOrderedPropertyNames(
  * @param rows - データベースの行配列
  * @returns { markdown, tableData, statusColorMap }
  */
+function getDatabaseTitle(database: any): string {
+  if (Array.isArray(database.title)) {
+    return database.title.map((t: any) => t.plain_text).join("");
+  }
+  return "Untitled Database";
+}
+
+function detectDateProperty(rows: any[]): {
+  datePropertyName?: string;
+  viewType: "table" | "calendar" | "timeline";
+} {
+  const firstRow = rows[0];
+  if (!firstRow) {
+    return { viewType: "table" };
+  }
+
+  const properties = firstRow.properties || {};
+  for (const [propName, propValue] of Object.entries(properties)) {
+    if ((propValue as any).type !== "date") {
+      continue;
+    }
+
+    const hasAnyDateValue = rows.some((row) => {
+      const prop = row.properties[propName];
+      return prop && prop.type === "date" && prop.date?.start;
+    });
+
+    if (!hasAnyDateValue) {
+      continue;
+    }
+
+    // Determine viewType based on date range: timeline if end exists, calendar if start only
+    const hasAnyDateRange = rows.some((row) => {
+      const prop = row.properties[propName];
+      return prop && prop.type === "date" && prop.date?.end !== null;
+    });
+
+    return {
+      datePropertyName: propName,
+      viewType: hasAnyDateRange ? "timeline" : "calendar",
+    };
+  }
+
+  return { viewType: "table" };
+}
+
+function collectStatusColors(rows: any[]): Record<string, string> {
+  const statusColorMap: Record<string, string> = {};
+  const firstRow = rows[0];
+  if (!firstRow) {
+    return statusColorMap;
+  }
+
+  const firstRowProps = firstRow.properties || {};
+  for (const propName in firstRowProps) {
+    const prop = firstRowProps[propName];
+    if (prop?.type !== "status") {
+      continue;
+    }
+
+    // すべての行から status 値を集める
+    for (const row of rows) {
+      const rowProp = row.properties[propName];
+      if (rowProp?.status) {
+        const statusInfo = extractStatusPropertyValue(rowProp);
+        if (statusInfo.name) {
+          statusColorMap[statusInfo.name] = statusInfo.color;
+        }
+      }
+    }
+  }
+
+  return statusColorMap;
+}
+
 export function convertDatabaseToMarkdownAndTable(
   database: any,
   rows: any[],
@@ -220,66 +295,15 @@ export function convertDatabaseToMarkdownAndTable(
   viewType?: "table" | "calendar" | "timeline";
   datePropertyName?: string;
 } {
-  // データベースタイトルを取得
-  let title = "Untitled Database";
-  if (Array.isArray(database.title)) {
-    title = database.title.map((t: any) => t.plain_text).join("");
-  }
-
-  // プロパティ名を抽出
+  const title = getDatabaseTitle(database);
   const firstRow = rows[0];
   const propertyNames = getOrderedPropertyNames(firstRow?.properties);
 
   const markdown = `# ${title}`;
   const tableData = convertRowsToTableData(rows, propertyNames);
 
-  // 日付プロパティを検出して viewType を決定
-  let datePropertyName: string | undefined;
-  let viewType: "table" | "calendar" | "timeline" = "table";
-
-  if (firstRow) {
-    const properties = firstRow.properties || {};
-    for (const [propName, propValue] of Object.entries(properties)) {
-      if ((propValue as any).type === "date") {
-        const hasAnyDateValue = rows.some((row) => {
-          const prop = row.properties[propName];
-          return prop && prop.type === "date" && prop.date?.start;
-        });
-
-        if (!hasAnyDateValue) {
-          continue;
-        }
-
-        datePropertyName = propName;
-        // Determine viewType based on date range: timeline if end exists, calendar if start only
-        const hasAnyDateRange = rows.some((row) => {
-          const prop = row.properties[propName];
-          return prop && prop.type === "date" && prop.date?.end !== null;
-        });
-        viewType = hasAnyDateRange ? "timeline" : "calendar";
-        break;
-      }
-    }
-  }
-
-  // Status プロパティの色情報を収集
-  const statusColorMap: Record<string, string> = {};
-  const firstRowProps = firstRow?.properties || {};
-  for (const propName in firstRowProps) {
-    const prop = firstRowProps[propName];
-    if (prop && prop.type === "status") {
-      // すべての行から status 値を集める
-      for (const row of rows) {
-        const rowProp = row.properties[propName];
-        if (rowProp && rowProp.status) {
-          const statusInfo = extractStatusPropertyValue(rowProp);
-          if (statusInfo.name) {
-            statusColorMap[statusInfo.name] = statusInfo.color;
-          }
-        }
-      }
-    }
-  }
+  const { datePropertyName, viewType } = detectDateProperty(rows);
+  const statusColorMap = collectStatusColors(rows);
 
   const result: {
     markdown: string;
