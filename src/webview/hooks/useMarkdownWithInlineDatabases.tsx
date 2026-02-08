@@ -11,20 +11,13 @@ import rehypeTableHeaders from "./rehypeTableHeaders";
 /**
  * inline DB プレースホルダーを検出してテーブルを挿入
  */
-export const useMarkdownWithInlineDatabases = (
-  state: NotionWebviewState,
-  openPageCommand: `${CommandId.OpenPage}`,
-  viewModes: Record<string, "calendar" | "timeline" | "table" | "board">,
-  setViewMode: (
-    databaseId: string,
-    mode: "calendar" | "timeline" | "table" | "board",
-  ) => void,
+type InlineDbRenderers = {
   renderCalendar: (
-    db: NonNullable<typeof state.inlineDatabases>[number],
-  ) => React.ReactElement,
+    db: NonNullable<NotionWebviewState["inlineDatabases"]>[number],
+  ) => React.ReactElement;
   renderTimeline: (
-    db: NonNullable<typeof state.inlineDatabases>[number],
-  ) => React.ReactElement,
+    db: NonNullable<NotionWebviewState["inlineDatabases"]>[number],
+  ) => React.ReactElement;
   renderTable: (
     tableData: {
       columns: string[];
@@ -34,7 +27,7 @@ export const useMarkdownWithInlineDatabases = (
       }[];
     },
     showDescription?: boolean,
-  ) => React.ReactElement,
+  ) => React.ReactElement;
   renderBoard: (
     tableData: {
       columns: string[];
@@ -44,9 +37,23 @@ export const useMarkdownWithInlineDatabases = (
       }[];
     },
     statusColorMap?: Record<string, string>,
-  ) => React.ReactElement,
+  ) => React.ReactElement;
+};
+
+export const useMarkdownWithInlineDatabases = (
+  state: NotionWebviewState,
+  openPageCommand: `${CommandId.OpenPage}`,
+  viewModes: Record<string, "calendar" | "timeline" | "table" | "board">,
+  setViewMode: (
+    databaseId: string,
+    mode: "calendar" | "timeline" | "table" | "board",
+  ) => void,
+  renderers: InlineDbRenderers,
   remarkPlugins: PluggableList,
 ) => {
+  const { renderCalendar, renderTimeline, renderTable, renderBoard } =
+    renderers;
+
   const renderMarkdownWithInlineDatabases = useCallback(() => {
     /**
      * ビューモード判定ロジック

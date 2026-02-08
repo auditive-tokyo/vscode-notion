@@ -82,10 +82,12 @@ const App: React.FC = () => {
     openPageCommand,
     viewModes,
     setViewMode,
-    renderCalendar,
-    renderTimeline,
-    renderTable,
-    renderBoard,
+    {
+      renderCalendar,
+      renderTimeline,
+      renderTable,
+      renderBoard,
+    },
     [remarkGfm, remarkBreaks],
   );
 
