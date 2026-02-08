@@ -173,7 +173,7 @@ export function convertRowsToTableData(
       cells: propertyNames.map((propName) => {
         const prop = row.properties[propName];
         // date 型は start/end オブジェクトを返す
-        if (prop && prop.type === "date") {
+        if (prop?.type === "date") {
           return extractDatePropertyValue(prop);
         }
         // その他は文字列を返す
@@ -234,7 +234,7 @@ function detectDateProperty(rows: any[]): {
 
     const hasAnyDateValue = rows.some((row) => {
       const prop = row.properties[propName];
-      return prop && prop.type === "date" && prop.date?.start;
+      return prop?.type === "date" && prop.date?.start;
     });
 
     if (!hasAnyDateValue) {
@@ -244,7 +244,7 @@ function detectDateProperty(rows: any[]): {
     // Determine viewType based on date range: timeline if end exists, calendar if start only
     const hasAnyDateRange = rows.some((row) => {
       const prop = row.properties[propName];
-      return prop && prop.type === "date" && prop.date?.end !== null;
+      return prop?.type === "date" && prop.date?.end !== null;
     });
 
     return {
@@ -382,7 +382,7 @@ function detectInlineDatabaseViewType(
 
     const hasAnyDateValue = rows.some((row) => {
       const prop = row.properties[propName];
-      return prop && prop.type === "date" && prop.date?.start;
+      return prop?.type === "date" && prop.date?.start;
     });
 
     if (!hasAnyDateValue) {
@@ -391,7 +391,7 @@ function detectInlineDatabaseViewType(
 
     const hasAnyDateRange = rows.some((row) => {
       const prop = row.properties[propName];
-      return prop && prop.type === "date" && prop.date?.end !== null;
+      return prop?.type === "date" && prop.date?.end !== null;
     });
 
     return {

@@ -57,7 +57,7 @@ export class OpenPageCommand implements vscode.Disposable {
           try {
             // 子ページがあるかチェック
             const children = await dataProvider.getChildren(treeItemFromArgs);
-            const hasChildren = children && children.length > 0;
+            const hasChildren = children?.length > 0;
 
             // 渡された treeItem で reveal() を実行（子がある場合のみ展開）
             await treeView.reveal(treeItemFromArgs, {

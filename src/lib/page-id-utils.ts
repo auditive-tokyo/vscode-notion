@@ -56,7 +56,7 @@ export function extractPageId(input: string): string | null {
 
     // hash 部分から抽出（URL のハッシュの場合）
     const hashMatch = url.hash.match(/([a-f0-9]{32})/);
-    if (hashMatch && hashMatch[1]) {
+    if (hashMatch?.[1]) {
       return hashMatch[1];
     }
 
