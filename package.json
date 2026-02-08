@@ -179,6 +179,6 @@
     "webpack-cli": "^6.0.1"
   },
   "engines": {
-    "vscode": "^1.91.0"
+    "vscode": "^1.108.0"
   }
 }

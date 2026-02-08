@@ -14,3 +14,5 @@ package-lock.json
 **/*.test.ts
 **/*.spec.ts
 docs/
+.env
+.DS_Store
