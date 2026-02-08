@@ -8,6 +8,35 @@
  * @param block - Notion API から取得したブロックオブジェクト
  * @returns Markdown 形式の文字列
  */
+function normalizeGoogleMapsEmbedUrl(url: string): string {
+  try {
+    const isGoogleHost = /(^|\.)google\./i.test(url);
+    if (!isGoogleHost || !/\/maps/i.test(url)) {
+      return url;
+    }
+
+    if (/\/maps\/embed/i.test(url) || /pb=/i.test(url)) {
+      return url;
+    }
+
+    const coordMatch = url.match(/@(-?[\d.]+),(-?[\d.]+)/);
+    if (coordMatch) {
+      const [, lat, lng] = coordMatch;
+      return `https://www.google.com/maps?embed&q=${lat},${lng}`;
+    }
+
+    const placeMatch = url.match(/\/maps\/(?:place|search)\/([^/@]+)/i);
+    if (placeMatch?.[1]) {
+      const place = placeMatch[1].replace(/\+/g, " ");
+      return `https://www.google.com/maps?embed&q=${encodeURIComponent(place)}`;
+    }
+
+    return url;
+  } catch {
+    return url;
+  }
+}
+
 export function blockToMarkdown(block: any): string {
   const type = block.type;
 
@@ -136,6 +165,42 @@ export function blockToMarkdown(block: any): string {
       src="${embedUrl}" 
       style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
       title="Video player"
+    ></iframe>
+  </div>
+  ${caption}
+</div>`;
+      }
+
+      case "embed": {
+        let embedUrl = block.embed?.url || block.type_specific_data?.url || "";
+        const embedCaption =
+          block.embed?.caption?.map((t: any) => t.plain_text).join("") || "";
+
+        if (!embedUrl) return "";
+
+        const isGoogleMaps = /google\.com\/maps/i.test(embedUrl);
+        if (isGoogleMaps) {
+          // Google Maps はiframe で表示できないので、リンク形式で返す
+          const placeMatch = embedUrl.match(/\/maps\/place\/([^/@]+)/);
+          const placeName = placeMatch
+            ? placeMatch[1].replace(/\+/g, " ")
+            : "Location";
+          return `[📍 ${placeName} on Google Maps](${embedUrl})`;
+        }
+
+        // その他の embed（YouTube など）は iframe で表示
+        embedUrl = normalizeGoogleMapsEmbedUrl(embedUrl);
+
+        const caption = embedCaption
+          ? `<p class="embed-caption">${embedCaption}</p>`
+          : "";
+
+        return `<div class="notion-embed" style="max-width: 100%; margin: 1em 0;">
+  <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+    <iframe
+      src="${embedUrl}"
+      style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+      title="Embedded content"
     ></iframe>
   </div>
   ${caption}
