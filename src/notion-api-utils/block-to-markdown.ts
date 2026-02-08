@@ -28,6 +28,7 @@ function normalizeGoogleMapsEmbedUrl(url: string): string {
       // 簡易版 pb パラメータを生成
       // 最小構成：座標 + ズームレベル + 言語
       const zoomLevel = 15;
+      // TODO: Keep this simplified pb until we can reliably derive a proper embed payload.
       const pb = `!1m18!1m12!1m3!1d${3240}!2d${lng}!3d${lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f${zoomLevel}!3m3!1m2!1sen!2sjp!4v${Date.now()}`;
       return `https://www.google.com/maps/embed?${pb}`;
     }
@@ -192,23 +193,26 @@ export function blockToMarkdown(block: any): string {
           ? `<p class="embed-caption">${embedCaption}</p>`
           : "";
 
-        // Google Maps の場合はリンクボタンも追加
-        const mapsLink = isGoogleMaps
-          ? `<p style="margin-top: 8px;"><a href="${originalUrl}" target="_blank" style="color: #0066cc; text-decoration: none;">📍 View on Google Maps</a></p>`
+        const mapsOverlay = isGoogleMaps
+          ? `<a href="${originalUrl}" target="_blank" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.35); color: #ffffff; text-decoration: none; font-weight: 600;">📍 View on Google Maps</a>`
           : "";
+
+        const iframeStyle = isGoogleMaps
+          ? "position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; filter: brightness(0.75) saturate(0.9);"
+          : "position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;";
 
         return `<div class="notion-embed" style="max-width: 100%; margin: 1em 0;">
   <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
     <iframe
       src="${embedUrl}"
-      style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+      style="${iframeStyle}"
       title="Embedded content"
       allowfullscreen=""
       loading="lazy"
     ></iframe>
+    ${mapsOverlay}
   </div>
   ${caption}
-  ${mapsLink}
 </div>`;
       }
 
