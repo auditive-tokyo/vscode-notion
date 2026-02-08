@@ -48,229 +48,342 @@ export const useMarkdownWithInlineDatabases = (
   remarkPlugins: PluggableList,
 ) => {
   const renderMarkdownWithInlineDatabases = useCallback(() => {
-    let markdown = state.data;
-    const inlineDbComponents: React.ReactElement[] = [];
+    /**
+     * ビューモード判定ロジック
+     */
+    function determineDefaultViewMode(
+      inlineDb: NonNullable<typeof state.inlineDatabases>[number],
+      hasStatusColumn: boolean,
+    ): "calendar" | "timeline" | "table" | "board" {
+      if (inlineDb.datePropertyName) {
+        return inlineDb.viewType === "timeline" ? "timeline" : "calendar";
+      }
+      if (hasStatusColumn) {
+        return "board";
+      }
+      return "table";
+    }
 
-    // プレースホルダーを特殊マーカーに置換し、コンポーネントを準備
-    const placeholderPattern = /__INLINE_DB_PLACEHOLDER__([^_]+)__(.+?)__/g;
-    let match;
-    let index = 0;
+    /**
+     * 利用可能なビューモード一覧を取得
+     */
+    function getAvailableViewModes(
+      hasDateProperty: boolean,
+      hasStatusColumn: boolean,
+    ): Array<"table" | "calendar" | "timeline" | "board"> {
+      const modes: Array<"table" | "calendar" | "timeline" | "board"> = [];
+      if (hasDateProperty) {
+        modes.push("calendar");
+        modes.push("timeline");
+      }
+      if (hasStatusColumn) {
+        modes.push("board");
+      }
+      modes.push("table");
+      return modes;
+    }
 
-    while ((match = placeholderPattern.exec(state.data)) !== null) {
-      const [fullMatch, databaseId, title] = match;
-      const inlineDb = state.inlineDatabases?.find(
-        (db) => db.databaseId === databaseId,
+    /**
+     * モードのラベルを取得
+     */
+    function getModeLabel(mode: "table" | "calendar" | "timeline" | "board") {
+      const labels: Record<
+        "table" | "calendar" | "timeline" | "board",
+        string
+      > = {
+        table: "📋 Table",
+        calendar: "📅 Calendar",
+        timeline: "📈 Timeline",
+        board: "📊 Board",
+      };
+      return labels[mode];
+    }
+
+    /**
+     * ビューモード状態をチェック
+     */
+    function checkViewModeStates(
+      currentViewMode: string,
+      inlineDb: NonNullable<typeof state.inlineDatabases>[number],
+      hasStatusColumn: boolean,
+    ) {
+      return {
+        isCalendarView:
+          currentViewMode === "calendar" && !!inlineDb.datePropertyName,
+        isTimelineView:
+          currentViewMode === "timeline" && !!inlineDb.datePropertyName,
+        isBoardView: currentViewMode === "board" && hasStatusColumn,
+      };
+    }
+
+    /**
+     * ビューモード別コンテンツをレンダリング
+     */
+    function renderDbContent(
+      viewModeStates: ReturnType<typeof checkViewModeStates>,
+      inlineDb: NonNullable<typeof state.inlineDatabases>[number],
+    ): React.ReactElement {
+      const { isTimelineView, isCalendarView, isBoardView } = viewModeStates;
+      if (isTimelineView) {
+        return renderTimeline(inlineDb);
+      }
+      if (isCalendarView) {
+        return renderCalendar(inlineDb);
+      }
+      if (isBoardView) {
+        return renderBoard(inlineDb.tableData, inlineDb.statusColorMap);
+      }
+      return renderTable(inlineDb.tableData, false);
+    }
+
+    /**
+     * ビューモードに応じたアイコンを取得
+     */
+    function getViewIcon(
+      viewModeStates: ReturnType<typeof checkViewModeStates>,
+    ) {
+      const { isTimelineView, isCalendarView, isBoardView } = viewModeStates;
+      if (isTimelineView) return "📈";
+      if (isCalendarView) return "📅";
+      if (isBoardView) return "📊";
+      return "📋";
+    }
+
+    /**
+     * インラインDBコンポーネントを構築
+     */
+    function buildInlineDbComponent(
+      index: number,
+      databaseId: string,
+      title: string,
+      inlineDb: NonNullable<typeof state.inlineDatabases>[number],
+      marker: string,
+    ): React.ReactElement {
+      const hasStatusColumn = inlineDb.tableData.columns.some(
+        (col) => col.toLowerCase() === "status",
+      );
+      const hasDateProperty = !!inlineDb.datePropertyName;
+      const defaultViewMode = determineDefaultViewMode(
+        inlineDb,
+        hasStatusColumn,
+      );
+      const currentViewMode = viewModes[databaseId] || defaultViewMode;
+      const availableModes = getAvailableViewModes(
+        hasDateProperty,
+        hasStatusColumn,
+      );
+      const viewModeStates = checkViewModeStates(
+        currentViewMode,
+        inlineDb,
+        hasStatusColumn,
       );
 
-      if (inlineDb) {
-        const marker = `___INLINE_DB_${index}___`;
-        markdown = markdown.replace(fullMatch, marker);
+      const dbContent = renderDbContent(viewModeStates, inlineDb);
+      const icon = getViewIcon(viewModeStates);
 
-        // デフォルトビューモード: timeline > calendar > board > table の優先順位
-        const hasStatusColumn = inlineDb.tableData.columns.some(
-          (col) => col.toLowerCase() === "status",
-        );
-        let defaultViewMode: "calendar" | "timeline" | "table" | "board" =
-          "table";
-        if (inlineDb.datePropertyName) {
-          // Use viewType to determine default: timeline for date ranges, calendar for single dates
-          defaultViewMode =
-            inlineDb.viewType === "timeline" ? "timeline" : "calendar";
-        } else if (hasStatusColumn) {
-          defaultViewMode = "board";
-        }
+      const viewSelector = (
+        <select
+          className="view-selector"
+          value={currentViewMode}
+          onChange={(e) =>
+            setViewMode(
+              databaseId,
+              e.target.value as "table" | "calendar" | "timeline" | "board",
+            )
+          }
+          style={{ minWidth: "120px" }}
+        >
+          {availableModes.map((mode) => (
+            <option key={mode} value={mode}>
+              {getModeLabel(mode)}
+            </option>
+          ))}
+        </select>
+      );
 
-        const currentViewMode = viewModes[databaseId] || defaultViewMode;
-        const isCalendarView =
-          currentViewMode === "calendar" && inlineDb.datePropertyName;
-        const isTimelineView =
-          currentViewMode === "timeline" && inlineDb.datePropertyName;
-        const isBoardView = currentViewMode === "board" && hasStatusColumn;
-
-        // ビューモード切り替えドロップダウン
-        const hasDateProperty = !!inlineDb.datePropertyName;
-        const availableModes: Array<
-          "table" | "calendar" | "timeline" | "board"
-        > = [];
-
-        if (hasDateProperty) {
-          availableModes.push("calendar");
-          availableModes.push("timeline"); // Always available when date exists
-        }
-        if (hasStatusColumn) {
-          availableModes.push("board");
-        }
-        availableModes.push("table");
-
-        const getModeLabel = (
-          mode: "table" | "calendar" | "timeline" | "board",
-        ) => {
-          const labels: Record<
-            "table" | "calendar" | "timeline" | "board",
-            string
-          > = {
-            table: "📋 Table",
-            calendar: "📅 Calendar",
-            timeline: "📈 Timeline",
-            board: "📊 Board",
-          };
-          return labels[mode];
-        };
-
-        const viewSelector = (
-          <select
-            className="view-selector"
-            value={currentViewMode}
-            onChange={(e) =>
-              setViewMode(
-                databaseId,
-                e.target.value as "table" | "calendar" | "timeline" | "board",
-              )
-            }
-            style={{ minWidth: "120px" }}
-          >
-            {availableModes.map((mode) => (
-              <option key={mode} value={mode}>
-                {getModeLabel(mode)}
-              </option>
-            ))}
-          </select>
-        );
-
-        // ビューモード別にコンテンツをレンダリング
-        let dbContent: React.ReactElement;
-        if (isTimelineView) {
-          dbContent = renderTimeline(inlineDb);
-        } else if (isCalendarView) {
-          dbContent = renderCalendar(inlineDb);
-        } else if (isBoardView) {
-          dbContent = renderBoard(inlineDb.tableData, inlineDb.statusColorMap);
-        } else {
-          dbContent = renderTable(inlineDb.tableData, false);
-        }
-
-        // アイコンを表示
-        let icon = "📋";
-        if (isTimelineView) {
-          icon = "📈";
-        } else if (isCalendarView) {
-          icon = "📅";
-        } else if (isBoardView) {
-          icon = "📊";
-        }
-
-        inlineDbComponents.push(
-          <div
-            key={index}
-            className="my-6"
-            data-marker={marker}
-            data-db-index={index}
-          >
-            <div className="flex items-center mb-4">
-              <h3 className="text-xl font-semibold grow">
-                {icon} {title}
-              </h3>
-              {viewSelector}
-            </div>
-            {dbContent}
-          </div>,
-        );
-        index++;
-      }
+      return (
+        <div
+          key={index}
+          className="my-6"
+          data-marker={marker}
+          data-db-index={index}
+        >
+          <div className="flex items-center mb-4">
+            <h3 className="text-xl font-semibold grow">
+              {icon} {title}
+            </h3>
+            {viewSelector}
+          </div>
+          {dbContent}
+        </div>
+      );
     }
 
-    // markdownを分割してテーブルを挿入
-    const parts = markdown.split(/___INLINE_DB_(\d+)___/);
-    const elements: (React.ReactElement | string)[] = [];
+    /**
+     * プレースホルダーをマーカーに置換し、コンポーネントを準備
+     */
+    function processPlaceholdersAndComponents(): {
+      markdown: string;
+      inlineDbComponents: React.ReactElement[];
+    } {
+      let markdown = state.data;
+      const inlineDbComponents: React.ReactElement[] = [];
+      const placeholderPattern = /__INLINE_DB_PLACEHOLDER__([^_]+)__(.+?)__/g;
+      let match;
+      let index = 0;
 
-    for (let i = 0; i < parts.length; i++) {
-      if (i % 2 === 0) {
-        // markdown部分
-        if (parts[i].trim()) {
-          elements.push(
-            <ReactMarkdown
-              key={`md-${i}`}
-              remarkPlugins={remarkPlugins}
-              rehypePlugins={[rehypeRaw, rehypeTableHeaders] as PluggableList}
-              components={{
-                a: (props) => {
-                  const href = props.href || "";
-                  if (href.startsWith("/")) {
-                    const args = JSON.stringify({
-                      id: href.slice(1),
-                    } as OpenPageCommandArgs);
-                    return (
-                      <a
-                        {...props}
-                        href={`command:${openPageCommand}?${encodeURI(args)}`}
-                      >
-                        {props.children}
-                      </a>
-                    );
-                  }
-                  return <a {...props} />;
-                },
-                ul: (props) => <ul className="list-disc" {...props} />,
-                ol: (props) => <ol className="list-decimal" {...props} />,
-                pre: (props) => {
-                  const code = props.children as React.ReactElement<{
-                    className?: string;
-                  }>;
-                  const isCallout =
-                    code?.props?.className?.includes("language-callout");
-                  if (isCallout) {
-                    return <>{props.children}</>;
-                  }
-                  return <pre {...props} />;
-                },
-                code: ({
-                  inline,
-                  className,
-                  children,
-                  ...props
-                }: ComponentProps<"code"> & {
-                  inline?: boolean;
-                  className?: string;
-                }) => {
-                  const match = /language-(\w+)/.exec(className || "");
-                  const language = match ? match[1] : null;
+      while ((match = placeholderPattern.exec(state.data)) !== null) {
+        const [fullMatch, databaseId, title] = match;
+        const inlineDb = state.inlineDatabases?.find(
+          (db) => db.databaseId === databaseId,
+        );
 
-                  // Mermaid diagram rendering
-                  if (!inline && language === "mermaid") {
-                    const code = String(children).replace(/\n$/, "");
-                    return <MermaidDiagram chart={code} />;
-                  }
+        if (inlineDb) {
+          const marker = `___INLINE_DB_${index}___`;
+          markdown = markdown.replace(fullMatch, marker);
 
-                  if (!inline && language === "callout") {
-                    return <div className="notion-callout">{children}</div>;
-                  }
-
-                  return inline ? (
-                    <code {...props}>{children}</code>
-                  ) : !inline && match ? (
-                    <code {...props} className={className}>
-                      {children}
-                    </code>
-                  ) : (
-                    <code {...props}>{children}</code>
-                  );
-                },
-                // Table elements are handled by rehypeTableHeaders plugin
-                // which ensures all tables have proper <th> headers with scope="col"
-              }}
-            >
-              {parts[i]}
-            </ReactMarkdown>,
+          const component = buildInlineDbComponent(
+            index,
+            databaseId,
+            title,
+            inlineDb,
+            marker,
           );
-        }
-      } else {
-        // inline DB部分
-        const dbIndex = Number.parseInt(parts[i], 10);
-        if (inlineDbComponents[dbIndex]) {
-          elements.push(inlineDbComponents[dbIndex]);
+          inlineDbComponents.push(component);
+          index++;
         }
       }
+
+      return { markdown, inlineDbComponents };
     }
+
+    const { markdown, inlineDbComponents } = processPlaceholdersAndComponents();
+
+    /**
+     * ReactMarkdownのカスタムコンポーネント定義を取得
+     */
+    function getMarkdownComponents() {
+      return {
+        a: (
+          props: React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+            children?: React.ReactNode;
+          },
+        ) => {
+          const href = props.href || "";
+          if (href.startsWith("/")) {
+            const args = JSON.stringify({
+              id: href.slice(1),
+            } as OpenPageCommandArgs);
+            return (
+              <a
+                {...props}
+                href={`command:${openPageCommand}?${encodeURI(args)}`}
+              >
+                {props.children}
+              </a>
+            );
+          }
+          return <a {...props} />;
+        },
+        ul: (
+          props: React.HTMLAttributes<HTMLUListElement> & {
+            children?: React.ReactNode;
+          },
+        ) => <ul className="list-disc" {...props} />,
+        ol: (
+          props: React.HTMLAttributes<HTMLOListElement> & {
+            children?: React.ReactNode;
+          },
+        ) => <ol className="list-decimal" {...props} />,
+        pre: (
+          props: React.HTMLAttributes<HTMLPreElement> & {
+            children?: React.ReactNode;
+          },
+        ) => {
+          const code = props.children as React.ReactElement<{
+            className?: string;
+          }>;
+          const isCallout =
+            code?.props?.className?.includes("language-callout");
+          if (isCallout) {
+            return <>{props.children}</>;
+          }
+          return <pre {...props} />;
+        },
+        code: ({
+          inline,
+          className,
+          children,
+          ...props
+        }: ComponentProps<"code"> & {
+          inline?: boolean;
+          className?: string;
+        }) => {
+          const match = /language-(\w+)/.exec(className || "");
+          const language = match ? match[1] : null;
+
+          // Mermaid diagram rendering
+          if (!inline && language === "mermaid") {
+            const code = String(children).replace(/\n$/, "");
+            return <MermaidDiagram chart={code} />;
+          }
+
+          if (!inline && language === "callout") {
+            return <div className="notion-callout">{children}</div>;
+          }
+
+          return inline ? (
+            <code {...props}>{children}</code>
+          ) : !inline && match ? (
+            <code {...props} className={className}>
+              {children}
+            </code>
+          ) : (
+            <code {...props}>{children}</code>
+          );
+        },
+      };
+    }
+
+    /**
+     * マークダウンとインラインDB要素を構築
+     */
+    function buildElements(
+      markdown: string,
+      inlineDbComponents: React.ReactElement[],
+    ): (React.ReactElement | string)[] {
+      const parts = markdown.split(/___INLINE_DB_(\d+)___/);
+      const elements: (React.ReactElement | string)[] = [];
+      const markdownComponents = getMarkdownComponents();
+
+      for (let i = 0; i < parts.length; i++) {
+        if (i % 2 === 0) {
+          // markdown部分
+          if (parts[i].trim()) {
+            elements.push(
+              <ReactMarkdown
+                key={`md-${i}`}
+                remarkPlugins={remarkPlugins}
+                rehypePlugins={[rehypeRaw, rehypeTableHeaders] as PluggableList}
+                components={markdownComponents}
+              >
+                {parts[i]}
+              </ReactMarkdown>,
+            );
+          }
+        } else {
+          // inline DB部分
+          const dbIndex = Number.parseInt(parts[i], 10);
+          if (inlineDbComponents[dbIndex]) {
+            elements.push(inlineDbComponents[dbIndex]);
+          }
+        }
+      }
+
+      return elements;
+    }
+
+    const elements = buildElements(markdown, inlineDbComponents);
 
     return <>{elements}</>;
   }, [
