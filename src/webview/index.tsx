@@ -173,18 +173,13 @@ const App: React.FC = () => {
       const isBoardView = currentViewMode === "board" && hasStatusColumn;
 
       // ビューモード切り替えドロップダウン
-      const availableModesFullPage: Array<
-        "table" | "calendar" | "timeline" | "board"
-      > = [];
-
-      if (state.datePropertyName) {
-        availableModesFullPage.push("calendar");
-        availableModesFullPage.push("timeline"); // Always available when date exists
-      }
-      if (hasStatusColumn) {
-        availableModesFullPage.push("board");
-      }
-      availableModesFullPage.push("table");
+      const availableModesFullPage = [
+        ...(state.datePropertyName
+          ? ["calendar" as const, "timeline" as const]
+          : []),
+        ...(hasStatusColumn ? ["board" as const] : []),
+        "table" as const,
+      ];
 
       const getModeLabel = (
         mode: "table" | "calendar" | "timeline" | "board",
@@ -223,30 +218,15 @@ const App: React.FC = () => {
         ) : null;
 
       const renderActualContent = () => {
-        if (isTimelineView) {
-          return renderTableWrapper(
-            state.tableData,
-            true,
-            state.viewType,
-            currentViewMode,
-          );
-        } else if (isCalendarView) {
-          return renderTableWrapper(
-            state.tableData,
-            true,
-            state.viewType,
-            currentViewMode,
-          );
-        } else if (isBoardView) {
+        if (isBoardView) {
           return renderBoard(state.tableData, state.statusColorMap);
-        } else {
-          return renderTableWrapper(
-            state.tableData,
-            true,
-            undefined,
-            currentViewMode,
-          );
         }
+        return renderTableWrapper(
+          state.tableData,
+          true,
+          isTimelineView || isCalendarView ? state.viewType : undefined,
+          currentViewMode,
+        );
       };
 
       return (
