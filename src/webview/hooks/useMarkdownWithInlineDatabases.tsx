@@ -283,7 +283,7 @@ export const useMarkdownWithInlineDatabases = (
               </a>
             );
           }
-          return <a {...props} />;
+          return <a {...props}>{props.children}</a>;
         },
         ul: (
           props: React.HTMLAttributes<HTMLUListElement> & {
