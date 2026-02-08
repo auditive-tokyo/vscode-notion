@@ -354,6 +354,133 @@ export function convertRowsToMarkdownTable(rows: any[]): string {
 }
 
 /**
+ * Full Page Database をリンクに置換
+ */
+function processFullPageDatabase(
+  markdown: string,
+  fullMatch: string,
+  dbTitle: string,
+  databaseId: string,
+): string {
+  return markdown.replace(fullMatch, `📋 [${dbTitle}](/${databaseId})`);
+}
+
+/**
+ * 日付プロパティを検出し、viewType を判定
+ */
+function detectInlineDatabaseViewType(
+  rows: any[],
+  properties: Record<string, any>,
+): {
+  datePropertyName?: string;
+  viewType: "table" | "calendar" | "timeline";
+} {
+  for (const [propName, propValue] of Object.entries(properties)) {
+    if ((propValue as any).type !== "date") {
+      continue;
+    }
+
+    const hasAnyDateValue = rows.some((row) => {
+      const prop = row.properties[propName];
+      return prop && prop.type === "date" && prop.date?.start;
+    });
+
+    if (!hasAnyDateValue) {
+      continue;
+    }
+
+    const hasAnyDateRange = rows.some((row) => {
+      const prop = row.properties[propName];
+      return prop && prop.type === "date" && prop.date?.end !== null;
+    });
+
+    return {
+      datePropertyName: propName,
+      viewType: hasAnyDateRange ? "timeline" : "calendar",
+    };
+  }
+
+  return { viewType: "table" };
+}
+
+/**
+ * Status プロパティのカラーマップを収集
+ */
+function collectInlineDatabaseStatusColors(
+  rows: any[],
+  properties: Record<string, any>,
+): Record<string, string> | undefined {
+  for (const propName in properties) {
+    const prop = properties[propName];
+    if (prop?.type !== "status") {
+      continue;
+    }
+
+    const statusColorMap: Record<string, string> = {};
+    for (const row of rows) {
+      const rowProp = row.properties[propName];
+      if (rowProp?.status) {
+        const statusInfo = extractStatusPropertyValue(rowProp);
+        if (statusInfo.name) {
+          statusColorMap[statusInfo.name] = statusInfo.color;
+        }
+      }
+    }
+    return statusColorMap;
+  }
+
+  return undefined;
+}
+
+/**
+ * Inline Database のテーブルデータを処理
+ */
+async function processInlineDatabase(
+  databaseId: string,
+  dbTitle: string,
+  queryRows: (databaseId: string) => Promise<any[]>,
+): Promise<{
+  databaseId: string;
+  title: string;
+  viewType: "table" | "calendar" | "timeline";
+  datePropertyName?: string;
+  statusColorMap?: Record<string, string>;
+  tableData: {
+    columns: string[];
+    rows: {
+      id: string;
+      cells: (string | { start: string | null; end: string | null })[];
+    }[];
+  };
+} | null> {
+  const rows = await queryRows(databaseId);
+
+  if (rows.length === 0) {
+    return null;
+  }
+
+  const firstRow = rows[0];
+  const properties = firstRow.properties || {};
+  const propertyNames = getOrderedPropertyNames(properties);
+
+  const { datePropertyName, viewType } = detectInlineDatabaseViewType(
+    rows,
+    properties,
+  );
+  const tableData = convertRowsToTableData(rows, propertyNames);
+  const statusColorMap = collectInlineDatabaseStatusColors(rows, properties);
+
+  return {
+    databaseId,
+    title: dbTitle,
+    viewType,
+    ...(datePropertyName ? { datePropertyName } : {}),
+    ...(statusColorMap ? { statusColorMap } : {}),
+    tableData,
+  };
+}
+
+/**
  * inline DB プレースホルダーからデータを収集
  * is_inline: true のDBはテーブルデータを収集
  * is_inline: false のDBはリンクに置換
@@ -384,7 +511,6 @@ async function collectInlineDbData(
     };
   }>;
 }> {
-  // プレースホルダーのパターン: __INLINE_DB_PLACEHOLDER__id__title__
   const placeholderPattern = /__INLINE_DB_PLACEHOLDER__([^_]+)__(.+?)__/g;
   const matches = [...markdown.matchAll(placeholderPattern)];
 
@@ -416,8 +542,7 @@ async function collectInlineDbData(
     }
 
     try {
-      // is_inline を判定
-      let isInline = true; // デフォルトはinline扱い
+      let isInline = true;
       let dbTitle = title;
 
       if (getDatabaseInfo) {
@@ -427,90 +552,30 @@ async function collectInlineDbData(
       }
 
       if (!isInline) {
-        // Full Page DB: リンクに置換
-        resultMarkdown = resultMarkdown.replace(
+        resultMarkdown = processFullPageDatabase(
+          resultMarkdown,
           fullMatch,
-          `📋 [${dbTitle}](/${databaseId})`,
+          dbTitle,
+          databaseId,
         );
         continue;
       }
 
-      // Inline DB: テーブルデータを収集
-      const rows = await queryRows(databaseId);
-
-      if (rows.length > 0) {
-        // プロパティ名を抽出
-        const firstRow = rows[0];
-        const properties = firstRow.properties || {};
-        const propertyNames = getOrderedPropertyNames(properties);
-
-        // 日付プロパティを検出
-        let datePropertyName: string | undefined;
-
-        for (const [propName, propValue] of Object.entries(properties)) {
-          if ((propValue as any).type === "date") {
-            const hasAnyDateValue = rows.some((row) => {
-              const prop = row.properties[propName];
-              return prop && prop.type === "date" && prop.date?.start;
-            });
-
-            if (!hasAnyDateValue) {
-              continue;
-            }
-
-            datePropertyName = propName;
-            break;
-          }
-        }
-
-        // viewType: timeline if end exists, calendar if start only, table if no date
-        let viewType: "table" | "calendar" | "timeline" = "table";
-        if (datePropertyName) {
-          // Check if any row has date range
-          const hasAnyDateRange = rows.some((row) => {
-            const prop = row.properties[datePropertyName];
-            return prop && prop.type === "date" && prop.date?.end !== null;
-          });
-          viewType = hasAnyDateRange ? "timeline" : "calendar";
-        }
-
-        const tableData = convertRowsToTableData(rows, propertyNames);
-
-        // Status カラーマップを生成
-        let statusColorMap: Record<string, string> | undefined;
-        for (const propName in properties) {
-          const prop = properties[propName];
-          if (prop && prop.type === "status") {
-            statusColorMap = {};
-            // すべての行から status 値を集める
-            for (const row of rows) {
-              const rowProp = row.properties[propName];
-              if (rowProp && rowProp.status) {
-                const statusInfo = extractStatusPropertyValue(rowProp);
-                if (statusInfo.name) {
-                  statusColorMap[statusInfo.name] = statusInfo.color;
-                }
-              }
-            }
-            break;
-          }
-        }
-
-        inlineDatabases.push({
-          databaseId,
-          title: dbTitle,
-          viewType,
-          ...(datePropertyName ? { datePropertyName } : {}),
-          ...(statusColorMap ? { statusColorMap } : {}),
-          tableData,
-        });
+      const inlineDbInfo = await processInlineDatabase(
+        databaseId,
+        dbTitle,
+        queryRows,
+      );
+      if (inlineDbInfo) {
+        inlineDatabases.push(inlineDbInfo);
       }
     } catch (error) {
       console.error("[markdown-converter] Failed to process DB:", error);
-      // エラー時はリンクにフォールバック
-      resultMarkdown = resultMarkdown.replace(
+      resultMarkdown = processFullPageDatabase(
+        resultMarkdown,
         fullMatch,
-        `📋 [${title}](/${databaseId})`,
+        title,
+        databaseId,
       );
     }
   }
