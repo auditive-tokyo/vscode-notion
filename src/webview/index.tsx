@@ -62,7 +62,7 @@ const App: React.FC = () => {
     });
   };
 
-  if (!state || !state.data) {
+  if (!state?.data) {
     return (
       <div className="p-5 text-red-500">Error: No page data available</div>
     );
@@ -89,7 +89,7 @@ const App: React.FC = () => {
     [remarkGfm, remarkBreaks],
   );
 
-  if (!state || !state.data) {
+  if (!state?.data) {
     return (
       <div className="p-5 text-red-500">Error: No page data available</div>
     );
