@@ -27,6 +27,32 @@ export class OpenPageCommand implements vscode.Disposable {
     this.disposable.dispose();
   }
 
+  /**
+   * ツリービューで該当アイテムを展開・フォーカス
+   */
+  private async revealPageInTreeView(
+    treeItem: NotionPageTreeItem,
+  ): Promise<void> {
+    const hierarchyTreeView = NotionHierarchyTreeView.getInstance();
+    const treeView = hierarchyTreeView?.getTreeView();
+    const dataProvider = hierarchyTreeView?.getDataProvider();
+
+    if (!treeView || !dataProvider) return;
+
+    try {
+      const children = await dataProvider.getChildren(treeItem);
+      const hasChildren = children?.length > 0;
+
+      await treeView.reveal(treeItem, {
+        focus: true,
+        select: true,
+        expand: hasChildren ? 1 : false,
+      });
+    } catch {
+      // reveal に失敗した場合はログのみ（ページオープンは成功）
+    }
+  }
+
   private async run(args?: OpenPageCommandArgs) {
     let pageId = args?.id;
     const treeItemFromArgs = args?.treeItem;
@@ -49,26 +75,7 @@ export class OpenPageCommand implements vscode.Disposable {
 
       // ツリービューで該当アイテムを展開・フォーカス（treeItem が渡された場合のみ）
       if (treeItemFromArgs) {
-        const hierarchyTreeView = NotionHierarchyTreeView.getInstance();
-        const treeView = hierarchyTreeView?.getTreeView();
-        const dataProvider = hierarchyTreeView?.getDataProvider();
-
-        if (treeView && dataProvider) {
-          try {
-            // 子ページがあるかチェック
-            const children = await dataProvider.getChildren(treeItemFromArgs);
-            const hasChildren = children?.length > 0;
-
-            // 渡された treeItem で reveal() を実行（子がある場合のみ展開）
-            await treeView.reveal(treeItemFromArgs, {
-              focus: true,
-              select: true,
-              expand: hasChildren ? 1 : false,
-            });
-          } catch {
-            // reveal に失敗した場合はログのみ（ページオープンは成功）
-          }
-        }
+        await this.revealPageInTreeView(treeItemFromArgs);
       }
     } catch (e) {
       const message =

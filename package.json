@@ -71,7 +71,7 @@
       "activitybar": [
         {
           "id": "notion-sidebar",
-          "title": "VSCode Notion",
+          "title": "Notion VSCode",
           "icon": "$(custom-icons-notion)"
         }
       ]
