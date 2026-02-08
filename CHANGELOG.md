@@ -2,6 +2,11 @@
 
 All notable changes to Notion-VSCode will be documented in this file.
 
+## [1.0.3] - 2026-02-09
+
+### Changed
+- Timeline bar labels now display dates only (time is hidden)
+
 ## [1.0.2] - 2026-02-09
 
 ### Added

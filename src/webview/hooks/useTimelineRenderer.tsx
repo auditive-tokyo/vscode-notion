@@ -98,6 +98,9 @@ export const useTimelineRenderer = (
       return endPos - startPos || 0.5; // 最小幅 0.5%
     };
 
+    const formatDateLabel = (value?: string | null) =>
+      value ? value.split("T")[0] : "";
+
     return (
       <div className="timeline-container space-y-3">
         {/* タイムスケール */}
@@ -162,8 +165,10 @@ export const useTimelineRenderer = (
                     style={{ color: "var(--vscode-button-foreground)" }}
                   >
                     {dateValue.end
-                      ? `${dateValue.start} → ${dateValue.end}`
-                      : dateValue.start}
+                      ? `${formatDateLabel(
+                          dateValue.start,
+                        )} → ${formatDateLabel(dateValue.end)}`
+                      : formatDateLabel(dateValue.start)}
                   </div>
                 </div>
               </div>
