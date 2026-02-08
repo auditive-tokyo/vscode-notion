@@ -1,9 +1,9 @@
 {
-  "name": "vscode-notion-dev",
-  "displayName": "VSCode Notion (Dev)",
-  "icon": "resources/vscode-notion.png",
-  "version": "2.0.1",
-  "description": "Browse Notion pages directly in Visual Studio Code.",
+  "name": "notion-vscode",
+  "displayName": "Notion VSCode",
+  "icon": "resources/notion-vscode.png",
+  "version": "1.0.0",
+  "description": "Browse Notion pages directly in Visual Studio Code with your Integration API key.",
   "categories": [
     "Other"
   ],
@@ -11,13 +11,13 @@
     "notion",
     "notion.so"
   ],
-  "homepage": "https://github.com/kyswtn/vscode-notion#readme",
+  "homepage": "https://github.com/auditive-tokyo/Notion-VSCode#readme",
   "bugs": {
-    "url": "https://github.com/kyswtn/vscode-notion/issues"
+    "url": "https://github.com/auditive-tokyo/Notion-VSCode/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/kyswtn/vscode-notion"
+    "url": "https://github.com/auditive-tokyo/Notion-VSCode"
   },
   "license": "MIT",
   "publisher": "auditive-tokyo",
