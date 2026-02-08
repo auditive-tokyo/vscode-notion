@@ -89,7 +89,7 @@ export class NotionHierarchyTreeView
           event.affectsConfiguration("notion.rootPageId")
         ) {
           void this.migrateRootPageSetting();
-          void this.treeDataProvider?.refresh();
+          this.treeDataProvider?.refresh();
           this.updateHierarchyContext();
         }
       }),
