@@ -29,57 +29,92 @@ export const useCalendarRenderer = (
       return <div className="text-gray-400">Date property is empty</div>;
     }
 
-    // 日付ごとにイベントをマッピング
-    const eventsByDate = new Map<
-      string,
-      (typeof db.tableData.rows)[number][]
-    >();
-    db.tableData.rows.forEach((row) => {
-      const dateValue = row.cells[dateColumnIndex];
-      // Date 型オブジェクトの場合
-      if (typeof dateValue === "object" && dateValue?.start) {
-        const startDate = new Date(dateValue.start);
-        const endDate = dateValue.end
-          ? new Date(dateValue.end)
-          : new Date(startDate);
-
-        // start から end までの全日付を追加
-        for (
-          let d = new Date(startDate);
-          d <= endDate;
-          d.setDate(d.getDate() + 1)
-        ) {
-          const year = d.getFullYear();
-          const month = String(d.getMonth() + 1).padStart(2, "0");
-          const day = String(d.getDate()).padStart(2, "0");
-          const dateStr = `${year}-${month}-${day}`;
-
-          if (!eventsByDate.has(dateStr)) {
-            eventsByDate.set(dateStr, []);
-          }
-          eventsByDate.get(dateStr)!.push(row);
-        }
-      } else {
-        // 文字列形式の日付
-        const dateStr =
-          typeof dateValue === "string" ? dateValue : dateValue?.start;
-        if (dateStr) {
-          if (!eventsByDate.has(dateStr)) {
-            eventsByDate.set(dateStr, []);
-          }
-          eventsByDate.get(dateStr)!.push(row);
-        }
-      }
-    });
-
-    // カレンダーのタイル内容
-    const tileContent = ({ date }: { date: Date; view: string }) => {
-      // ローカル時刻で日付文字列を作成（タイムゾーンのずれを防ぐ）
+    /**
+     * 日付をYYYY-MM-DD形式にフォーマット
+     */
+    function formatDateString(date: Date): string {
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, "0");
       const day = String(date.getDate()).padStart(2, "0");
-      const dateStr = `${year}-${month}-${day}`;
+      return `${year}-${month}-${day}`;
+    }
 
+    /**
+     * 日付範囲をマップに追加
+     */
+    function addDateRangeToMap(
+      map: Map<string, (typeof db.tableData.rows)[number][]>,
+      dateRange: { start: string; end?: string },
+      row: (typeof db.tableData.rows)[number],
+    ): void {
+      const startDate = new Date(dateRange.start);
+      const endDate = dateRange.end ? new Date(dateRange.end) : startDate;
+
+      for (
+        let d = new Date(startDate);
+        d <= endDate;
+        d.setDate(d.getDate() + 1)
+      ) {
+        const dateStr = formatDateString(d);
+        if (!map.has(dateStr)) {
+          map.set(dateStr, []);
+        }
+        map.get(dateStr)!.push(row);
+      }
+    }
+
+    /**
+     * 単一日付をマップに追加
+     */
+    function addSingleDateToMap(
+      map: Map<string, (typeof db.tableData.rows)[number][]>,
+      dateStr: string | undefined,
+      row: (typeof db.tableData.rows)[number],
+    ): void {
+      if (dateStr) {
+        if (!map.has(dateStr)) {
+          map.set(dateStr, []);
+        }
+        map.get(dateStr)!.push(row);
+      }
+    }
+
+    /**
+     * イベントを日付ごとにマッピング
+     */
+    function buildEventsByDateMap(): Map<
+      string,
+      (typeof db.tableData.rows)[number][]
+    > {
+      const eventsByDate = new Map<
+        string,
+        (typeof db.tableData.rows)[number][]
+      >();
+
+      for (const row of db.tableData.rows) {
+        const dateValue = row.cells[dateColumnIndex];
+        // Date型オブジェクト: start～end の全日付を追加
+        if (typeof dateValue === "object" && dateValue?.start) {
+          addDateRangeToMap(eventsByDate, dateValue, row);
+        } else if (typeof dateValue === "string" || dateValue?.start) {
+          // 文字列形式の日付: 単一日付を追加
+          const singleDateStr =
+            typeof dateValue === "string"
+              ? dateValue
+              : (dateValue as { start?: string }).start;
+          addSingleDateToMap(eventsByDate, singleDateStr, row);
+        }
+      }
+
+      return eventsByDate;
+    }
+
+    // 日付ごとにイベントをマッピング
+    const eventsByDate = buildEventsByDateMap();
+
+    // カレンダーのタイル内容
+    const tileContent = ({ date }: { date: Date; view: string }) => {
+      const dateStr = formatDateString(date);
       const events = eventsByDate.get(dateStr);
 
       if (events && events.length > 0) {
@@ -113,11 +148,7 @@ export const useCalendarRenderer = (
     // イベントがある日付にクラスを追加
     const tileClassName = ({ date, view }: { date: Date; view: string }) => {
       if (view === "month") {
-        // ローカル時刻で日付文字列を作成（タイムゾーンのずれを防ぐ）
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const day = String(date.getDate()).padStart(2, "0");
-        const dateStr = `${year}-${month}-${day}`;
+        const dateStr = formatDateString(date);
 
         if (eventsByDate.has(dateStr)) {
           return "has-events";
@@ -128,10 +159,7 @@ export const useCalendarRenderer = (
 
     // タイル（日付）クリック時にイベントページに遷移
     const onClickDay = (date: Date) => {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
-      const dateStr = `${year}-${month}-${day}`;
+      const dateStr = formatDateString(date);
 
       const events = eventsByDate.get(dateStr);
       if (events && events.length > 0) {
