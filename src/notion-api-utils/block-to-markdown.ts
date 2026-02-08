@@ -15,20 +15,21 @@ function normalizeGoogleMapsEmbedUrl(url: string): string {
       return url;
     }
 
-    if (/\/maps\/embed/i.test(url) || /pb=/i.test(url)) {
+    // pb パラメータ付きなら、そのまま返す
+    if (/pb=/i.test(url)) {
       return url;
     }
 
+    // 座標を抽出（@35.6811441,139.7644811）
     const coordMatch = url.match(/@(-?[\d.]+),(-?[\d.]+)/);
     if (coordMatch) {
       const [, lat, lng] = coordMatch;
-      return `https://www.google.com/maps?embed&q=${lat},${lng}`;
-    }
 
-    const placeMatch = url.match(/\/maps\/(?:place|search)\/([^/@]+)/i);
-    if (placeMatch?.[1]) {
-      const place = placeMatch[1].replace(/\+/g, " ");
-      return `https://www.google.com/maps?embed&q=${encodeURIComponent(place)}`;
+      // 簡易版 pb パラメータを生成
+      // 最小構成：座標 + ズームレベル + 言語
+      const zoomLevel = 15;
+      const pb = `!1m18!1m12!1m3!1d${3240}!2d${lng}!3d${lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f${zoomLevel}!3m3!1m2!1sen!2sjp!4v${Date.now()}`;
+      return `https://www.google.com/maps/embed?${pb}`;
     }
 
     return url;
@@ -172,27 +173,28 @@ export function blockToMarkdown(block: any): string {
       }
 
       case "embed": {
-        let embedUrl = block.embed?.url || block.type_specific_data?.url || "";
+        const originalUrl =
+          block.embed?.url || block.type_specific_data?.url || "";
         const embedCaption =
           block.embed?.caption?.map((t: any) => t.plain_text).join("") || "";
 
-        if (!embedUrl) return "";
+        if (!originalUrl) return "";
 
-        const isGoogleMaps = /google\.com\/maps/i.test(embedUrl);
+        let embedUrl = originalUrl;
+        const isGoogleMaps = /google\.com\/maps/i.test(originalUrl);
+
+        // Google Maps URL を pb パラメータ形式に変換
         if (isGoogleMaps) {
-          // Google Maps はiframe で表示できないので、リンク形式で返す
-          const placeMatch = embedUrl.match(/\/maps\/place\/([^/@]+)/);
-          const placeName = placeMatch
-            ? placeMatch[1].replace(/\+/g, " ")
-            : "Location";
-          return `[📍 ${placeName} on Google Maps](${embedUrl})`;
+          embedUrl = normalizeGoogleMapsEmbedUrl(originalUrl);
         }
-
-        // その他の embed（YouTube など）は iframe で表示
-        embedUrl = normalizeGoogleMapsEmbedUrl(embedUrl);
 
         const caption = embedCaption
           ? `<p class="embed-caption">${embedCaption}</p>`
+          : "";
+
+        // Google Maps の場合はリンクボタンも追加
+        const mapsLink = isGoogleMaps
+          ? `<p style="margin-top: 8px;"><a href="${originalUrl}" target="_blank" style="color: #0066cc; text-decoration: none;">📍 View on Google Maps</a></p>`
           : "";
 
         return `<div class="notion-embed" style="max-width: 100%; margin: 1em 0;">
@@ -201,9 +203,12 @@ export function blockToMarkdown(block: any): string {
       src="${embedUrl}"
       style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
       title="Embedded content"
+      allowfullscreen=""
+      loading="lazy"
     ></iframe>
   </div>
   ${caption}
+  ${mapsLink}
 </div>`;
       }
 
