@@ -185,7 +185,7 @@ function renderEmbed(block: any): string {
     ? "position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; filter: brightness(0.75) saturate(0.9);"
     : "position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;";
 
-  return `<div class="notion-embed" style="max-width: 100%; margin: 1em 0;">
+  return `<div class="notion-embed" style="max-width: 560px; margin: 1em 0;">
   <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
     <iframe
       src="${embedUrl}"
@@ -273,6 +273,81 @@ const blockRenderers: Record<string, (block: any) => string> = {
   table_row: renderTableRow,
 };
 
+interface TableState {
+  currentTableParentId: string | null;
+  isFirstRowInCurrentTable: boolean;
+}
+
+function isToggleOrToggleHeading(block: any): boolean {
+  if (block.type === "toggle") {
+    return true;
+  }
+
+  return (
+    (block.type === "heading_1" && block.heading_1?.is_toggleable) ||
+    (block.type === "heading_2" && block.heading_2?.is_toggleable) ||
+    (block.type === "heading_3" && block.heading_3?.is_toggleable)
+  );
+}
+
+function shouldSkipChildren(block: any): boolean {
+  return block.type === "child_page" || block.type === "child_database";
+}
+
+function processTableRow(block: any, state: TableState): string {
+  const rowParentId = block.parent?.block_id;
+  const cellCount = block.table_row?.cells?.length || 0;
+
+  // 新しいテーブルの開始か判定
+  if (rowParentId !== state.currentTableParentId) {
+    state.currentTableParentId = rowParentId;
+    state.isFirstRowInCurrentTable = true;
+  }
+
+  let result = blockToMarkdown(block) + "\n";
+
+  // 最初の行の後にセパレータを挿入
+  if (state.isFirstRowInCurrentTable) {
+    const separator = `| ${new Array(cellCount).fill("---").join(" | ")} |\n`;
+    result += separator;
+    state.isFirstRowInCurrentTable = false;
+  }
+
+  return result;
+}
+
+async function processNormalBlock(
+  block: any,
+  getChildBlocks?: (blockId: string) => Promise<any[]>,
+): Promise<string> {
+  let result = blockToMarkdown(block) + "\n\n";
+
+  // toggle または toggle heading で子要素がない場合は </details> で閉じる
+  if (isToggleOrToggleHeading(block) && !block.has_children) {
+    result += "</details>\n";
+  }
+
+  // 子ブロックがあれば再帰的に処理
+  if (block.has_children && getChildBlocks && !shouldSkipChildren(block)) {
+    try {
+      const childBlocks = await getChildBlocks(block.id);
+      const childMarkdown = await blocksToMarkdown(childBlocks, getChildBlocks);
+      result += childMarkdown.endsWith("\n\n")
+        ? childMarkdown
+        : childMarkdown + "\n\n";
+
+      // toggle または toggle heading の場合は </details> で閉じる
+      if (isToggleOrToggleHeading(block)) {
+        result += "</details>\n";
+      }
+    } catch (error) {
+      console.warn("[block-to-markdown] Failed to get child blocks:", error);
+    }
+  }
+
+  return result;
+}
+
 /**
  * ブロック配列を Markdown に変換（再帰サポート）
  * @param blocks - ブロックの配列
@@ -284,85 +359,21 @@ export async function blocksToMarkdown(
   getChildBlocks?: (blockId: string) => Promise<any[]>,
 ): Promise<string> {
   let markdown = "";
-  let currentTableParentId: string | null = null;
-  let isFirstRowInCurrentTable = false;
+  const tableState: TableState = {
+    currentTableParentId: null,
+    isFirstRowInCurrentTable: false,
+  };
 
-  for (let i = 0; i < blocks.length; i++) {
-    const block = blocks[i];
-
-    // テーブル行を処理
+  for (const block of blocks) {
     if (block.type === "table_row") {
-      const rowParentId = block.parent?.block_id;
-      const cellCount = block.table_row?.cells?.length || 0;
-
-      // 新しいテーブルの開始か判定
-      if (rowParentId !== currentTableParentId) {
-        currentTableParentId = rowParentId;
-        isFirstRowInCurrentTable = true;
-      }
-
-      // テーブル行を追加
-      markdown += blockToMarkdown(block) + "\n";
-
-      // 最初の行の後にセパレータを挿入
-      if (isFirstRowInCurrentTable) {
-        const separator = `| ${new Array(cellCount)
-          .fill("---")
-          .join(" | ")} |\n`;
-        markdown += separator;
-        isFirstRowInCurrentTable = false;
-      }
+      markdown += processTableRow(block, tableState);
     } else {
-      // テーブル行以外のブロック
-      markdown += blockToMarkdown(block) + "\n\n";
-
-      // toggle または toggle heading で子要素がない場合は </details> で閉じる
-      const isToggle = block.type === "toggle";
-      const isToggleHeading =
-        (block.type === "heading_1" && block.heading_1?.is_toggleable) ||
-        (block.type === "heading_2" && block.heading_2?.is_toggleable) ||
-        (block.type === "heading_3" && block.heading_3?.is_toggleable);
-
-      if ((isToggle || isToggleHeading) && !block.has_children) {
-        markdown += "</details>\n";
-      }
+      markdown += await processNormalBlock(block, getChildBlocks);
 
       // テーブルコンテキストをリセット
       if (block.type !== "table") {
-        currentTableParentId = null;
-        isFirstRowInCurrentTable = false;
-      }
-    }
-
-    // child_page と child_database は子ブロックを取得しない
-    // （孫ページまで表示されないようにする）
-    const shouldSkipChildren =
-      block.type === "child_page" || block.type === "child_database";
-
-    // 子ブロックがあれば再帰的に処理
-    if (block.has_children && getChildBlocks && !shouldSkipChildren) {
-      try {
-        const childBlocks = await getChildBlocks(block.id);
-        const childMarkdown = await blocksToMarkdown(
-          childBlocks,
-          getChildBlocks,
-        );
-        markdown += childMarkdown.endsWith("\n\n")
-          ? childMarkdown
-          : childMarkdown + "\n\n";
-
-        // toggle または toggle heading の場合は </details> で閉じる
-        const isToggleBlock = block.type === "toggle";
-        const isToggleHeadingBlock =
-          (block.type === "heading_1" && block.heading_1?.is_toggleable) ||
-          (block.type === "heading_2" && block.heading_2?.is_toggleable) ||
-          (block.type === "heading_3" && block.heading_3?.is_toggleable);
-
-        if (isToggleBlock || isToggleHeadingBlock) {
-          markdown += "</details>\n";
-        }
-      } catch (error) {
-        console.warn("[block-to-markdown] Failed to get child blocks:", error);
+        tableState.currentTableParentId = null;
+        tableState.isFirstRowInCurrentTable = false;
       }
     }
   }
