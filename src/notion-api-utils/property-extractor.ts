@@ -73,6 +73,10 @@ export function extractPropertyValue(prop: any): string {
       return prop.phone_number || "";
     case "status":
       return prop.status?.name || "";
+    case "created_time":
+      return prop.created_time || "";
+    case "last_edited_time":
+      return prop.last_edited_time || "";
     default:
       return "";
   }
