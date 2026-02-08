@@ -12,7 +12,7 @@ export function extractDatePropertyValue(prop: any): {
   start: string | null;
   end: string | null;
 } {
-  if (!prop || prop.type !== "date") {
+  if (prop?.type !== "date") {
     return { start: null, end: null };
   }
   return {
@@ -30,7 +30,7 @@ export function extractStatusPropertyValue(prop: any): {
   name: string;
   color: string;
 } {
-  if (!prop || prop.type !== "status") {
+  if (prop?.type !== "status") {
     return { name: "", color: "default" };
   }
   return {

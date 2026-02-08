@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
-import * as fs from "fs/promises";
-import * as path from "path";
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
 import { NotionApiClient } from "../notion-api-client";
 import {
   extractPagesAndDatabases,
@@ -14,18 +14,18 @@ import { extractPageId } from "../lib/page-id-utils";
 export class NotionTreeDataProvider
   implements vscode.TreeDataProvider<NotionPageTreeItem>
 {
-  private _onDidChangeTreeData = new vscode.EventEmitter<
+  private readonly _onDidChangeTreeData = new vscode.EventEmitter<
     NotionPageTreeItem | undefined | null | void
   >();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
-  private notionClient: NotionApiClient;
-  private cache: Map<string, NotionPageTreeItem[]> = new Map();
-  private cacheDir: string;
+  private readonly notionClient: NotionApiClient;
+  private readonly cache: Map<string, NotionPageTreeItem[]> = new Map();
+  private readonly cacheDir: string;
   // 親ノードを保持するマップ: 子ノードのID → 親ノード
-  private parentMap: Map<string, NotionPageTreeItem> = new Map();
+  private readonly parentMap: Map<string, NotionPageTreeItem> = new Map();
   // すべてのアイテムをキャッシュ: アイテムID → NotionPageTreeItem
-  private itemCache: Map<string, NotionPageTreeItem> = new Map();
+  private readonly itemCache: Map<string, NotionPageTreeItem> = new Map();
 
   constructor(notionClient: NotionApiClient, globalStorageUri: vscode.Uri) {
     this.notionClient = notionClient;
