@@ -9,7 +9,10 @@
   ],
   "keywords": [
     "notion",
-    "notion.so"
+    "notion-database",
+    "notion-api",
+    "notion-client",
+    "notion-integrations"
   ],
   "homepage": "https://github.com/auditive-tokyo/Notion-VSCode#readme",
   "bugs": {
