@@ -12,6 +12,18 @@ import {
 } from "./property-extractor";
 
 /**
+ * ビューモード型の定義
+ */
+type ViewMode = "table" | "calendar" | "timeline";
+
+/**
+ * プロパティが日付型でないかをチェック
+ */
+function isNotDateType(propValue: any): boolean {
+  return (propValue as any).type !== "date";
+}
+
+/**
  * ページタイトルを抽出
  * データベースレコードの場合は id="title" のプロパティを使用
  * @param page - Notion API から取得したページオブジェクト
@@ -219,7 +231,7 @@ function getDatabaseTitle(database: any): string {
 
 function detectDateProperty(rows: any[]): {
   datePropertyName?: string;
-  viewType: "table" | "calendar" | "timeline";
+  viewType: ViewMode;
 } {
   const firstRow = rows[0];
   if (!firstRow) {
@@ -228,7 +240,7 @@ function detectDateProperty(rows: any[]): {
 
   const properties = firstRow.properties || {};
   for (const [propName, propValue] of Object.entries(properties)) {
-    if ((propValue as any).type !== "date") {
+    if (isNotDateType(propValue)) {
       continue;
     }
 
@@ -292,7 +304,7 @@ export function convertDatabaseToMarkdownAndTable(
   markdown: string;
   tableData: any;
   statusColorMap?: Record<string, string>;
-  viewType?: "table" | "calendar" | "timeline";
+  viewType?: ViewMode;
   datePropertyName?: string;
 } {
   const title = getDatabaseTitle(database);
@@ -309,7 +321,7 @@ export function convertDatabaseToMarkdownAndTable(
     markdown: string;
     tableData: any;
     statusColorMap?: Record<string, string>;
-    viewType?: "table" | "calendar" | "timeline";
+    viewType?: ViewMode;
     datePropertyName?: string;
   } = { markdown, tableData, viewType };
 
@@ -373,10 +385,10 @@ function detectInlineDatabaseViewType(
   properties: Record<string, any>,
 ): {
   datePropertyName?: string;
-  viewType: "table" | "calendar" | "timeline";
+  viewType: ViewMode;
 } {
   for (const [propName, propValue] of Object.entries(properties)) {
-    if ((propValue as any).type !== "date") {
+    if (isNotDateType(propValue)) {
       continue;
     }
 
@@ -442,7 +454,7 @@ async function processInlineDatabase(
 ): Promise<{
   databaseId: string;
   title: string;
-  viewType: "table" | "calendar" | "timeline";
+  viewType: ViewMode;
   datePropertyName?: string;
   statusColorMap?: Record<string, string>;
   tableData: {
@@ -500,7 +512,7 @@ async function collectInlineDbData(
   inlineDatabases: Array<{
     databaseId: string;
     title: string;
-    viewType: "table" | "calendar" | "timeline";
+    viewType: ViewMode;
     datePropertyName?: string;
     tableData: {
       columns: string[];
@@ -521,7 +533,7 @@ async function collectInlineDbData(
   const inlineDatabases: Array<{
     databaseId: string;
     title: string;
-    viewType: "table" | "calendar" | "timeline";
+    viewType: ViewMode;
     datePropertyName?: string;
     tableData: {
       columns: string[];
@@ -609,7 +621,7 @@ export async function convertPageToMarkdownHelper(
   inlineDatabases?: Array<{
     databaseId: string;
     title: string;
-    viewType: "table" | "calendar" | "timeline";
+    viewType: ViewMode;
     datePropertyName?: string;
     tableData: {
       columns: string[];
@@ -626,7 +638,7 @@ export async function convertPageToMarkdownHelper(
   let inlineDatabases: Array<{
     databaseId: string;
     title: string;
-    viewType: "table" | "calendar" | "timeline";
+    viewType: ViewMode;
     datePropertyName?: string;
     tableData: {
       columns: string[];
@@ -672,7 +684,7 @@ export async function convertDatabaseToMarkdownHelper(
   coverUrl: string | null;
   icon: { type: string; emoji?: string; url?: string } | null;
   description: string | null;
-  viewType?: "table" | "calendar" | "timeline";
+  viewType?: ViewMode;
   datePropertyName?: string;
   statusColorMap?: Record<string, string>;
 }> {
