@@ -82,6 +82,82 @@ export function extractPagesAndDatabases(block: any): NotionPageTreeItem[] {
  * @param richTexts - リッチテキストオブジェクトの配列
  * @returns 抽出されたページ参照のリスト
  */
+/**
+ * Mention型のテキストからページIDを抽出
+ */
+function extractPageIdFromMention(text: any): string | null {
+  if (text.type === "mention" && text.mention?.type === "page") {
+    return text.mention?.page?.id || null;
+  }
+  return null;
+}
+
+/**
+ * hrefから複数の形式でページIDを抽出
+ * Notion内部リンク形式を優先し、短いID形式はフォールバック
+ */
+function extractPageIdFromHref(
+  href: string,
+): { pageId: string; isFullMatch: boolean } | null {
+  // Notion内部リンク形式（32文字）
+  const notionMatch = href.match(
+    /\/(?:workspace|database|page)\/([a-f0-9]{32})/,
+  );
+  if (notionMatch) {
+    return { pageId: notionMatch[1]!, isFullMatch: true };
+  }
+
+  // Notion内部リンク形式（ハイフン区切り）
+  const dashedNotionMatch = href.match(
+    /\/(?:workspace|database|page)\/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/,
+  );
+  if (dashedNotionMatch) {
+    return { pageId: dashedNotionMatch[1]!, isFullMatch: true };
+  }
+
+  // 短いID形式（32文字）
+  const shortMatch = href.match(/([a-f0-9]{32})/);
+  if (shortMatch) {
+    return { pageId: shortMatch[1]!, isFullMatch: false };
+  }
+
+  // 短いID形式（ハイフン区切り）
+  const dashedMatch = href.match(
+    /([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/,
+  );
+  if (dashedMatch) {
+    return { pageId: dashedMatch[1]!, isFullMatch: false };
+  }
+
+  return null;
+}
+
+/**
+ * ページアイテムを作成
+ */
+function createPageItem(pageId: string, plainText: string): NotionPageTreeItem {
+  return {
+    id: pageId,
+    title: plainText || pageId.slice(0, 8),
+    type: "page",
+  };
+}
+
+/**
+ * ページIDが新規だった場合、itemsに追加
+ */
+function addPageIfNew(
+  items: NotionPageTreeItem[],
+  seenIds: Set<string>,
+  pageId: string,
+  plainText: string,
+): void {
+  if (!seenIds.has(pageId)) {
+    items.push(createPageItem(pageId, plainText));
+    seenIds.add(pageId);
+  }
+}
+
 export function extractPageReferencesFromRichText(
   richTexts: any[],
 ): NotionPageTreeItem[] {
@@ -91,78 +167,18 @@ export function extractPageReferencesFromRichText(
   if (!Array.isArray(richTexts)) return items;
 
   for (const text of richTexts) {
-    if (text.type === "mention" && text.mention?.type === "page") {
-      const pageId = text.mention?.page?.id;
-      if (pageId && !seenIds.has(pageId)) {
-        items.push({
-          id: pageId,
-          title: text.plain_text || pageId.slice(0, 8),
-          type: "page",
-        });
-        seenIds.add(pageId);
-      }
+    // Mention型をチェック
+    const mentionPageId = extractPageIdFromMention(text);
+    if (mentionPageId) {
+      addPageIfNew(items, seenIds, mentionPageId, text.plain_text);
     }
 
+    // href型をチェック
     if (!text.href) continue;
 
-    // Notion の内部リンク形式: /workspace/page-id や /database/page-id
-    const notionLinkMatch = text.href.match(
-      /\/(?:workspace|database|page)\/([a-f0-9]{32})/,
-    );
-    const notionDashedMatch = text.href.match(
-      /\/(?:workspace|database|page)\/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/,
-    );
-    if (notionLinkMatch) {
-      const pageId = notionLinkMatch[1];
-      if (!seenIds.has(pageId)) {
-        items.push({
-          id: pageId,
-          title: text.plain_text || pageId.slice(0, 8),
-          type: "page",
-        });
-        seenIds.add(pageId);
-      }
-    }
-
-    if (notionDashedMatch) {
-      const pageId = notionDashedMatch[1];
-      if (!seenIds.has(pageId)) {
-        items.push({
-          id: pageId,
-          title: text.plain_text || pageId.slice(0, 8),
-          type: "page",
-        });
-        seenIds.add(pageId);
-      }
-    }
-
-    // 短いハイフン区切り形式も試す: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-    const shortIdMatch = text.href.match(/([a-f0-9]{32})/);
-    const dashedIdMatch = text.href.match(
-      /([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/,
-    );
-    if (shortIdMatch && !notionLinkMatch) {
-      const pageId = shortIdMatch[1];
-      if (!seenIds.has(pageId)) {
-        items.push({
-          id: pageId,
-          title: text.plain_text || pageId.slice(0, 8),
-          type: "page",
-        });
-        seenIds.add(pageId);
-      }
-    }
-
-    if (dashedIdMatch && !notionDashedMatch) {
-      const pageId = dashedIdMatch[1];
-      if (!seenIds.has(pageId)) {
-        items.push({
-          id: pageId,
-          title: text.plain_text || pageId.slice(0, 8),
-          type: "page",
-        });
-        seenIds.add(pageId);
-      }
+    const extracted = extractPageIdFromHref(text.href);
+    if (extracted) {
+      addPageIfNew(items, seenIds, extracted.pageId, text.plain_text);
     }
   }
 
