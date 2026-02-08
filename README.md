@@ -24,24 +24,24 @@
 - 🌙 **Light & Dark Mode** - Seamlessly supports VS Code themes
 - 🔒 **Official Notion API** - Uses Notion's official public API (no scraping)
 
+> **Why Official Notion API?**
+>
+> This extension uses **Notion's official public API** instead of web scraping. This approach provides:
+>
+> - ✅ **Stability** - No fragility from HTML structure changes
+> - ✅ **Security** - Your Notion data stays in your control
+> - ✅ **Compliance** - Works as intended with Notion's terms of service
+> - ✅ **Future-proof** - Automatically benefits from Notion API improvements
+> - ✅ **Transparent** - Explicit permission model through integrations
+>
+> You control exactly what data the extension can access through integrations.
+
 ## 🚀 Installation
 
 1. Open VS Code
 2. Go to Extensions (Ctrl+Shift+X / Cmd+Shift+X)
 3. Search for **"Notion-VSCode"**
 4. Click Install
-
-## Why Official Notion API?
-
-This extension uses **Notion's official public API** instead of web scraping. This approach provides:
-
-- ✅ **Stability** - No fragility from HTML structure changes
-- ✅ **Security** - Your Notion data stays in your control
-- ✅ **Compliance** - Works as intended with Notion's terms of service
-- ✅ **Future-proof** - Automatically benefits from Notion API improvements
-- ✅ **Transparent** - Explicit permission model through integrations
-
-You control exactly what data the extension can access through integrations.
 
 ## ✅ Quick Start
 
