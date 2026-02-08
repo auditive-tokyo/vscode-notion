@@ -41,127 +41,111 @@ function normalizeGoogleMapsEmbedUrl(url: string): string {
 
 export function blockToMarkdown(block: any): string {
   const type = block.type;
+  const renderer = blockRenderers[type];
+  if (!renderer) {
+    console.warn(`[block-to-markdown] Unsupported block type: ${type}`);
+    return "";
+  }
 
   try {
-    switch (type) {
-      case "paragraph": {
-        const richTexts = block.paragraph?.rich_text || [];
-        // Extract text from richTexts array
-        // This preserves Shift+Enter (\n within richText) from Notion
-        // which remark-breaks will convert to <br> tags
-        // vs. Enter (separate paragraph blocks) which are handled separately
-        const text = richTexts.map((rt: any) => rt.plain_text).join("");
+    return renderer(block);
+  } catch (error) {
+    console.warn(
+      `[block-to-markdown] Error converting block of type ${type}:`,
+      error,
+    );
+    return "";
+  }
+}
 
-        // \n\n を Markdown の段落区切りとして処理
-        // （\n 1つは remark-breaks が <br> に変換）
-        if (text.includes("\n\n")) {
-          // \n\n で分割して、各部分を別の段落として返す
-          const parts = text.split("\n\n").filter((p: string) => p.length > 0);
-          return parts.join("\n\n"); // Markdownの段落区切り（空行）
-        }
+function getRichTextPlainText(richText?: any[]): string {
+  return richText?.map((t: any) => t.plain_text).join("") || "";
+}
 
-        return text;
-      }
+function renderParagraph(block: any): string {
+  const richTexts = block.paragraph?.rich_text || [];
+  // Extract text from richTexts array
+  // This preserves Shift+Enter (\n within richText) from Notion
+  // which remark-breaks will convert to <br> tags
+  // vs. Enter (separate paragraph blocks) which are handled separately
+  const text = richTexts.map((rt: any) => rt.plain_text).join("");
 
-      case "heading_1": {
-        const text =
-          block.heading_1?.rich_text?.map((t: any) => t.plain_text).join("") ||
-          "";
-        const isToggleable = block.heading_1?.is_toggleable || false;
-        if (isToggleable) {
-          // \n は HTML構造化のための区切り文字（コード側で生成）
-          return `<details>\n<summary><h1>${text}</h1></summary>\n`;
-        }
-        return `# ${text}`;
-      }
+  // \n\n を Markdown の段落区切りとして処理
+  // （\n 1つは remark-breaks が <br> に変換）
+  if (text.includes("\n\n")) {
+    // \n\n で分割して、各部分を別の段落として返す
+    const parts = text.split("\n\n").filter((p: string) => p.length > 0);
+    return parts.join("\n\n"); // Markdownの段落区切り（空行）
+  }
 
-      case "heading_2": {
-        const text =
-          block.heading_2?.rich_text?.map((t: any) => t.plain_text).join("") ||
-          "";
-        const isToggleable = block.heading_2?.is_toggleable || false;
-        if (isToggleable) {
-          // \n は HTML構造化のための区切り文字（コード側で生成）
-          return `<details>\n<summary><h2>${text}</h2></summary>\n`;
-        }
-        return `## ${text}`;
-      }
+  return text;
+}
 
-      case "heading_3": {
-        const text =
-          block.heading_3?.rich_text?.map((t: any) => t.plain_text).join("") ||
-          "";
-        const isToggleable = block.heading_3?.is_toggleable || false;
-        if (isToggleable) {
-          // \n は HTML構造化のための区切り文字（コード側で生成）
-          return `<details>\n<summary><h3>${text}</h3></summary>\n`;
-        }
-        return `### ${text}`;
-      }
+function renderHeading(level: 1 | 2 | 3, block: any): string {
+  const heading = block[`heading_${level}`];
+  const text = getRichTextPlainText(heading?.rich_text);
+  const isToggleable = heading?.is_toggleable || false;
 
-      case "bulleted_list_item":
-        return (
-          "- " +
-          (block.bulleted_list_item?.rich_text
-            ?.map((t: any) => t.plain_text)
-            .join("") || "")
-        );
+  if (isToggleable) {
+    // \n は HTML構造化のための区切り文字（コード側で生成）
+    return `<details>\n<summary><h${level}>${text}</h${level}></summary>\n`;
+  }
 
-      case "numbered_list_item":
-        return (
-          "1. " +
-          (block.numbered_list_item?.rich_text
-            ?.map((t: any) => t.plain_text)
-            .join("") || "")
-        );
+  const prefix = "#".repeat(level);
+  return `${prefix} ${text}`;
+}
 
-      case "to_do": {
-        const checked = block.to_do?.checked || false;
-        const text =
-          block.to_do?.rich_text?.map((t: any) => t.plain_text).join("") || "";
-        const checkedAttr = checked ? " checked" : "";
-        const checkedClass = checked ? " is-checked" : "";
-        return `<div class="notion-todo${checkedClass}"><input type="checkbox" class="notion-todo-checkbox"${checkedAttr} tabindex="-1" aria-disabled="true" /> <span class="notion-todo-text">${text}</span></div>`;
-      }
+function renderBulletedListItem(block: any): string {
+  return `- ${getRichTextPlainText(block.bulleted_list_item?.rich_text)}`;
+}
 
-      case "code": {
-        const language = block.code?.language || "text";
-        const code =
-          block.code?.rich_text?.map((t: any) => t.plain_text).join("") || "";
-        return `\`\`\`${language}\n${code}\n\`\`\``;
-      }
+function renderNumberedListItem(block: any): string {
+  return `1. ${getRichTextPlainText(block.numbered_list_item?.rich_text)}`;
+}
 
-      case "image": {
-        const imageUrl =
-          block.image?.external?.url || block.image?.file?.url || "";
-        const imageCaption =
-          block.image?.caption?.map((t: any) => t.plain_text).join("") || "";
-        return `![${imageCaption}](${imageUrl})`;
-      }
+function renderTodo(block: any): string {
+  const checked = block.to_do?.checked || false;
+  const text = getRichTextPlainText(block.to_do?.rich_text);
+  const checkedAttr = checked ? " checked" : "";
+  const checkedClass = checked ? " is-checked" : "";
+  return `<div class="notion-todo${checkedClass}"><input type="checkbox" class="notion-todo-checkbox"${checkedAttr} tabindex="-1" aria-disabled="true" /> <span class="notion-todo-text">${text}</span></div>`;
+}
 
-      case "video": {
-        const videoUrl =
-          block.video?.external?.url || block.video?.file?.url || "";
-        const videoCaption =
-          block.video?.caption?.map((t: any) => t.plain_text).join("") || "";
+function renderCode(block: any): string {
+  const language = block.code?.language || "text";
+  const code = getRichTextPlainText(block.code?.rich_text);
+  return `\`\`\`${language}\n${code}\n\`\`\``;
+}
 
-        if (!videoUrl) return "";
+function renderImage(block: any): string {
+  const imageUrl = block.image?.external?.url || block.image?.file?.url || "";
+  const imageCaption = getRichTextPlainText(block.image?.caption);
+  return `![${imageCaption}](${imageUrl})`;
+}
 
-        // YouTube URL を埋め込み形式に変換
-        let embedUrl = videoUrl;
-        const youtubeMatch = videoUrl.match(
-          /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/,
-        );
-        if (youtubeMatch) {
-          const videoId = youtubeMatch[1];
-          embedUrl = `https://www.youtube.com/embed/${videoId}`;
-        }
+function renderVideo(block: any): string {
+  const videoUrl = block.video?.external?.url || block.video?.file?.url || "";
+  const videoCaption = getRichTextPlainText(block.video?.caption);
 
-        // HTML iframe で埋め込み（VS Code Webview sandbox 対応）
-        const caption = videoCaption
-          ? `<p class="video-caption">${videoCaption}</p>`
-          : "";
-        return `<div class="notion-video" style="max-width: 560px; margin: 1em 0;">
+  if (!videoUrl) {
+    return "";
+  }
+
+  // YouTube URL を埋め込み形式に変換
+  let embedUrl = videoUrl;
+  const youtubeMatch = videoUrl.match(
+    /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/,
+  );
+  if (youtubeMatch) {
+    const videoId = youtubeMatch[1];
+    embedUrl = `https://www.youtube.com/embed/${videoId}`;
+  }
+
+  // HTML iframe で埋め込み（VS Code Webview sandbox 対応）
+  const caption = videoCaption
+    ? `<p class="video-caption">${videoCaption}</p>`
+    : "";
+  return `<div class="notion-video" style="max-width: 560px; margin: 1em 0;">
   <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
     <iframe 
       src="${embedUrl}" 
@@ -171,37 +155,37 @@ export function blockToMarkdown(block: any): string {
   </div>
   ${caption}
 </div>`;
-      }
+}
 
-      case "embed": {
-        const originalUrl =
-          block.embed?.url || block.type_specific_data?.url || "";
-        const embedCaption =
-          block.embed?.caption?.map((t: any) => t.plain_text).join("") || "";
+function renderEmbed(block: any): string {
+  const originalUrl = block.embed?.url || block.type_specific_data?.url || "";
+  const embedCaption = getRichTextPlainText(block.embed?.caption);
 
-        if (!originalUrl) return "";
+  if (!originalUrl) {
+    return "";
+  }
 
-        let embedUrl = originalUrl;
-        const isGoogleMaps = /google\.com\/maps/i.test(originalUrl);
+  let embedUrl = originalUrl;
+  const isGoogleMaps = /google\.com\/maps/i.test(originalUrl);
 
-        // Google Maps URL を pb パラメータ形式に変換
-        if (isGoogleMaps) {
-          embedUrl = normalizeGoogleMapsEmbedUrl(originalUrl);
-        }
+  // Google Maps URL を pb パラメータ形式に変換
+  if (isGoogleMaps) {
+    embedUrl = normalizeGoogleMapsEmbedUrl(originalUrl);
+  }
 
-        const caption = embedCaption
-          ? `<p class="embed-caption">${embedCaption}</p>`
-          : "";
+  const caption = embedCaption
+    ? `<p class="embed-caption">${embedCaption}</p>`
+    : "";
 
-        const mapsOverlay = isGoogleMaps
-          ? `<a href="${originalUrl}" target="_blank" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.35); color: #ffffff; text-decoration: none; font-weight: 600;">📍 View on Google Maps</a>`
-          : "";
+  const mapsOverlay = isGoogleMaps
+    ? `<a href="${originalUrl}" target="_blank" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.35); color: #ffffff; text-decoration: none; font-weight: 600;">📍 View on Google Maps</a>`
+    : "";
 
-        const iframeStyle = isGoogleMaps
-          ? "position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; filter: brightness(0.75) saturate(0.9);"
-          : "position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;";
+  const iframeStyle = isGoogleMaps
+    ? "position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; filter: brightness(0.75) saturate(0.9);"
+    : "position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;";
 
-        return `<div class="notion-embed" style="max-width: 100%; margin: 1em 0;">
+  return `<div class="notion-embed" style="max-width: 100%; margin: 1em 0;">
   <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
     <iframe
       src="${embedUrl}"
@@ -214,74 +198,80 @@ export function blockToMarkdown(block: any): string {
   </div>
   ${caption}
 </div>`;
-      }
-
-      case "child_page": {
-        const pageId = block.id;
-        const pageTitle = block.child_page?.title || "Untitled Page";
-        return `📄 [${pageTitle}](/${pageId})`;
-      }
-
-      case "child_database": {
-        const databaseId = block.id;
-        const databaseTitle =
-          block.child_database?.title || "Untitled Database";
-        // inline DB のプレースホルダーを返す（後で実データに置換される）
-        return `__INLINE_DB_PLACEHOLDER__${databaseId}__${databaseTitle}__`;
-      }
-
-      case "quote": {
-        const text =
-          block.quote?.rich_text?.map((t: any) => t.plain_text).join("") || "";
-        return `> ${text}`;
-      }
-
-      case "callout": {
-        const icon = block.callout?.icon?.emoji || "💡";
-        const text =
-          block.callout?.rich_text?.map((t: any) => t.plain_text).join("") ||
-          "";
-        // カスタムコードブロック記法で callout を表現
-        return `\`\`\`callout\n${icon} ${text}\n\`\`\``;
-      }
-
-      case "toggle": {
-        const text =
-          block.toggle?.rich_text?.map((t: any) => t.plain_text).join("") || "";
-        // \n は HTML構造化のための区切り文字（コード側で生成）
-        // Notion由来の Shift+Enter とは異なる
-        return `<details>\n<summary>${text}</summary>\n`;
-      }
-
-      case "divider":
-        return "---";
-
-      case "table":
-        // テーブルは子ブロック（table_row）で処理するため、ここでは何も出力しない
-        return "";
-
-      case "table_row": {
-        const cells = block.table_row?.cells || [];
-        // 各セルのテキストを抽出
-        const cellContents = cells.map((cellRichTexts: any[]) =>
-          cellRichTexts.map((t: any) => t.plain_text || "").join(""),
-        );
-        // Markdown テーブル行として返す
-        return `| ${cellContents.join(" | ")} |`;
-      }
-
-      default:
-        console.warn(`[block-to-markdown] Unsupported block type: ${type}`);
-        return "";
-    }
-  } catch (error) {
-    console.warn(
-      `[block-to-markdown] Error converting block of type ${type}:`,
-      error,
-    );
-    return "";
-  }
 }
+
+function renderChildPage(block: any): string {
+  const pageId = block.id;
+  const pageTitle = block.child_page?.title || "Untitled Page";
+  return `📄 [${pageTitle}](/${pageId})`;
+}
+
+function renderChildDatabase(block: any): string {
+  const databaseId = block.id;
+  const databaseTitle = block.child_database?.title || "Untitled Database";
+  // inline DB のプレースホルダーを返す（後で実データに置換される）
+  return `__INLINE_DB_PLACEHOLDER__${databaseId}__${databaseTitle}__`;
+}
+
+function renderQuote(block: any): string {
+  const text = getRichTextPlainText(block.quote?.rich_text);
+  return `> ${text}`;
+}
+
+function renderCallout(block: any): string {
+  const icon = block.callout?.icon?.emoji || "💡";
+  const text = getRichTextPlainText(block.callout?.rich_text);
+  // カスタムコードブロック記法で callout を表現
+  return `\`\`\`callout\n${icon} ${text}\n\`\`\``;
+}
+
+function renderToggle(block: any): string {
+  const text = getRichTextPlainText(block.toggle?.rich_text);
+  // \n は HTML構造化のための区切り文字（コード側で生成）
+  // Notion由来の Shift+Enter とは異なる
+  return `<details>\n<summary>${text}</summary>\n`;
+}
+
+function renderDivider(): string {
+  return "---";
+}
+
+function renderTable(): string {
+  // テーブルは子ブロック（table_row）で処理するため、ここでは何も出力しない
+  return "";
+}
+
+function renderTableRow(block: any): string {
+  const cells = block.table_row?.cells || [];
+  // 各セルのテキストを抽出
+  const cellContents = cells.map((cellRichTexts: any[]) =>
+    cellRichTexts.map((t: any) => t.plain_text || "").join(""),
+  );
+  // Markdown テーブル行として返す
+  return `| ${cellContents.join(" | ")} |`;
+}
+
+const blockRenderers: Record<string, (block: any) => string> = {
+  paragraph: renderParagraph,
+  heading_1: (block) => renderHeading(1, block),
+  heading_2: (block) => renderHeading(2, block),
+  heading_3: (block) => renderHeading(3, block),
+  bulleted_list_item: renderBulletedListItem,
+  numbered_list_item: renderNumberedListItem,
+  to_do: renderTodo,
+  code: renderCode,
+  image: renderImage,
+  video: renderVideo,
+  embed: renderEmbed,
+  child_page: renderChildPage,
+  child_database: renderChildDatabase,
+  quote: renderQuote,
+  callout: renderCallout,
+  toggle: renderToggle,
+  divider: renderDivider,
+  table: renderTable,
+  table_row: renderTableRow,
+};
 
 /**
  * ブロック配列を Markdown に変換（再帰サポート）

@@ -245,7 +245,7 @@ export class NotionTreeDataProvider
           type: "page",
         };
         return parentId ? { item, parentId } : { item };
-      } catch (pageError) {
+      } catch {
         // ページとして取得失敗時、データベースとして取得を試みる
         try {
           const database = await officialClient.databases.retrieve({
