@@ -1,8 +1,19 @@
 # Notion-VSCode
 
-> 🚀 Browse and explore your Notion pages directly in Visual Studio Code
+> 🚀 Browse and explore your Notion pages directly in Visual Studio Code using official Notion integration.
+>
+> - Official Notion API: only pages shared with your integration API key are visible.
+> - Rate limits (free plan: 3 requests/sec) can slow complex pages, but loaded pages are cached for fast display.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub Issues](https://img.shields.io/github/issues/auditive-tokyo/Notion-VSCode)](https://github.com/auditive-tokyo/Notion-VSCode/issues)
+[![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](CONTRIBUTING.md)
+
+|                  Front Page                  |                   Block Rendering                   |
+| :------------------------------------------: | :-------------------------------------------------: |
+|   ![Front Page](docs/images/frontpage.png)   | ![Block Rendering](docs/images/block-rendering.png) |
+|             **Mermaid Diagrams**             |               **Database Rendering**                |
+| ![Mermaid Diagrams](docs/images/mermaid.png) | ![Database Rendering](docs/images/db-rendering.png) |
 
 ## ✨ Features
 
@@ -19,6 +30,18 @@
 2. Go to Extensions (Ctrl+Shift+X / Cmd+Shift+X)
 3. Search for **"Notion-VSCode"**
 4. Click Install
+
+## Why Official Notion API?
+
+This extension uses **Notion's official public API** instead of web scraping. This approach provides:
+
+- ✅ **Stability** - No fragility from HTML structure changes
+- ✅ **Security** - Your Notion data stays in your control
+- ✅ **Compliance** - Works as intended with Notion's terms of service
+- ✅ **Future-proof** - Automatically benefits from Notion API improvements
+- ✅ **Transparent** - Explicit permission model through integrations
+
+You control exactly what data the extension can access through integrations.
 
 ## ✅ Quick Start
 
