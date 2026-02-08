@@ -236,45 +236,19 @@ export class NotionApiClient {
       // queryDatabaseRows を使用してレコードを取得
       const rawRecords = await this.queryDatabaseRows(databaseId);
 
-      // タイトルを抽出して変換
-      const records: { id: string; title: string }[] = [];
-
-      for (const record of rawRecords) {
-        if (!record.id) continue;
-
-        // タイトルを抽出（properties.Name または最初の title プロパティ）
-        let title = "Untitled";
-        const properties = record.properties;
-
-        if (properties) {
-          // Name プロパティを優先
-          if (properties.Name && properties.Name.type === "title") {
-            const titleArray = properties.Name.title;
-            if (titleArray && titleArray.length > 0) {
-              title = titleArray.map((t: any) => t.plain_text).join("");
-            }
-          } else {
-            // 最初の title 型プロパティを探す
-            for (const key of Object.keys(properties)) {
-              const prop = properties[key];
-              if (prop.type === "title") {
-                const titleArray = prop.title;
-                if (titleArray && titleArray.length > 0) {
-                  title = titleArray.map((t: any) => t.plain_text).join("");
-                  break;
-                }
-              }
-            }
-          }
+      return rawRecords.flatMap(record => {
+        const id = record?.id;
+        if (!id) {
+          return [];
         }
 
-        records.push({
-          id: record.id,
-          title: title || "Untitled",
-        });
-      }
-
-      return records;
+        return [
+          {
+            id,
+            title: this.extractRecordTitle(record),
+          },
+        ];
+      });
     } catch (error) {
       console.error(
         `[notion-api-client] Failed to get database records:`,
@@ -282,6 +256,52 @@ export class NotionApiClient {
       );
       throw error;
     }
+  }
+
+  private extractRecordTitle(record: any): string {
+    const properties = record?.properties;
+    if (!properties) {
+      return "Untitled";
+    }
+
+    const nameTitle = this.getTitleFromNameProperty(properties);
+    if (nameTitle) {
+      return nameTitle;
+    }
+
+    const firstTitle = this.getFirstTitleProperty(properties);
+    return firstTitle || "Untitled";
+  }
+
+  private getTitleFromNameProperty(properties: Record<string, any>): string | null {
+    const nameProperty = properties["Name"];
+    if (nameProperty?.type !== "title") {
+      return null;
+    }
+
+    return this.joinTitlePlainText(nameProperty.title);
+  }
+
+  private getFirstTitleProperty(properties: Record<string, any>): string | null {
+    for (const key of Object.keys(properties)) {
+      const prop = properties[key];
+      if (prop?.type === "title") {
+        const title = this.joinTitlePlainText(prop.title);
+        if (title) {
+          return title;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  private joinTitlePlainText(titleArray?: Array<{ plain_text?: string }>): string | null {
+    if (!titleArray || titleArray.length === 0) {
+      return null;
+    }
+
+    return titleArray.map(item => item.plain_text ?? "").join("") || null;
   }
 
   /**
