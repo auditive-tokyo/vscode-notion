@@ -2,6 +2,12 @@
 
 All notable changes to Notion-VSCode will be documented in this file.
 
+## [1.0.1] - 2026-02-08
+
+### Changed
+- Updated README with credits to original author
+- Added compatibility notice for original vscode-notion extension
+
 ## [1.0.0] - 2026-02-07
 
 ### 🎉 Initial Release
