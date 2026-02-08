@@ -49,7 +49,8 @@ You control exactly what data the extension can access through integrations.
 2. Share the pages you want to view with your integration
 3. Open VS Code Settings (Cmd+,)
 4. Search for `notion` and paste your API token
-5. Your Notion workspace appears in the sidebar
+5. Set `notion.rootPage` with a Notion page URL or 32-character ID
+6. Your Notion workspace appears in the sidebar
 
 ## 📚 Docs
 
