@@ -194,6 +194,46 @@ export class NotionTreeDataProvider
     return chain;
   }
 
+  private getParentId(parent: any): string | undefined {
+    if (!parent || typeof parent !== "object") {
+      return undefined;
+    }
+    if (parent.type === "page_id") {
+      return parent.page_id;
+    }
+    if (parent.type === "database_id") {
+      return parent.database_id;
+    }
+    if (parent.type === "data_source_id") {
+      // データベースレコードの場合、database_id を返す
+      return parent.database_id;
+    }
+    if (parent.type === "block_id") {
+      return parent.block_id;
+    }
+    return undefined;
+  }
+
+  private getPageTitle(page: any): string {
+    let title = "Untitled";
+    const properties = (page as any).properties || {};
+    for (const [, value] of Object.entries(properties)) {
+      const prop = value as any;
+      if (prop.type === "title" && prop.title?.length > 0) {
+        title = prop.title.map((t: any) => t.plain_text).join("");
+        break;
+      }
+    }
+    return title;
+  }
+
+  private getDatabaseTitle(database: any): string {
+    return (
+      (database as any).title?.map((t: any) => t.plain_text).join("") ||
+      "Untitled Database"
+    );
+  }
+
   private async fetchItemInfoWithParent(pageId: string): Promise<{
     item: NotionPageTreeItem;
     parentId?: string;
@@ -204,40 +244,11 @@ export class NotionTreeDataProvider
         return null;
       }
 
-      const getParentId = (parent: any): string | undefined => {
-        if (!parent || typeof parent !== "object") {
-          return undefined;
-        }
-        if (parent.type === "page_id") {
-          return parent.page_id;
-        }
-        if (parent.type === "database_id") {
-          return parent.database_id;
-        }
-        if (parent.type === "data_source_id") {
-          // データベースレコードの場合、database_id を返す
-          return parent.database_id;
-        }
-        if (parent.type === "block_id") {
-          return parent.block_id;
-        }
-        return undefined;
-      };
-
       // まずページとして取得を試みる
       try {
         const page = await officialClient.pages.retrieve({ page_id: pageId });
-        let title = "Untitled";
-        const properties = (page as any).properties || {};
-        for (const [, value] of Object.entries(properties)) {
-          const prop = value as any;
-          if (prop.type === "title" && prop.title?.length > 0) {
-            title = prop.title.map((t: any) => t.plain_text).join("");
-            break;
-          }
-        }
-
-        const parentId = getParentId((page as any).parent);
+        const title = this.getPageTitle(page);
+        const parentId = this.getParentId((page as any).parent);
 
         const item: NotionPageTreeItem = {
           id: page.id,
@@ -252,11 +263,8 @@ export class NotionTreeDataProvider
             database_id: pageId,
           });
 
-          const title =
-            (database as any).title?.map((t: any) => t.plain_text).join("") ||
-            "Untitled Database";
-
-          const parentId = getParentId((database as any).parent);
+          const title = this.getDatabaseTitle(database);
+          const parentId = this.getParentId((database as any).parent);
 
           const item: NotionPageTreeItem = {
             id: database.id,
@@ -438,17 +446,7 @@ export class NotionTreeDataProvider
         const page = await officialClient.pages.retrieve({ page_id: pageId });
 
         // タイトルを取得
-        let title = "Untitled";
-        const properties = (page as any).properties || {};
-
-        // Title プロパティを探す
-        for (const [, value] of Object.entries(properties)) {
-          const prop = value as any;
-          if (prop.type === "title" && prop.title?.length > 0) {
-            title = prop.title.map((t: any) => t.plain_text).join("");
-            break;
-          }
-        }
+        const title = this.getPageTitle(page);
 
         return {
           id: page.id,
@@ -462,9 +460,7 @@ export class NotionTreeDataProvider
             database_id: pageId,
           });
 
-          const title =
-            (database as any).title?.map((t: any) => t.plain_text).join("") ||
-            "Untitled Database";
+          const title = this.getDatabaseTitle(database);
 
           return {
             id: database.id,
