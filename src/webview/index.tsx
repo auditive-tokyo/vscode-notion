@@ -150,6 +150,55 @@ const App: React.FC = () => {
     return renderTable(tableData, showDescription);
   };
 
+  type FullPageViewMode = "calendar" | "timeline" | "table" | "board";
+
+  const getDefaultFullPageViewMode = (
+    hasDateProperty: boolean,
+    hasStatusColumn: boolean,
+    viewType?: "table" | "calendar" | "timeline",
+  ): FullPageViewMode => {
+    if (hasDateProperty) {
+      return viewType === "timeline" ? "timeline" : "calendar";
+    }
+    if (hasStatusColumn) {
+      return "board";
+    }
+    return "table";
+  };
+
+  const getFullPageViewStates = (
+    currentViewMode: FullPageViewMode,
+    hasDateProperty: boolean,
+    hasStatusColumn: boolean,
+  ) => {
+    return {
+      isCalendarView: currentViewMode === "calendar" && hasDateProperty,
+      isTimelineView: currentViewMode === "timeline" && hasDateProperty,
+      isBoardView: currentViewMode === "board" && hasStatusColumn,
+    };
+  };
+
+  const getAvailableFullPageModes = (
+    hasDateProperty: boolean,
+    hasStatusColumn: boolean,
+  ): FullPageViewMode[] => [
+    ...(hasDateProperty
+      ? (["calendar", "timeline"] as FullPageViewMode[])
+      : []),
+    ...(hasStatusColumn ? (["board"] as FullPageViewMode[]) : []),
+    "table",
+  ];
+
+  const getModeLabel = (mode: FullPageViewMode) => {
+    const labels: Record<FullPageViewMode, string> = {
+      table: "📋 Table",
+      calendar: "📅 Calendar",
+      timeline: "📈 Timeline",
+      board: "📊 Board",
+    };
+    return labels[mode];
+  };
+
   // テーブルデータがあった場合のレンダリング
   const renderContent = () => {
     if (state.tableData) {
@@ -157,44 +206,25 @@ const App: React.FC = () => {
       const hasStatusColumn = state.tableData.columns.some(
         (col) => col.toLowerCase() === "status",
       );
-      const defaultViewMode: "calendar" | "timeline" | "table" | "board" =
-        state.datePropertyName
-          ? state.viewType === "timeline"
-            ? "timeline"
-            : "calendar"
-          : hasStatusColumn
-          ? "board"
-          : "table";
+      const hasDateProperty = !!state.datePropertyName;
+      const defaultViewMode = getDefaultFullPageViewMode(
+        hasDateProperty,
+        hasStatusColumn,
+        state.viewType,
+      );
       const currentViewMode = viewModes[state.id] || defaultViewMode;
-      const isCalendarView =
-        currentViewMode === "calendar" && state.datePropertyName;
-      const isTimelineView =
-        currentViewMode === "timeline" && state.datePropertyName;
-      const isBoardView = currentViewMode === "board" && hasStatusColumn;
+      const { isCalendarView, isTimelineView, isBoardView } =
+        getFullPageViewStates(
+          currentViewMode,
+          hasDateProperty,
+          hasStatusColumn,
+        );
 
       // ビューモード切り替えドロップダウン
-      const availableModesFullPage = [
-        ...(state.datePropertyName
-          ? ["calendar" as const, "timeline" as const]
-          : []),
-        ...(hasStatusColumn ? ["board" as const] : []),
-        "table" as const,
-      ];
-
-      const getModeLabel = (
-        mode: "table" | "calendar" | "timeline" | "board",
-      ) => {
-        const labels: Record<
-          "table" | "calendar" | "timeline" | "board",
-          string
-        > = {
-          table: "📋 Table",
-          calendar: "📅 Calendar",
-          timeline: "📈 Timeline",
-          board: "📊 Board",
-        };
-        return labels[mode];
-      };
+      const availableModesFullPage = getAvailableFullPageModes(
+        hasDateProperty,
+        hasStatusColumn,
+      );
 
       const toggleViewButton =
         availableModesFullPage.length > 1 ? (
