@@ -5,6 +5,14 @@
 > - Official Notion API: only pages shared with your integration API key are visible.
 > - Rate limits (free plan: 3 requests/sec) can slow complex pages, but loaded pages are cached for fast display.
 
+### 🙏 Credits
+
+Big thanks to [kyswtn](https://github.com/kyswtn) for the original [vscode-notion](https://github.com/kyswtn/vscode-notion)! This project is forked from their work and recreated to use the **official Notion API**.
+
+⚠️ **Important**: Due to conflicting extension IDs and commands, this extension cannot be used simultaneously with the original vscode-notion. Please disable or uninstall the original extension before installing this one.
+
+---
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub Issues](https://img.shields.io/github/issues/auditive-tokyo/Notion-VSCode)](https://github.com/auditive-tokyo/Notion-VSCode/issues)
 [![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](CONTRIBUTING.md)
