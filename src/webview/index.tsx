@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { type ComponentProps, useState } from "react";
 import { createRoot } from "react-dom/client";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -266,6 +266,11 @@ const App: React.FC = () => {
             <ReactMarkdown
               remarkPlugins={[remarkGfm, remarkBreaks]}
               rehypePlugins={[rehypeRaw]}
+              components={{
+                input: (props: ComponentProps<"input">) => (
+                  <input {...props} readOnly />
+                ),
+              }}
             >
               {state.data}
             </ReactMarkdown>

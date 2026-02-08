@@ -20,7 +20,7 @@ type ViewMode = "table" | "calendar" | "timeline";
  * プロパティが日付型でないかをチェック
  */
 function isNotDateType(propValue: any): boolean {
-  return (propValue as any).type !== "date";
+  return propValue.type !== "date";
 }
 
 /**
@@ -229,7 +229,10 @@ function getDatabaseTitle(database: any): string {
   return "Untitled Database";
 }
 
-function detectDateProperty(rows: any[]): {
+function detectDateProperty(
+  rows: any[],
+  properties?: Record<string, any>,
+): {
   datePropertyName?: string;
   viewType: ViewMode;
 } {
@@ -238,8 +241,8 @@ function detectDateProperty(rows: any[]): {
     return { viewType: "table" };
   }
 
-  const properties = firstRow.properties || {};
-  for (const [propName, propValue] of Object.entries(properties)) {
+  const props = properties || firstRow.properties || {};
+  for (const [propName, propValue] of Object.entries(props)) {
     if (isNotDateType(propValue)) {
       continue;
     }
@@ -268,16 +271,20 @@ function detectDateProperty(rows: any[]): {
   return { viewType: "table" };
 }
 
-function collectStatusColors(rows: any[]): Record<string, string> {
+function collectStatusColors(
+  rows: any[],
+  properties?: Record<string, any>,
+  returnFirst: boolean = false,
+): Record<string, string> {
   const statusColorMap: Record<string, string> = {};
   const firstRow = rows[0];
   if (!firstRow) {
     return statusColorMap;
   }
 
-  const firstRowProps = firstRow.properties || {};
-  for (const propName in firstRowProps) {
-    const prop = firstRowProps[propName];
+  const props = properties || firstRow.properties || {};
+  for (const propName in props) {
+    const prop = props[propName];
     if (prop?.type !== "status") {
       continue;
     }
@@ -291,6 +298,11 @@ function collectStatusColors(rows: any[]): Record<string, string> {
           statusColorMap[statusInfo.name] = statusInfo.color;
         }
       }
+    }
+
+    // Inline Database の場合は最初の status プロパティのみ処理
+    if (returnFirst) {
+      return statusColorMap;
     }
   }
 
@@ -378,73 +390,6 @@ function processFullPageDatabase(
 }
 
 /**
- * 日付プロパティを検出し、viewType を判定
- */
-function detectInlineDatabaseViewType(
-  rows: any[],
-  properties: Record<string, any>,
-): {
-  datePropertyName?: string;
-  viewType: ViewMode;
-} {
-  for (const [propName, propValue] of Object.entries(properties)) {
-    if (isNotDateType(propValue)) {
-      continue;
-    }
-
-    const hasAnyDateValue = rows.some((row) => {
-      const prop = row.properties[propName];
-      return prop?.type === "date" && prop.date?.start;
-    });
-
-    if (!hasAnyDateValue) {
-      continue;
-    }
-
-    const hasAnyDateRange = rows.some((row) => {
-      const prop = row.properties[propName];
-      return prop?.type === "date" && prop.date?.end !== null;
-    });
-
-    return {
-      datePropertyName: propName,
-      viewType: hasAnyDateRange ? "timeline" : "calendar",
-    };
-  }
-
-  return { viewType: "table" };
-}
-
-/**
- * Status プロパティのカラーマップを収集
- */
-function collectInlineDatabaseStatusColors(
-  rows: any[],
-  properties: Record<string, any>,
-): Record<string, string> | undefined {
-  for (const propName in properties) {
-    const prop = properties[propName];
-    if (prop?.type !== "status") {
-      continue;
-    }
-
-    const statusColorMap: Record<string, string> = {};
-    for (const row of rows) {
-      const rowProp = row.properties[propName];
-      if (rowProp?.status) {
-        const statusInfo = extractStatusPropertyValue(rowProp);
-        if (statusInfo.name) {
-          statusColorMap[statusInfo.name] = statusInfo.color;
-        }
-      }
-    }
-    return statusColorMap;
-  }
-
-  return undefined;
-}
-
-/**
  * Inline Database のテーブルデータを処理
  */
 async function processInlineDatabase(
@@ -475,12 +420,11 @@ async function processInlineDatabase(
   const properties = firstRow.properties || {};
   const propertyNames = getOrderedPropertyNames(properties);
 
-  const { datePropertyName, viewType } = detectInlineDatabaseViewType(
-    rows,
-    properties,
-  );
+  const { datePropertyName, viewType } = detectDateProperty(rows, properties);
   const tableData = convertRowsToTableData(rows, propertyNames);
-  const statusColorMap = collectInlineDatabaseStatusColors(rows, properties);
+  const statusColors = collectStatusColors(rows, properties, true);
+  const statusColorMap =
+    Object.keys(statusColors).length > 0 ? statusColors : undefined;
 
   return {
     databaseId,

@@ -310,6 +310,9 @@ export const useMarkdownWithInlineDatabases = (
           }
           return <pre {...props} />;
         },
+        input: (props: ComponentProps<"input">) => (
+          <input {...props} readOnly />
+        ),
         code: ({
           inline,
           className,
