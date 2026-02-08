@@ -1,7 +1,6 @@
 node_modules/
 src/
 scripts/
-resources/custom-icons/
 .git/
 .gitignore
 .eslintrc.json
