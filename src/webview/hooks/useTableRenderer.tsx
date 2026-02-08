@@ -73,8 +73,8 @@ export const useTableRenderer = (
             </thead>
             <tbody>
               {tableData.rows.map(
-                (row: { id: string; cells: CellValue[] }, idx: number) => (
-                  <tr key={idx}>
+                (row: { id: string; cells: CellValue[] }) => (
+                  <tr key={row.id}>
                     <td
                       className="px-4 py-2"
                       style={{
@@ -105,9 +105,11 @@ export const useTableRenderer = (
                         OPEN
                       </a>
                     </td>
-                    {row.cells.map((cell: CellValue, cellIdx: number) => (
+                    {row.cells.map((cell: CellValue, cellIdx: number) => {
+                      const columnKey = tableData.columns[cellIdx] ?? String(cellIdx);
+                      return (
                       <td
-                        key={cellIdx}
+                        key={`${row.id}-${columnKey}`}
                         className="px-4 py-2"
                         style={{
                           border:
@@ -116,7 +118,8 @@ export const useTableRenderer = (
                       >
                         {cellToString(cell)}
                       </td>
-                    ))}
+                      );
+                    })}
                   </tr>
                 ),
               )}
