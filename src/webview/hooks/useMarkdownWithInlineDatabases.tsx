@@ -342,15 +342,15 @@ export const useMarkdownWithInlineDatabases = (
             return <div className="notion-callout">{children}</div>;
           }
 
-          return inline ? (
-            <code {...props}>{children}</code>
-          ) : !inline && match ? (
-            <code {...props} className={className}>
+          if (inline) {
+            return <code {...props}>{children}</code>;
+          }
+          if (match) {
+            return <code {...props} className={className}>
               {children}
-            </code>
-          ) : (
-            <code {...props}>{children}</code>
-          );
+            </code>;
+          }
+          return <code {...props}>{children}</code>;
         },
       };
     }
