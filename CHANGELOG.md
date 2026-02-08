@@ -2,6 +2,14 @@
 
 All notable changes to Notion-VSCode will be documented in this file.
 
+## [1.0.2] - 2026-02-09
+
+### Added
+- Support for `created_time` and `last_edited_time` system property types in database views
+
+### Fixed
+- Created and Last Edited columns now display correctly in database tables
+
 ## [1.0.1] - 2026-02-08
 
 ### Changed
