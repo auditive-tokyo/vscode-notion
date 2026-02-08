@@ -21,17 +21,25 @@ export const usePageCover = (state: NotionWebviewState) => {
           />
           {state.icon && (
             <div className="absolute bottom-0 left-6 translate-y-1/2">
-              {state.icon.type === "emoji" ? (
-                <span className="text-6xl drop-shadow-lg">
-                  {state.icon.emoji}
-                </span>
-              ) : state.icon.url ? (
-                <img
-                  src={state.icon.url}
-                  alt="Page icon"
-                  className="w-20 h-20 rounded-lg shadow-lg object-cover"
-                />
-              ) : null}
+              {(() => {
+                if (state.icon.type === "emoji") {
+                  return (
+                    <span className="text-6xl drop-shadow-lg">
+                      {state.icon.emoji}
+                    </span>
+                  );
+                }
+                if (state.icon.url) {
+                  return (
+                    <img
+                      src={state.icon.url}
+                      alt="Page icon"
+                      className="w-20 h-20 rounded-lg shadow-lg object-cover"
+                    />
+                  );
+                }
+                return null;
+              })()}
             </div>
           )}
         </div>
@@ -42,15 +50,25 @@ export const usePageCover = (state: NotionWebviewState) => {
     if (state.icon) {
       return (
         <div className="mb-6">
-          {state.icon.type === "emoji" ? (
-            <span className="text-5xl inline-block">{state.icon.emoji}</span>
-          ) : state.icon.url ? (
-            <img
-              src={state.icon.url}
-              alt="Page icon"
-              className="w-16 h-16 rounded-lg object-cover"
-            />
-          ) : null}
+          {(() => {
+            if (state.icon.type === "emoji") {
+              return (
+                <span className="text-5xl inline-block">
+                  {state.icon.emoji}
+                </span>
+              );
+            }
+            if (state.icon.url) {
+              return (
+                <img
+                  src={state.icon.url}
+                  alt="Page icon"
+                  className="w-16 h-16 rounded-lg object-cover"
+                />
+              );
+            }
+            return null;
+          })()}
         </div>
       );
     }
