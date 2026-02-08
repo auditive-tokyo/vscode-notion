@@ -5,6 +5,16 @@ import type { OpenPageCommandArgs } from "@/ui/open-page-command";
 import type { CommandId } from "@/constants";
 
 /**
+ * 日付をYYYY-MM-DD形式にフォーマット
+ */
+function formatDateString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/**
  * カレンダー表示（react-calendar使用）
  */
 export const useCalendarRenderer = (
@@ -27,16 +37,6 @@ export const useCalendarRenderer = (
 
     if (rowsWithDates.length === 0) {
       return <div className="text-gray-400">Date property is empty</div>;
-    }
-
-    /**
-     * 日付をYYYY-MM-DD形式にフォーマット
-     */
-    function formatDateString(date: Date): string {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
-      return `${year}-${month}-${day}`;
     }
 
     /**
@@ -120,7 +120,7 @@ export const useCalendarRenderer = (
       if (events && events.length > 0) {
         return (
           <div className="calendar-events">
-            {events.map((event, idx) => {
+            {events.map((event) => {
               const titleValue = event.cells[titleColumnIndex];
               const titleStr =
                 typeof titleValue === "string"
@@ -128,7 +128,7 @@ export const useCalendarRenderer = (
                   : titleValue?.start || "Untitled";
               return (
                 <a
-                  key={idx}
+                  key={event.id}
                   href={`command:${openPageCommand}?${encodeURI(
                     JSON.stringify({ id: event.id } as OpenPageCommandArgs),
                   )}`}
@@ -174,7 +174,7 @@ export const useCalendarRenderer = (
         a.style.display = "none";
         document.body.appendChild(a);
         a.click();
-        document.body.removeChild(a);
+        a.remove();
       }
     };
 
