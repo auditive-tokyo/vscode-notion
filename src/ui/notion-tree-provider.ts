@@ -156,7 +156,18 @@ export class NotionTreeDataProvider
       }
       seen.add(normalized);
 
-      const info = await this.fetchItemInfoWithParent(currentId);
+      // キャッシュから先に確認
+      const cachedItem = this.itemCache.get(currentId);
+      let info: { item: NotionPageTreeItem; parentId?: string } | null = null;
+
+      if (cachedItem) {
+        // キャッシュがあればそれを使用（親情報はなし）
+        info = { item: cachedItem };
+      } else {
+        // キャッシュになければ API から取得
+        info = await this.fetchItemInfoWithParent(currentId);
+      }
+
       if (!info) {
         return null;
       }
@@ -169,7 +180,8 @@ export class NotionTreeDataProvider
       }
 
       if (!info.parentId) {
-        return null;
+        // parentId がない場合は終了（親情報を取得できなかった、またはキャッシュから取得）
+        break;
       }
       currentId = info.parentId;
     }
@@ -234,7 +246,7 @@ export class NotionTreeDataProvider
         };
         return parentId ? { item, parentId } : { item };
       } catch (pageError) {
-        // データベースとして取得を試みる
+        // ページとして取得失敗時、データベースとして取得を試みる
         try {
           const database = await officialClient.databases.retrieve({
             database_id: pageId,
@@ -253,14 +265,13 @@ export class NotionTreeDataProvider
           };
           return parentId ? { item, parentId } : { item };
         } catch {
-          throw pageError;
+          // ページ・データベース両方の取得に失敗した場合は null を返す
+          // （警告は出さない。親が共有されていない場合は単に辿りやめる）
+          return null;
         }
       }
-    } catch (error) {
-      console.error(
-        `[notion-tree] Failed to fetch parent info for ${pageId}:`,
-        error,
-      );
+    } catch {
+      // 予期しないエラーの場合
       return null;
     }
   }
