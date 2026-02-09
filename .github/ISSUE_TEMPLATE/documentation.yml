@@ -1,0 +1,105 @@
+name: Documentation Request
+description: Suggest documentation changes, improvements, or translations
+title: "[DOCS] "
+labels: ["documentation", "help-wanted", "community"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 📚 Documentation Request
+        Help us improve docs and translations for Notion-VSCode.
+
+  - type: checkboxes
+    id: request-type
+    attributes:
+      label: What kind of documentation request is this?
+      description: Select all that apply
+      options:
+        - label: Translation
+        - label: New documentation
+        - label: Improve existing documentation
+        - label: Documentation for a feature or bug fix
+        - label: Other (specify below)
+    validations:
+      required: true
+
+  - type: input
+    id: target-language
+    attributes:
+      label: Target Language (translation only)
+      description: If this is a translation request, specify the language. Otherwise, enter N/A.
+      placeholder: "e.g., Italian, Polish, Japanese, Korean"
+
+  - type: checkboxes
+    id: translation-scope
+    attributes:
+      label: Translation scope (translation only)
+      description: If this is a translation request, select all that apply.
+      options:
+        - label: Documentation (README, guides, etc.)
+        - label: User interface text
+        - label: Error messages
+        - label: Tutorial content
+        - label: Other (specify below)
+
+  - type: textarea
+    id: target-files
+    attributes:
+      label: Target files or sections
+      description: List the specific files or sections that need work
+      placeholder: |
+        Files:
+        - README.md
+        - docs/GETTING_STARTED.md
+
+        Sections:
+        - Installation instructions
+        - Configuration guide
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this documentation request?
+      options:
+        - High - Blocks users from understanding core features
+        - Medium - Improves user experience significantly
+        - Low - Nice to have
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Add any notes about tone, technical terms, or special requirements
+      placeholder: Please maintain technical accuracy and use consistent terminology
+
+  - type: textarea
+    id: reference
+    attributes:
+      label: Reference
+      description: Link to existing docs or style guides (if any)
+      placeholder: https://example.com/style-guide
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ## ✅ Guidelines
+
+        **Before starting:**
+        - Read existing documentation (if any)
+        - Understand the technical context
+        - Maintain consistent terminology
+
+        **Translation tips (if applicable):**
+        - Keep code examples and technical terms in English unless commonly translated in your language
+        - Maintain markdown formatting and links
+        - Preserve inline code blocks and syntax highlighting
+        - Follow existing translation style guides if available
+
+        **Thank you for helping make Notion-VSCode easier to understand! 🙏**

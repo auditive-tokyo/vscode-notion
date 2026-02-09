@@ -1,0 +1,40 @@
+name: Feature Request
+description: Suggest an idea for Notion-VSCode
+title: '[FEATURE] '
+labels: ['enhancement']
+assignees: []
+body:
+  - type: textarea
+    id: related-problem
+    attributes:
+      label: Is your feature request related to a problem? Please describe.
+      description: A clear and concise description of what the problem is.
+      placeholder: I have trouble viewing filtered database views in the tree. Currently, I can only see all pages at once.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Describe the solution you'd like
+      description: A clear and concise description of what you want to happen.
+      placeholder: Add support for displaying Notion filter configurations in the tree view, so I can see pre-filtered data.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Describe alternatives you've considered
+      description: A clear and concise description of any alternative solutions or features you've considered.
+      placeholder: I considered manually filtering in Notion, but having it reflected in VS Code would be more efficient.
+  - type: textarea
+    id: use-cases
+    attributes:
+      label: Use cases
+      description: How would this feature improve your workflow?
+      placeholder: This would help me manage database views more efficiently within VS Code, reducing context switching.
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Add any other context or screenshots about the feature request here.
+      placeholder: This would align with how Notion's native client handles filtered views.
