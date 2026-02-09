@@ -1,6 +1,6 @@
 [English](../../README.md) | [日本語](README.ja.md)
 
-**Needs to be tranlated（以下翻訳が必要）**
+**Needs to be translated（以下翻訳が必要）**
 
 # Notion-VSCode
 
