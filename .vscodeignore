@@ -13,6 +13,12 @@ package-lock.json
 *.vsix
 **/*.test.ts
 **/*.spec.ts
+**/*.map
 docs/
 .env
 .DS_Store
+.github/
+.vscode/
+.changeset/
+api_responses/
+coverage/

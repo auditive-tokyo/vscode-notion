@@ -2,6 +2,12 @@
 
 All notable changes to Notion-VSCode will be documented in this file.
 
+## [1.0.5] - 2026-02-10
+
+### Changed
+- Optimized VSIX package size by excluding source maps and development files
+- Reduced extension download size from ~17MB to ~4MB (75% reduction)
+
 ## [1.0.4] - 2026-02-09
 
 ### Added
