@@ -22,11 +22,12 @@
 
 ## Connect to VS Code
 
-1. Open VS Code Settings (Cmd+,)
-2. Search for `notion`
-3. Paste your integration token into `notion.apiKey`
-4. Set your root page in `notion.rootPage`
-5. Your Notion workspace appears in the sidebar
+1. Open VS Code Settings (macOS: Cmd+, / Windows, Linux: Ctrl+,)
+2. Search for `notion` and set:
+   - **Notion: Api Key** - Paste your integration token
+   - **Notion: Cache Ttl Days** - How long to cache loaded pages (default: 7 days)
+   - **Notion: Root Page** - Notion page URL or 32-character page/database ID
+3. Your Notion workspace appears in the sidebar
 
 ## Browse Pages
 
