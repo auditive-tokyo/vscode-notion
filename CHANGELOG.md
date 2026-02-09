@@ -2,6 +2,11 @@
 
 All notable changes to Notion-VSCode will be documented in this file.
 
+## [1.0.4] - 2026-02-09
+
+### Added
+- Support for bookmark blocks (displayed as blog-style link cards)
+
 ## [1.0.3] - 2026-02-09
 
 ### Changed
