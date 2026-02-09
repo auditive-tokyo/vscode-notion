@@ -251,6 +251,38 @@ function renderTableRow(block: any): string {
   return `| ${cellContents.join(" | ")} |`;
 }
 
+function renderBookmark(block: any): string {
+  const url = block.bookmark?.url || block.type_specific_data?.url || "";
+  const caption = getRichTextPlainText(
+    block.bookmark?.caption || block.type_specific_data?.caption,
+  );
+
+  if (!url) {
+    return "";
+  }
+
+  // captionがあればタイトルに、なければホスト名を表示
+  let displayTitle = caption;
+  const displayUrl = url;
+
+  if (!caption) {
+    try {
+      const urlObj = new URL(url);
+      displayTitle = urlObj.hostname.replace(/^www\./, "");
+    } catch {
+      displayTitle = url;
+    }
+  }
+
+  // HTMLカード形式で出力
+  return `<a href="${url}" class="notion-bookmark" target="_blank" rel="noopener noreferrer">
+  <div class="bookmark-content">
+    <div class="bookmark-title">${displayTitle}</div>
+    <div class="bookmark-url">${displayUrl}</div>
+  </div>
+</a>`;
+}
+
 const blockRenderers: Record<string, (block: any) => string> = {
   paragraph: renderParagraph,
   heading_1: (block) => renderHeading(1, block),
@@ -271,6 +303,7 @@ const blockRenderers: Record<string, (block: any) => string> = {
   divider: renderDivider,
   table: renderTable,
   table_row: renderTableRow,
+  bookmark: renderBookmark,
 };
 
 interface TableState {

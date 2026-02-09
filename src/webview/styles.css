@@ -361,3 +361,42 @@ details > summary > h3 {
 .board-card-title:hover {
   color: var(--vscode-textLink-activeForeground);
 }
+
+/* Bookmark card styling */
+.notion-bookmark {
+  display: block;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 8px 0;
+  text-decoration: none;
+  color: inherit;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.notion-bookmark:hover {
+  background-color: var(--vscode-list-hoverBackground);
+  border-color: var(--vscode-focusBorder);
+  text-decoration: none;
+}
+
+.bookmark-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bookmark-title {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--vscode-textLink-foreground);
+  line-height: 1.4;
+}
+
+.bookmark-url {
+  font-size: 0.8125rem;
+  color: var(--vscode-descriptionForeground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
