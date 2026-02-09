@@ -1,4 +1,6 @@
-[English](README.md) | [日本語](docs/translations/README.ja.md)
+[English](../../README.md) | [日本語](README.ja.md)
+
+**Needs to be tranlated（以下翻訳が必要）**
 
 # Notion-VSCode
 
@@ -19,11 +21,11 @@ Big thanks to [kyswtn](https://github.com/kyswtn) for the original [vscode-notio
 [![GitHub Issues](https://img.shields.io/github/issues/auditive-tokyo/Notion-VSCode)](https://github.com/auditive-tokyo/Notion-VSCode/issues)
 [![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-|                  Front Page                  |                   Block Rendering                   |
-| :------------------------------------------: | :-------------------------------------------------: |
-|   ![Front Page](docs/images/frontpage.png)   | ![Block Rendering](docs/images/block-rendering.png) |
-|             **Mermaid Diagrams**             |               **Database Rendering**                |
-| ![Mermaid Diagrams](docs/images/mermaid.png) | ![Database Rendering](docs/images/db-rendering.png) |
+|                     Front Page                     |                      Block Rendering                      |
+| :------------------------------------------------: | :-------------------------------------------------------: |
+|   ![Front Page](../../docs/images/frontpage.png)   | ![Block Rendering](../../docs/images/block-rendering.png) |
+|                **Mermaid Diagrams**                |                  **Database Rendering**                   |
+| ![Mermaid Diagrams](../../docs/images/mermaid.png) | ![Database Rendering](../../docs/images/db-rendering.png) |
 
 ## ✨ Features
 
