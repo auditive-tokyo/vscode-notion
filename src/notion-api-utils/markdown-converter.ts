@@ -131,10 +131,11 @@ export async function convertPageToMarkdown(
   getChildBlocks?: (blockId: string) => Promise<any[]>,
 ): Promise<string> {
   const title = extractPageTitle(page);
-  let markdown = await blocksToMarkdown(blocks, getChildBlocks);
+  const markdown = await blocksToMarkdown(blocks, getChildBlocks);
 
-  // ブロックがない場合、properties から情報を抽出（データベースレコード対応）
-  if (blocks.length === 0 && "properties" in page && page.properties) {
+  // プロパティをタイトル直下に表示（データベースレコード対応）
+  let propertySection = "";
+  if ("properties" in page && page.properties) {
     const props = page.properties;
     const propLines: string[] = [];
 
@@ -150,11 +151,11 @@ export async function convertPageToMarkdown(
     }
 
     if (propLines.length > 0) {
-      markdown = propLines.join("\n\n");
+      propertySection = propLines.join("\n\n") + "\n\n---\n\n";
     }
   }
 
-  return `# ${title}\n\n${markdown}`;
+  return `# ${title}\n\n${propertySection}${markdown}`;
 }
 
 /**
