@@ -25,6 +25,6 @@ jobs:
         run: npm install
 
       - name: Build and publish
-        run: npm run build && vsce publish
+        run: npm run build && npm run publish-extension
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
