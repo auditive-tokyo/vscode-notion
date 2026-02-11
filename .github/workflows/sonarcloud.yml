@@ -15,7 +15,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
 
       - name: Setup Node
         uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
@@ -32,7 +32,59 @@ jobs:
         run: npm run lint
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
+        uses: SonarSource/sonarqube-scan-action@13990a695682794b53148ff9f6a8b6e22e43955e # v3
+        id: sonarcloud-scan
+        continue-on-error: true
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
+
+      - name: Check SonarCloud Quality Gate
+        if: always()
+        run: |
+          echo "::group::SonarCloud Quality Gate Results"
+          
+          # report-task.txt から CE Task ID を取得
+          if [ -f ".scannerwork/report-task.txt" ]; then
+            CE_TASK_ID=$(grep "ceTaskId=" .scannerwork/report-task.txt | cut -d= -f2)
+            echo "Task ID: $CE_TASK_ID"
+            
+            # タスク完了待機（最大5分）
+            echo "Waiting for SonarCloud analysis to complete..."
+            timeout=300
+            elapsed=0
+            while [ $elapsed -lt $timeout ]; do
+              TASK_STATUS=$(curl -s \
+                "https://sonarcloud.io/api/ce/activity?type=REPORT" \
+                -H "Authorization: Bearer ${{ secrets.SONAR_TOKEN }}" \
+                | jq -r '.tasks[0].status // "PENDING"')
+              
+              if [ "$TASK_STATUS" = "SUCCESS" ] || [ "$TASK_STATUS" = "FAILED" ]; then
+                echo "Task Status: $TASK_STATUS"
+                break
+              fi
+              
+              sleep 5
+              elapsed=$((elapsed + 5))
+            done
+          fi
+          
+          # Quality Gate 結果取得
+          QUALITY_GATE=$(curl -s \
+            "https://sonarcloud.io/api/qualitygates/project_status" \
+            -H "Authorization: Bearer ${{ secrets.SONAR_TOKEN }}" \
+            -d "projectKey=auditive-tokyo_Notion-VSCode" \
+            -d "pullRequest=${{ github.event.pull_request.number }}")
+          
+          QG_STATUS=$(echo "$QUALITY_GATE" | jq -r '.projectStatus.status // "UNKNOWN"')
+          echo ""
+          echo "Quality Gate Status: $QG_STATUS"
+          
+          # メトリクス表示
+          echo ""
+          echo "Metrics:"
+          echo "$QUALITY_GATE" | jq -r '.projectStatus.conditions[]? | "\(.metricKey): \(.actualValue) (\(.comparator) \(.errorThreshold))"'
+          
+          echo ""
+          echo "Dashboard: https://sonarcloud.io/dashboard?id=auditive-tokyo_Notion-VSCode&pullRequest=${{ github.event.pull_request.number }}"
+          echo "::endgroup::"
