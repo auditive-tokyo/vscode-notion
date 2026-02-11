@@ -103,12 +103,6 @@ export class NotionWebviewPanelSerializer
         this.refreshActivePage,
         this,
       ),
-      // Development only: キャッシュクリアコマンド（開発時のデバッグ用）
-      vscode.commands.registerCommand("notion.clearCache", () => {
-        this.cache.forEach((cached) => cached.dispose());
-        this.cache.clear();
-        vscode.window.showInformationMessage("Notion page cache cleared");
-      }),
       vscode.window.registerWebviewPanelSerializer(
         ViewType.NotionPageView,
         this,

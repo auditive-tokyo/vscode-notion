@@ -103,6 +103,10 @@
     "menus": {
       "commandPalette": [
         {
+          "command": "notion.openPage",
+          "when": "false"
+        },
+        {
           "command": "notion.refreshPage",
           "when": "false"
         }

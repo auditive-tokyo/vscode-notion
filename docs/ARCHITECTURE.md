@@ -1,21 +1,71 @@
 # Architecture
 
+## Overview
+
+Notion-VSCode is a VS Code extension that renders Notion pages and databases inside VS Code. It uses the extension host for VS Code integration and a React-based webview for rich rendering.
+
+## Key Flows
+
+- Extension activation starts in `src/extension.ts` and registers commands, views, and webview panels.
+- Notion API access is handled by `src/notion-api-client.ts` with helper logic in `src/notion-api-utils/`.
+- Page discovery and tree navigation live under `src/ui/`, which feeds the Activity Bar TreeView.
+- Webview rendering is in `src/webview/` and focuses on Markdown conversion, tables, and inline databases.
+- Shared helpers for caching and page ID parsing live in `src/lib/`.
+
+## Repository Structure
+
 ```
 Notion-VSCode
-├── src/
-│   ├── ui/                    # VS Code UI components
-│   │   ├── notion-tree-provider.ts    # TreeView data provider
-│   │   ├── notion-page-viewer.ts      # Page viewer panel
-│   │   └── notion-hierarchy-tree-view.ts
-│   ├── webview/               # Webview (HTML preview)
-│   │   ├── components/        # React components
-│   │   ├── hooks/             # Custom React hooks
-│   │   └── styles.css         # Styling
-│   ├── notion-api-utils/      # Notion API utilities
-│   │   ├── block-to-markdown.ts
-│   │   ├── property-extractor.ts
-│   │   └── page-discovery.ts
-│   └── extension.ts           # Extension entry point
+├── AGENTS.md
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── LICENSE
+├── README.md
+├── eslint.config.mjs
+├── package-lock.json
 ├── package.json
-└── README.md
+├── postcss.config.js
+├── resources
+│   ├── fonts
+│   │   └── custom-icons.woff
+│   └── notion-vscode.png
+├── sonar-project.properties
+├── src
+│   ├── constants.ts
+│   ├── extension.ts
+│   ├── lib
+│   │   ├── cache-utils.ts
+│   │   └── page-id-utils.ts
+│   ├── notion-api-client.ts
+│   ├── notion-api-utils
+│   │   ├── block-to-markdown.ts
+│   │   ├── index.ts
+│   │   ├── markdown-converter.ts
+│   │   ├── page-discovery.ts
+│   │   ├── property-extractor.ts
+│   │   └── types.ts
+│   ├── ui
+│   │   ├── notion-hierarchy-tree-view.ts
+│   │   ├── notion-page-viewer.ts
+│   │   ├── notion-tree-provider.ts
+│   │   └── open-page-command.ts
+│   └── webview
+│       ├── components
+│       │   ├── MermaidDiagram.tsx
+│       │   └── index.ts
+│       ├── hooks
+│       │   ├── index.ts
+│       │   ├── rehypeTableHeaders.ts
+│       │   ├── useCalendarRenderer.tsx
+│       │   ├── useMarkdownWithInlineDatabases.tsx
+│       │   ├── usePageCover.tsx
+│       │   ├── useTableRenderer.tsx
+│       │   └── useTimelineRenderer.tsx
+│       ├── index.tsx
+│       ├── styles.css
+│       └── tsconfig.json
+├── tailwind.config.js
+├── tsconfig.config.json
+├── tsconfig.json
+└── webpack.config.ts
 ```

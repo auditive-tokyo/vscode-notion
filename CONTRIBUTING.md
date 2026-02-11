@@ -12,31 +12,26 @@ Thanks for your interest in contributing! This extension is maintained by the co
 
 ## Development Setup
 
+1. **Fork this repository** on GitHub (click the "Fork" button at the top right)
+2. **Clone your fork**:
+
 ```bash
-git clone https://github.com/auditive-tokyo/Notion-VSCode.git
+git clone https://github.com/your-username/Notion-VSCode.git
 cd Notion-VSCode
+git switch -c feat/my-feature  # Create your branch before making changes
 npm install
-npm run build
 ```
 
 ## Run in Development
 
-```bash
-npm run watch
-```
+Press **F5** in VS Code to launch the Extension Development Host (watch mode starts automatically).
 
-Then press F5 in VS Code to launch the Extension Development Host.
-You can also use this command if you prefer:
-
-```bash
-code --extensionDevelopmentPath=.
-```
+Alternatively, use Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) → `Debug: Start Debugging`.
 
 ## Code Quality
 
 ```bash
-npm run lint
-npm run typecheck
+npm run typecheck && npm run lint
 ```
 
 ## Commit Convention
@@ -51,37 +46,26 @@ docs(readme): update setup instructions
 
 ## Submitting a Pull Request
 
-1. Create a new branch:
-
-```bash
-git checkout -b feat/my-change
-```
-
-2. Make your changes and commit
-3. Push to your fork
-4. Open a PR against `main`
+1. Make your changes and commit with [Conventional Commits](#commit-convention)
+2. Push to your fork: `git push origin feat/my-feature`
+3. Open a PR to `auditive-tokyo/Notion-VSCode` (this repository's `main` branch)
 
 ## Reporting Issues
 
-Please include:
-
-- Steps to reproduce
-- Expected vs actual behavior
-- VS Code version and extension version
-- Screenshots if applicable
+Found a bug? [Open an issue](https://github.com/auditive-tokyo/Notion-VSCode/issues/new/choose) and select the **Bug Report** template.
 
 ## Documentation Translations
 
 We welcome documentation translations! To contribute a translation:
 
 1. Check existing translations in `docs/translations/`
-2. Create an issue for the translation (e.g., "Add Japanese translation for documentation")
+2. Create an issue for your translation (e.g., "Add Japanese translation for README")
 3. Create a new markdown file: `docs/translations/{filename}.{language-code}.md`
-4. Translate the content from the original document (README.md, docs/GETTING_STARTED.md, etc.)
-5. Add a link to your translation issue in the original document
+4. Translate the content from the original document (README.md, etc.)
+5. Add a link to your translation in the original document
 6. Submit a PR
 
-For questions about which languages are needed, please check the [Issues](https://github.com/auditive-tokyo/Notion-VSCode/issues) section.
+Feel free to propose any language—no prior issue required!
 
 ## Code of Conduct
 
