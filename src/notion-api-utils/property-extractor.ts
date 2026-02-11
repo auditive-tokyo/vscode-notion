@@ -22,21 +22,36 @@ export function extractDatePropertyValue(prop: any): {
 }
 
 /**
- * Status プロパティから名前と色を抽出
- * @param prop - Notion API から取得したstatus型プロパティ
+ * Status/Select プロパティから名前と色を抽出
+ * status型とselect型の両方に対応
+ * @param prop - Notion API から取得したstatus/select型プロパティ
  * @returns { name, color } オブジェクト
  */
 export function extractStatusPropertyValue(prop: any): {
   name: string;
   color: string;
 } {
-  if (prop?.type !== "status") {
+  if (!prop) {
     return { name: "", color: "default" };
   }
-  return {
-    name: prop.status?.name || "",
-    color: prop.status?.color || "default",
-  };
+
+  // status型プロパティ
+  if (prop?.type === "status" && prop.status) {
+    return {
+      name: prop.status?.name || "",
+      color: prop.status?.color || "default",
+    };
+  }
+
+  // select型プロパティ
+  if (prop?.type === "select" && prop.select) {
+    return {
+      name: prop.select?.name || "",
+      color: prop.select?.color || "default",
+    };
+  }
+
+  return { name: "", color: "default" };
 }
 
 /**

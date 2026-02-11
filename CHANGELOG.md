@@ -2,6 +2,13 @@
 
 All notable changes to Notion-VSCode will be documented in this file.
 
+## [1.0.7] - 2026-02-11
+
+### Fixed
+
+- Board View now supports both `status` and `select` property types
+- Status/Select property colors are now correctly extracted and displayed in Board View
+
 ## [1.0.6] - 2026-02-10
 
 ### Fixed
