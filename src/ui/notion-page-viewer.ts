@@ -14,6 +14,14 @@ import { getCacheTtlMs } from "../lib/cache-utils";
 import { NotionHierarchyTreeView } from "./notion-hierarchy-tree-view";
 
 /**
+ * Notion Property の基本型定義
+ */
+export interface NotionProperty {
+  type: string;
+  [key: string]: unknown;
+}
+
+/**
  * State that gets serialized and passed into webview.
  */
 export type NotionWebviewState = {
@@ -27,6 +35,7 @@ export type NotionWebviewState = {
       id: string;
       cells: string[];
     }[];
+    properties?: Record<string, NotionProperty>; // Property定義（status/select判定用）
   };
   viewType?: "table" | "calendar" | "timeline"; // For full-page databases
   datePropertyName?: string; // For full-page databases
@@ -44,6 +53,7 @@ export type NotionWebviewState = {
         id: string;
         cells: (string | { start: string | null; end: string | null })[];
       }[];
+      properties?: Record<string, NotionProperty>; // Property定義（status/select判定用）
     };
   }[];
   coverUrl?: string | null;
@@ -93,12 +103,6 @@ export class NotionWebviewPanelSerializer
         this.refreshActivePage,
         this,
       ),
-      // Development only: キャッシュクリアコマンド（開発時のデバッグ用）
-      vscode.commands.registerCommand("notion.clearCache", () => {
-        this.cache.forEach((cached) => cached.dispose());
-        this.cache.clear();
-        vscode.window.showInformationMessage("Notion page cache cleared");
-      }),
       vscode.window.registerWebviewPanelSerializer(
         ViewType.NotionPageView,
         this,
@@ -287,7 +291,6 @@ export class NotionWebviewPanelSerializer
         select: true,
         expand: true,
       });
-
     } catch (error) {
       console.error("[notion-page-viewer] Could not sync tree view:", error);
     }

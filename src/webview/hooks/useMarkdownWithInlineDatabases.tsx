@@ -2,7 +2,10 @@ import React, { type ComponentProps, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import type { PluggableList } from "unified";
-import type { NotionWebviewState } from "@/ui/notion-page-viewer";
+import type {
+  NotionWebviewState,
+  NotionProperty,
+} from "@/ui/notion-page-viewer";
 import type { OpenPageCommandArgs } from "@/ui/open-page-command";
 import type { CommandId } from "@/constants";
 import { MermaidDiagram } from "../components";
@@ -166,9 +169,14 @@ export const useMarkdownWithInlineDatabases = (
       inlineDb: NonNullable<typeof state.inlineDatabases>[number],
       marker: string,
     ): React.ReactElement {
-      const hasStatusColumn = inlineDb.tableData.columns.some(
-        (col) => col.toLowerCase() === "status",
-      );
+      const hasStatusColumn = inlineDb.tableData.properties
+        ? Object.values(inlineDb.tableData.properties).some(
+            (prop: NotionProperty) =>
+              prop.type === "status" || prop.type === "select",
+          )
+        : inlineDb.tableData.columns.some(
+            (col) => col.toLowerCase() === "status",
+          ); // フォールバック
       const hasDateProperty = !!inlineDb.datePropertyName;
       const defaultViewMode = determineDefaultViewMode(
         inlineDb,
@@ -346,9 +354,11 @@ export const useMarkdownWithInlineDatabases = (
             return <code {...props}>{children}</code>;
           }
           if (match) {
-            return <code {...props} className={className}>
-              {children}
-            </code>;
+            return (
+              <code {...props} className={className}>
+                {children}
+              </code>
+            );
           }
           return <code {...props}>{children}</code>;
         },

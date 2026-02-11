@@ -34,17 +34,14 @@ Big thanks to [kyswtn](https://github.com/kyswtn) for the original [vscode-notio
 - 🌙 **Light & Dark Mode** - Seamlessly supports VS Code themes
 - 🔒 **Official Notion API** - Uses Notion's official public API (no scraping)
 
-> **Why Official Notion API?**
->
-> This extension uses **Notion's official API** instead of web scraping. This approach provides:
->
-> - ✅ **Stability** - No fragility from HTML structure changes
-> - ✅ **Security** - Your Notion data stays in your control
-> - ✅ **Compliance** - Works as intended with Notion's terms of service
-> - ✅ **Future-proof** - Automatically benefits from Notion API improvements
-> - ✅ **Transparent** - Explicit permission model through integrations
->
-> You control exactly what data the extension can access through integrations.
+## ⚠️ Limitations
+
+- Your integration can only access pages that have been explicitly shared with it
+- Editing is not supported (view-only)
+- Some advanced Notion blocks may not render perfectly
+- YouTube and Google Maps embeds cannot be rendered, but links are provided to view them in a browser
+- Other embeds may not render correctly
+- Notion embedded images expire after 1 hour; reload the page to fetch fresh images
 
 ## 🚀 Installation
 
@@ -67,22 +64,11 @@ Big thanks to [kyswtn](https://github.com/kyswtn) for the original [vscode-notio
 
 ## 📚 Docs
 
-- [Getting Started](docs/GETTING_STARTED.md)
-- [Features](docs/FEATURES.md)
-- [Commands](docs/COMMANDS.md)
-- [Limitations](docs/LIMITATIONS.md)
 - [Architecture](docs/ARCHITECTURE.md)
-- [Development](docs/DEVELOPMENT.md)
 
-## 🐞 Reporting Issues
+## 🧭 Support
 
-Found a bug? [Open an issue](https://github.com/auditive-tokyo/Notion-VSCode/issues) with:
-
-- **Clear title** describing the problem
-- **Steps to reproduce** the issue
-- **Expected vs actual** behavior
-- **Screenshots** if applicable
-- **VS Code version** and **extension version**
+Report a bug or request a feature: [Open an issue](https://github.com/auditive-tokyo/Notion-VSCode/issues).
 
 ## 📄 License
 

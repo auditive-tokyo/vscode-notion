@@ -6,7 +6,10 @@ import remarkBreaks from "remark-breaks";
 import rehypeRaw from "rehype-raw";
 import "react-calendar/dist/Calendar.css";
 import type { CommandId } from "@/constants";
-import type { NotionWebviewState } from "@/ui/notion-page-viewer";
+import type {
+  NotionWebviewState,
+  NotionProperty,
+} from "@/ui/notion-page-viewer";
 import {
   usePageCover,
   useTableRenderer,
@@ -132,10 +135,13 @@ const App: React.FC = () => {
       }
     }
 
-    // Check for board view (status column exists but no date, and NOT requesting table view)
-    const hasStatusColumn = tableData.columns.some(
-      (col) => col.toLowerCase() === "status",
-    );
+    // Check for board view (status/select column exists but no date, and NOT requesting table view)
+    const hasStatusColumn = state.tableData.properties
+      ? Object.values(state.tableData.properties).some(
+          (prop: NotionProperty) =>
+            prop.type === "status" || prop.type === "select",
+        )
+      : state.tableData.columns.some((col) => col.toLowerCase() === "status"); // フォールバック
     if (
       hasStatusColumn &&
       !state.datePropertyName &&
@@ -209,9 +215,12 @@ const App: React.FC = () => {
   const renderContent = () => {
     if (state.tableData) {
       // Full-page database: ビューモード検出
-      const hasStatusColumn = state.tableData.columns.some(
-        (col) => col.toLowerCase() === "status",
-      );
+      const hasStatusColumn = state.tableData.properties
+        ? Object.values(state.tableData.properties).some(
+            (prop: NotionProperty) =>
+              prop.type === "status" || prop.type === "select",
+          )
+        : state.tableData.columns.some((col) => col.toLowerCase() === "status"); // フォールバック
       const hasDateProperty = !!state.datePropertyName;
       const defaultViewMode = getDefaultFullPageViewMode(
         hasDateProperty,

@@ -172,12 +172,14 @@ export async function convertPageToMarkdown(
 export function convertRowsToTableData(
   rows: any[],
   propertyNames: string[],
+  properties?: Record<string, any>,
 ): {
   columns: string[];
   rows: {
     id: string;
     cells: (string | { start: string | null; end: string | null })[];
   }[];
+  properties?: Record<string, any>;
 } {
   return {
     columns: propertyNames,
@@ -194,6 +196,7 @@ export function convertRowsToTableData(
         return value;
       }),
     })),
+    ...(properties ? { properties } : {}),
   };
 }
 
@@ -272,6 +275,67 @@ function detectDateProperty(
   return { viewType: "table" };
 }
 
+/**
+ * Status 型プロパティの行データから色を抽出
+ */
+function extractStatusRowColors(
+  propName: string,
+  rows: any[],
+): Record<string, string> {
+  const colorMap: Record<string, string> = {};
+
+  for (const row of rows) {
+    const rowProp = row.properties[propName];
+    if (rowProp?.status) {
+      const statusInfo = extractStatusPropertyValue(rowProp);
+      if (statusInfo.name) {
+        colorMap[statusInfo.name] = statusInfo.color;
+      }
+    }
+  }
+
+  return colorMap;
+}
+
+/**
+ * Select 型プロパティの定義からオプション色を抽出
+ */
+function extractSelectDefinitionColors(prop: any): Record<string, string> {
+  const colorMap: Record<string, string> = {};
+
+  if (prop.select?.options && Array.isArray(prop.select.options)) {
+    for (const option of prop.select.options) {
+      if (option.name && option.color) {
+        colorMap[option.name] = option.color;
+      }
+    }
+  }
+
+  return colorMap;
+}
+
+/**
+ * Select 型プロパティの行データから色を抽出
+ */
+function extractSelectRowColors(
+  propName: string,
+  rows: any[],
+): Record<string, string> {
+  const colorMap: Record<string, string> = {};
+
+  for (const row of rows) {
+    const rowProp = row.properties[propName];
+    if (rowProp?.select) {
+      const selectValue = rowProp.select;
+      if (selectValue.name && selectValue.color) {
+        colorMap[selectValue.name] = selectValue.color;
+      }
+    }
+  }
+
+  return colorMap;
+}
+
 function collectStatusColors(
   rows: any[],
   properties?: Record<string, any>,
@@ -286,24 +350,27 @@ function collectStatusColors(
   const props = properties || firstRow.properties || {};
   for (const propName in props) {
     const prop = props[propName];
-    if (prop?.type !== "status") {
-      continue;
-    }
 
-    // すべての行から status 値を集める
-    for (const row of rows) {
-      const rowProp = row.properties[propName];
-      if (rowProp?.status) {
-        const statusInfo = extractStatusPropertyValue(rowProp);
-        if (statusInfo.name) {
-          statusColorMap[statusInfo.name] = statusInfo.color;
-        }
+    // status 型プロパティの処理
+    if (prop?.type === "status") {
+      Object.assign(statusColorMap, extractStatusRowColors(propName, rows));
+
+      if (returnFirst) {
+        return statusColorMap;
       }
     }
 
-    // Inline Database の場合は最初の status プロパティのみ処理
-    if (returnFirst) {
-      return statusColorMap;
+    // select 型プロパティの処理（カラー付きSelectオプション用）
+    if (prop?.type === "select") {
+      Object.assign(
+        statusColorMap,
+        extractSelectDefinitionColors(prop),
+        extractSelectRowColors(propName, rows),
+      );
+
+      if (returnFirst) {
+        return statusColorMap;
+      }
     }
   }
 
@@ -322,13 +389,14 @@ export function convertDatabaseToMarkdownAndTable(
 } {
   const title = getDatabaseTitle(database);
   const firstRow = rows[0];
+  const properties = database.properties || firstRow?.properties || {};
   const propertyNames = getOrderedPropertyNames(firstRow?.properties);
 
   const markdown = `# ${title}`;
-  const tableData = convertRowsToTableData(rows, propertyNames);
+  const tableData = convertRowsToTableData(rows, propertyNames, properties);
 
-  const { datePropertyName, viewType } = detectDateProperty(rows);
-  const statusColorMap = collectStatusColors(rows);
+  const { datePropertyName, viewType } = detectDateProperty(rows, properties);
+  const statusColorMap = collectStatusColors(rows, properties);
 
   const result: {
     markdown: string;
@@ -409,6 +477,7 @@ async function processInlineDatabase(
       id: string;
       cells: (string | { start: string | null; end: string | null })[];
     }[];
+    properties?: Record<string, any>;
   };
 } | null> {
   const rows = await queryRows(databaseId);
@@ -422,7 +491,7 @@ async function processInlineDatabase(
   const propertyNames = getOrderedPropertyNames(properties);
 
   const { datePropertyName, viewType } = detectDateProperty(rows, properties);
-  const tableData = convertRowsToTableData(rows, propertyNames);
+  const tableData = convertRowsToTableData(rows, propertyNames, properties);
   const statusColors = collectStatusColors(rows, properties, true);
   const statusColorMap =
     Object.keys(statusColors).length > 0 ? statusColors : undefined;
