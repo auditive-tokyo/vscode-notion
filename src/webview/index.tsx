@@ -119,6 +119,7 @@ const App: React.FC = () => {
         viewType: viewType as "table" | "calendar" | "timeline",
         datePropertyName: state.datePropertyName,
         statusColorMap: state.statusColorMap,
+        description: state.description,
         tableData: tableData as {
           columns: string[];
           rows: {
@@ -156,10 +157,11 @@ const App: React.FC = () => {
           }[];
         },
         state.statusColorMap,
+        state.description,
       );
     }
 
-    return renderTable(tableData, showDescription);
+    return renderTable(tableData, showDescription, state.description);
   };
 
   type FullPageViewMode = "calendar" | "timeline" | "table" | "board";
@@ -264,7 +266,11 @@ const App: React.FC = () => {
 
       const renderActualContent = () => {
         if (isBoardView) {
-          return renderBoard(state.tableData, state.statusColorMap);
+          return renderBoard(
+            state.tableData,
+            state.statusColorMap,
+            state.description,
+          );
         }
         return renderTableWrapper(
           state.tableData,

@@ -17,6 +17,7 @@ export interface InlineDatabase {
   title: string;
   viewType: "table" | "calendar" | "timeline";
   datePropertyName?: string;
+  description?: string | null;
   tableData: {
     columns: string[];
     rows: {

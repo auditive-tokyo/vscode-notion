@@ -180,6 +180,9 @@ export const useCalendarRenderer = (
 
     return (
       <div className="notion-calendar">
+        {db.description && (
+          <p className="text-lg italic text-gray-300 mb-6">{db.description}</p>
+        )}
         <Calendar
           tileContent={tileContent}
           tileClassName={tileClassName}
