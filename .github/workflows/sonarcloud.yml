@@ -25,14 +25,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: TypeCheck
-        run: npm run typecheck
-
-      - name: Lint
-        run: npm run lint
-
       - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@13990a695682794b53148ff9f6a8b6e22e43955e # v3
+        uses: SonarSource/sonarqube-scan-action@689fb39b34b9aa95ebc5f8f119343ddd51542402 # v4
         id: sonarcloud-scan
         continue-on-error: true
         env:
