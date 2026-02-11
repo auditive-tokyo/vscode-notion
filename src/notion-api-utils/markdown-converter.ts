@@ -275,6 +275,67 @@ function detectDateProperty(
   return { viewType: "table" };
 }
 
+/**
+ * Status 型プロパティの行データから色を抽出
+ */
+function extractStatusRowColors(
+  propName: string,
+  rows: any[],
+): Record<string, string> {
+  const colorMap: Record<string, string> = {};
+
+  for (const row of rows) {
+    const rowProp = row.properties[propName];
+    if (rowProp?.status) {
+      const statusInfo = extractStatusPropertyValue(rowProp);
+      if (statusInfo.name) {
+        colorMap[statusInfo.name] = statusInfo.color;
+      }
+    }
+  }
+
+  return colorMap;
+}
+
+/**
+ * Select 型プロパティの定義からオプション色を抽出
+ */
+function extractSelectDefinitionColors(prop: any): Record<string, string> {
+  const colorMap: Record<string, string> = {};
+
+  if (prop.select?.options && Array.isArray(prop.select.options)) {
+    for (const option of prop.select.options) {
+      if (option.name && option.color) {
+        colorMap[option.name] = option.color;
+      }
+    }
+  }
+
+  return colorMap;
+}
+
+/**
+ * Select 型プロパティの行データから色を抽出
+ */
+function extractSelectRowColors(
+  propName: string,
+  rows: any[],
+): Record<string, string> {
+  const colorMap: Record<string, string> = {};
+
+  for (const row of rows) {
+    const rowProp = row.properties[propName];
+    if (rowProp?.select) {
+      const selectValue = rowProp.select;
+      if (selectValue.name && selectValue.color) {
+        colorMap[selectValue.name] = selectValue.color;
+      }
+    }
+  }
+
+  return colorMap;
+}
+
 function collectStatusColors(
   rows: any[],
   properties?: Record<string, any>,
@@ -292,18 +353,8 @@ function collectStatusColors(
 
     // status 型プロパティの処理
     if (prop?.type === "status") {
-      // すべての行から status 値を集める
-      for (const row of rows) {
-        const rowProp = row.properties[propName];
-        if (rowProp?.status) {
-          const statusInfo = extractStatusPropertyValue(rowProp);
-          if (statusInfo.name) {
-            statusColorMap[statusInfo.name] = statusInfo.color;
-          }
-        }
-      }
+      Object.assign(statusColorMap, extractStatusRowColors(propName, rows));
 
-      // Inline Database の場合は最初の status プロパティのみ処理
       if (returnFirst) {
         return statusColorMap;
       }
@@ -311,27 +362,12 @@ function collectStatusColors(
 
     // select 型プロパティの処理（カラー付きSelectオプション用）
     if (prop?.type === "select") {
-      // プロパティ定義からオプションの色を抽出
-      if (prop.select?.options && Array.isArray(prop.select.options)) {
-        for (const option of prop.select.options) {
-          if (option.name && option.color) {
-            statusColorMap[option.name] = option.color;
-          }
-        }
-      }
+      Object.assign(
+        statusColorMap,
+        extractSelectDefinitionColors(prop),
+        extractSelectRowColors(propName, rows),
+      );
 
-      // 行データからも色を抽出（select値がある場合）
-      for (const row of rows) {
-        const rowProp = row.properties[propName];
-        if (rowProp?.select) {
-          const selectValue = rowProp.select;
-          if (selectValue.name && selectValue.color) {
-            statusColorMap[selectValue.name] = selectValue.color;
-          }
-        }
-      }
-
-      // Inline Database の場合は最初のselect プロパティのみ処理
       if (returnFirst) {
         return statusColorMap;
       }
