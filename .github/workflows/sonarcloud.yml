@@ -6,9 +6,14 @@ on:
       - main
     paths:
       - "src/**"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.json"
+      - "tsconfig.config.json"
       - "webpack.config.ts"
       - "tailwind.config.js"
       - "eslint.config.mjs"
+      - "postcss.config.js"
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
@@ -64,7 +69,7 @@ jobs:
         if: always()
         run: |
           echo "::group::SonarCloud Quality Gate Results"
-          
+
           # report-task.txt から CE Task ID を取得
           if [ -f ".scannerwork/report-task.txt" ]; then
             CE_TASK_ID=$(grep "ceTaskId=" .scannerwork/report-task.txt | cut -d= -f2)
@@ -89,23 +94,23 @@ jobs:
               elapsed=$((elapsed + 5))
             done
           fi
-          
+
           # Quality Gate 結果取得
           QUALITY_GATE=$(curl -s \
             "https://sonarcloud.io/api/qualitygates/project_status" \
             -H "Authorization: Bearer ${{ secrets.SONAR_TOKEN }}" \
             -d "projectKey=auditive-tokyo_Notion-VSCode" \
             -d "pullRequest=${{ github.event.pull_request.number }}")
-          
+
           QG_STATUS=$(echo "$QUALITY_GATE" | jq -r '.projectStatus.status // "UNKNOWN"')
           echo ""
           echo "Quality Gate Status: $QG_STATUS"
-          
+
           # メトリクス表示
           echo ""
           echo "Metrics:"
           echo "$QUALITY_GATE" | jq -r '.projectStatus.conditions[]? | "\(.metricKey): \(.actualValue) (\(.comparator) \(.errorThreshold))"'
-          
+
           echo ""
           echo "Dashboard: https://sonarcloud.io/dashboard?id=auditive-tokyo_Notion-VSCode&pullRequest=${{ github.event.pull_request.number }}"
           echo "::endgroup::"

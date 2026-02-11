@@ -26,7 +26,7 @@
   "publisher": "auditive-tokyo",
   "main": "./dist/extension.js",
   "scripts": {
-    "typecheck": "tsc --noEmit && tsc --noEmit --project src/webview/tsconfig.json",
+    "typecheck": "tsc --noEmit && tsc --noEmit --project src/webview/tsconfig.json && tsc --noEmit --project tsconfig.config.json",
     "lint": "eslint . src/webview/",
     "lint:fix": "eslint . src/webview/ --fix",
     "build": "NODE_ENV=production webpack --mode production --config webpack.config.ts",
