@@ -103,6 +103,9 @@ export const useTimelineRenderer = (
 
     return (
       <div className="timeline-container space-y-3">
+        {db.description && (
+          <p className="text-lg italic text-gray-300 mb-6">{db.description}</p>
+        )}
         {/* タイムスケール */}
         <div className="timeline-scale bg-(--vscode-editor-inactiveSelectionBackground) rounded p-2 text-xs text-(--vscode-descriptionForeground)">
           <div className="flex justify-between">

@@ -30,6 +30,7 @@ type InlineDbRenderers = {
       }[];
     },
     showDescription?: boolean,
+    description?: string | null,
   ) => React.ReactElement;
   renderBoard: (
     tableData: {
@@ -40,6 +41,7 @@ type InlineDbRenderers = {
       }[];
     },
     statusColorMap?: Record<string, string>,
+    description?: string | null,
   ) => React.ReactElement;
 };
 
@@ -141,9 +143,17 @@ export const useMarkdownWithInlineDatabases = (
         return renderCalendar(inlineDb);
       }
       if (isBoardView) {
-        return renderBoard(inlineDb.tableData, inlineDb.statusColorMap);
+        return renderBoard(
+          inlineDb.tableData,
+          inlineDb.statusColorMap,
+          inlineDb.description,
+        );
       }
-      return renderTable(inlineDb.tableData, false);
+      return renderTable(
+        inlineDb.tableData,
+        !!inlineDb.description,
+        inlineDb.description,
+      );
     }
 
     /**

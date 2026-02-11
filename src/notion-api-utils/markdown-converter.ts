@@ -465,12 +465,14 @@ async function processInlineDatabase(
   databaseId: string,
   dbTitle: string,
   queryRows: (databaseId: string) => Promise<any[]>,
+  description?: string | null,
 ): Promise<{
   databaseId: string;
   title: string;
   viewType: ViewMode;
   datePropertyName?: string;
   statusColorMap?: Record<string, string>;
+  description?: string | null;
   tableData: {
     columns: string[];
     rows: {
@@ -502,6 +504,7 @@ async function processInlineDatabase(
     viewType,
     ...(datePropertyName ? { datePropertyName } : {}),
     ...(statusColorMap ? { statusColorMap } : {}),
+    ...(description ? { description } : {}),
     tableData,
   };
 }
@@ -571,10 +574,12 @@ async function collectInlineDbData(
       let isInline = true;
       let dbTitle = title;
 
+      let description: string | null = null;
       if (getDatabaseInfo) {
         const dbInfo = await getDatabaseInfo(databaseId);
         isInline = dbInfo.is_inline;
         dbTitle = dbInfo.title || title;
+        description = extractDatabaseDescription(dbInfo);
       }
 
       if (!isInline) {
@@ -591,6 +596,7 @@ async function collectInlineDbData(
         databaseId,
         dbTitle,
         queryRows,
+        description,
       );
       if (inlineDbInfo) {
         inlineDatabases.push(inlineDbInfo);
