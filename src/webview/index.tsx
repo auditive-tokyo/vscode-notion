@@ -13,6 +13,7 @@ import type {
 import {
   usePageCover,
   useTableRenderer,
+  useBoardRenderer,
   useCalendarRenderer,
   useTimelineRenderer,
   useMarkdownWithInlineDatabases,
@@ -78,7 +79,9 @@ const App: React.FC = () => {
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const renderCover = usePageCover(state);
   // eslint-disable-next-line react-hooks/rules-of-hooks
-  const { renderTable, renderBoard } = useTableRenderer(state, openPageCommand);
+  const renderTable = useTableRenderer(state, openPageCommand);
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const renderBoard = useBoardRenderer(state, openPageCommand);
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const renderCalendar = useCalendarRenderer(state, openPageCommand);
   // eslint-disable-next-line react-hooks/rules-of-hooks
