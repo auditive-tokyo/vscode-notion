@@ -100,31 +100,29 @@ function extractPageIdFromHref(
   href: string,
 ): { pageId: string; isFullMatch: boolean } | null {
   // Notion内部リンク形式（32文字）
-  const notionMatch = href.match(
-    /\/(?:workspace|database|page)\/([a-f0-9]{32})/,
-  );
+  const notionRegex = /\/(?:workspace|database|page)\/([a-f0-9]{32})/;
+  const notionMatch = notionRegex.exec(href);
   if (notionMatch) {
     return { pageId: notionMatch[1]!, isFullMatch: true };
   }
 
   // Notion内部リンク形式（ハイフン区切り）
-  const dashedNotionMatch = href.match(
-    /\/(?:workspace|database|page)\/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/,
-  );
+  const dashedNotionRegex = /\/(?:workspace|database|page)\/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/;
+  const dashedNotionMatch = dashedNotionRegex.exec(href);
   if (dashedNotionMatch) {
     return { pageId: dashedNotionMatch[1]!, isFullMatch: true };
   }
 
   // 短いID形式（32文字）
-  const shortMatch = href.match(/([a-f0-9]{32})/);
+  const shortRegex = /([a-f0-9]{32})/;
+  const shortMatch = shortRegex.exec(href);
   if (shortMatch) {
     return { pageId: shortMatch[1]!, isFullMatch: false };
   }
 
   // 短いID形式（ハイフン区切り）
-  const dashedMatch = href.match(
-    /([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/,
-  );
+  const dashedRegex = /([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/;
+  const dashedMatch = dashedRegex.exec(href);
   if (dashedMatch) {
     return { pageId: dashedMatch[1]!, isFullMatch: false };
   }

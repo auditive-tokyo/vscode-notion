@@ -21,7 +21,8 @@ function normalizeGoogleMapsEmbedUrl(url: string): string {
     }
 
     // 座標を抽出（@35.6811441,139.7644811）
-    const coordMatch = url.match(/@(-?[\d.]+),(-?[\d.]+)/);
+    const coordRegex = /@(-?[\d.]+),(-?[\d.]+)/;
+    const coordMatch = coordRegex.exec(url);
     if (coordMatch) {
       const [, lat, lng] = coordMatch;
 
@@ -133,9 +134,8 @@ function renderVideo(block: any): string {
 
   // YouTube URL を埋め込み形式に変換
   let embedUrl = videoUrl;
-  const youtubeMatch = videoUrl.match(
-    /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/,
-  );
+  const youtubeRegex = /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/;
+  const youtubeMatch = youtubeRegex.exec(videoUrl);
   if (youtubeMatch) {
     const videoId = youtubeMatch[1];
     embedUrl = `https://www.youtube.com/embed/${videoId}`;

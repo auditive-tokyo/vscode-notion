@@ -44,7 +44,7 @@ export function extractPageId(input: string): string | null {
     for (const part of pathParts) {
       // ハイフン区切りの最後の部分が 32 文字 ID の場合
       const segments = part.split("-");
-      const lastSegment = segments[segments.length - 1];
+      const lastSegment = segments.at(-1);
       if (lastSegment && /^[a-f0-9]{32}$/.test(lastSegment)) {
         return lastSegment;
       }
@@ -55,7 +55,8 @@ export function extractPageId(input: string): string | null {
     }
 
     // hash 部分から抽出（URL のハッシュの場合）
-    const hashMatch = url.hash.match(/([a-f0-9]{32})/);
+    const hashRegex = /([a-f0-9]{32})/;
+    const hashMatch = hashRegex.exec(url.hash);
     if (hashMatch?.[1]) {
       return hashMatch[1];
     }
