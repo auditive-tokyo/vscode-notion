@@ -70,13 +70,7 @@ Big thanks to [kyswtn](https://github.com/kyswtn) for the original [vscode-notio
 
 ## 🐞 Reporting Issues
 
-Found a bug? [Open an issue](https://github.com/auditive-tokyo/Notion-VSCode/issues) with:
-
-- **Clear title** describing the problem
-- **Steps to reproduce** the issue
-- **Expected vs actual** behavior
-- **Screenshots** if applicable
-- **VS Code version** and **extension version**
+Report a bug or request a feature: [Open an issue](https://github.com/auditive-tokyo/Notion-VSCode/issues).
 
 ## 📄 License
 
