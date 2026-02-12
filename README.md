@@ -66,7 +66,7 @@ Big thanks to [kyswtn](https://github.com/kyswtn) for the original [vscode-notio
 
 - [Architecture](docs/ARCHITECTURE.md)
 
-## 🧭 Support
+## 🐞 Reporting Issues
 
 Report a bug or request a feature: [Open an issue](https://github.com/auditive-tokyo/Notion-VSCode/issues).
 

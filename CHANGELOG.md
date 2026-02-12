@@ -2,6 +2,19 @@
 
 All notable changes to Notion-VSCode will be documented in this file.
 
+## [1.0.8] - 2026-02-12
+
+### Added
+
+- Database descriptions now display across all view modes (Table, Calendar, Timeline, Board)
+- API updated to Notion API version 2025-09-03 for improved database metadata support
+
+### Changed
+
+- Refactored Board renderer into separate `useBoardRenderer` hook for better code maintainability
+- Created shared `cellUtils.ts` for common cell rendering utilities
+- Updated documentation to note database cover image limitations for older databases (pre-2024)
+
 ## [1.0.7] - 2026-02-11
 
 ### Fixed
