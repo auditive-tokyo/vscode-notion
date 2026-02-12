@@ -2,6 +2,13 @@
 
 All notable changes to Notion-VSCode will be documented in this file.
 
+## [1.0.9] - 2026-02-12
+
+### Fixed
+
+- Page tree cache now updates parent page when refreshing active page
+- New sibling pages/databases are immediately reflected in tree after refresh
+
 ## [1.0.8] - 2026-02-12
 
 ### Added
