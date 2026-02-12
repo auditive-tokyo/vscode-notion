@@ -186,7 +186,7 @@ export const useTableRenderer = (
     const titleColumnIndex = tableData.columns.findIndex(
       (col) => col.toLowerCase() === "name" || col.toLowerCase() === "title",
     );
-    const actualTitleIndex = titleColumnIndex >= 0 ? titleColumnIndex : 0;
+    const actualTitleIndex = Math.max(titleColumnIndex, 0);
 
     return (
       <>

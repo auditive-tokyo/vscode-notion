@@ -216,7 +216,7 @@ export class NotionTreeDataProvider
 
   private getPageTitle(page: any): string {
     let title = "Untitled";
-    const properties = (page as any).properties || {};
+    const properties = page.properties || {};
     for (const [, value] of Object.entries(properties)) {
       const prop = value as any;
       if (prop.type === "title" && prop.title?.length > 0) {
@@ -229,7 +229,7 @@ export class NotionTreeDataProvider
 
   private getDatabaseTitle(database: any): string {
     return (
-      (database as any).title?.map((t: any) => t.plain_text).join("") ||
+      database.title?.map((t: any) => t.plain_text).join("") ||
       "Untitled Database"
     );
   }
@@ -248,7 +248,7 @@ export class NotionTreeDataProvider
       try {
         const page = await officialClient.pages.retrieve({ page_id: pageId });
         const title = this.getPageTitle(page);
-        const parentId = this.getParentId((page as any).parent);
+        const parentId = this.getParentId(page.parent);
 
         const item: NotionPageTreeItem = {
           id: page.id,
@@ -264,7 +264,7 @@ export class NotionTreeDataProvider
           });
 
           const title = this.getDatabaseTitle(database);
-          const parentId = this.getParentId((database as any).parent);
+          const parentId = this.getParentId(database.parent);
 
           const item: NotionPageTreeItem = {
             id: database.id,
