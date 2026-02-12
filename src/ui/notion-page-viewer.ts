@@ -322,12 +322,21 @@ export class NotionWebviewPanelSerializer
     const treeView = hierarchyView?.getTreeView();
     const dataProvider = hierarchyView?.getDataProvider();
     if (treeView && dataProvider) {
-      // TreeView のキャッシュもクリア（子ページリストを再取得）
-      await dataProvider.refreshItem(id);
-
+      // ページ自身のキャッシュをクリア
       const treeItem = dataProvider.getItemById(id);
+      await dataProvider.refreshItem(id);
+      
+      // 親ページのキャッシュもクリア（新しい兄弟ノードが反映されるように）
       if (treeItem) {
-        await treeView.reveal(treeItem, {
+        const parentItem = dataProvider.getParent(treeItem);
+        if (parentItem) {
+          await dataProvider.refreshItem(parentItem.id);
+        }
+      }
+
+      const updatedTreeItem = dataProvider.getItemById(id);
+      if (updatedTreeItem) {
+        await treeView.reveal(updatedTreeItem, {
           select: true,
           focus: false,
           expand: true,
